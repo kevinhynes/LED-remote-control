@@ -1,0 +1,27 @@
+<CornerLightMenu>:
+    orientation: 'vertical'
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'vertical'
+            FloatLayout:
+                background_color: [1,0,0]
+                Button:
+                    text: "On"
+                    size_hint: [0.5, 0.5]
+                    pos_hint: {'center': [0.5, 0.5]}
+            FloatLayout:
+                Button:
+                    text: "Off"
+                    size_hint: [0.5, 0.5]
+                    pos_hint: {'center': [0.5, 0.5]}
+        FloatLayout:
+            Slider:
+                orientation: 'vertical'
+                text: "On"
+                size_hint: [0.5, 0.5]
+                pos_hint: {'center': [0.5, 0.5]}
+                cursor_image: './img/new_cursor_image.png'
+    ColorPicker:
+        size_hint: [1, 1]
+        on_color: print(self.color)
