@@ -1,6 +1,5 @@
 from kivy.app import App
 from kivy.config import Config
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.colorpicker import ColorPicker
 
@@ -10,7 +9,6 @@ Config.set('graphics', 'height', 600)
 
 from jnius import autoclass
 # BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
-
 
 
 class CornerLightMenu(BoxLayout):
