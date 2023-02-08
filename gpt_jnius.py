@@ -18,7 +18,7 @@ class BluetoothApp(App):
         else:
             self.esp32 = None
 
-        button = Button(text="Connect to ESP32")
+        button = Button(text="Connect to ESP32 via pyjnuis")
         button.bind(on_press=self.connect_to_esp32)
         return button
 

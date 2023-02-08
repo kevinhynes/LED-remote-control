@@ -8,7 +8,7 @@ from kivy.uix.button import Button
 class BluetoothApp(App):
     def build(self):
         self.esp32 = None
-        button = Button(text="Connect to ESP32")
+        button = Button(text="Connect to ESP32 via bleak")
         button.bind(on_press=self.connect_to_esp32)
         return button
 
