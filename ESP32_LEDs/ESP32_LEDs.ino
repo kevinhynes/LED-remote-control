@@ -1,120 +1,67 @@
-#include <FastLED.h>
+// --------------------------------------------------
+//
+// Code for control of ESP32 through MIT inventor app (Bluetooth).
+// device used for tests: ESP32-WROOM-32D
+//
+// App on phone has three buttons:
+// Button 1: 11 for ON and 10 for OFF
+// Button 2: 21 for ON and 20 for OFF
+// Button 3: 31 for ON and 30 for OFF
+//
+// Written by mo thunderz (last update: 20.4.2021)
+//
+// --------------------------------------------------
 
-// How many leds in your strip?
-#define NUM_LEDS 60
+// This header is needed for Bluetooth Serial -> works ONLY on ESP32
+#include "BluetoothSerial.h"
+#include <stdlib.h>     /* atoi */
 
-// For led chips like WS2812, which have a data line, ground, and power, you just
-// need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
-// ground, and power), like the LPD8806 define both DATA_PIN and CLOCK_PIN
-// Clock pin only needed for SPI based chipsets when not using hardware SPI
-#define DATA_PIN 2
-// #define CLOCK_PIN 13
+// Initialize Class:
+BluetoothSerial ESP_BT;
 
-// Define the array of leds
-CRGB leds[NUM_LEDS];
+// init PINs: assign any pin on ESP32
+int led_pin_1 = 5;
+int led_pin_2 = 2;
 
-void setup() { 
-    // Uncomment/edit one of the following lines for your leds arrangement.
-    // ## Clockless types ##
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
-    // FastLED.addLeds<SM16703, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<TM1829, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<TM1812, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<TM1809, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<TM1804, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<TM1803, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<UCS1903, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<UCS1903B, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<UCS1904, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<UCS2903, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<WS2812, DATA_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<WS2852, DATA_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<GS1903, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<SK6812, DATA_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<SK6822, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<APA106, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<PL9823, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<SK6822, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<WS2813, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<APA104, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<WS2811_400, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<GE8822, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<GW6205, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<GW6205_400, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<LPD1886, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<LPD1886_8BIT, DATA_PIN, RGB>(leds, NUM_LEDS);
-    // ## Clocked (SPI) types ##
-    // FastLED.addLeds<LPD6803, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<LPD8806, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
-    // FastLED.addLeds<WS2801, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<WS2803, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<SM16716, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
-    // FastLED.addLeds<P9813, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // BGR ordering is typical
-    // FastLED.addLeds<DOTSTAR, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // BGR ordering is typical
-    // FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // BGR ordering is typical
-    // FastLED.addLeds<SK9822, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);  // BGR ordering is typical
+// Parameters for Bluetooth interface
+int incoming;
+
+void setup() {
+  Serial.begin(19200);
+  ESP_BT.begin("ESP32_Control"); //Name of your Bluetooth interface -> will show up on your phone
+
+  pinMode (led_pin_1, OUTPUT);
+  pinMode (led_pin_2, OUTPUT);
 }
 
-void turnStripRGB(int r, int g, int b) {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].setRGB(r, g, b);
+void loop() {
+
+  // -------------------- Receive Bluetooth signal ----------------------
+  if (ESP_BT.available())
+  {
+    incoming = ESP_BT.read(); //Read what we receive
+
+    int value = incoming;
+    Serial.println("###############################\n");
+    Serial.println("Incoming Value:");
+    Serial.println(value);
+    Serial.println("Incoming Value:");
+    Serial.write(value);
+    Serial.println();
+
+    if (value == 1) {
+      Serial.println("Turning On");
+      Serial.println();
+      digitalWrite(led_pin_1, value);
+      digitalWrite(led_pin_2, value);
     }
-  FastLED.show();
-}
-
-void moveLEDRGB(int r, int g, int b) {
-  turnStripOff();
-  int prev = -1;
-  for (int cur = 0; cur < NUM_LEDS; cur++) {
-    leds[cur].setRGB(r, g, b);
-    leds[prev].setRGB(0, 0, 0);
-    FastLED.show();
-    prev += 1;
-    delay(25);
+    if (value == 0) {
+      Serial.print("Turning Off");
+      Serial.println();
+      digitalWrite(led_pin_1, value);
+      digitalWrite(led_pin_2, value);
+    }
+    Serial.println("###############################\n");
+    delay(50);
   }
-  leds[prev].setRGB(0, 0, 0);
-  FastLED.show();
-}
-
-void turnStripHSV(int h, int s, int v) {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i].setHSV(h, s, v);
-  }
-  FastLED.show();
-}
-
-void turnStripOff() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::Black;
-  }
-  FastLED.show();
-}
-
-
-// Testing out different functions
-int red = 0;
-int green = 255;
-int blue = 0;
-
-int hue = 0; 
-int saturation = 150;
-int value = 255;
-
-void loop() { 
-  turnStripRGB(red, green, blue);
-  delay(500);
-
-  turnStripOff();
-  delay(500);
-
-  turnStripHSV(hue, saturation, value);
-  delay(500);
-
-  turnStripOff();
-  delay(500);
-
-  moveLEDRGB(0, 255, 100);
-  delay(500);
 }

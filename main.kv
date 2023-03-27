@@ -1,0 +1,140 @@
+#<DrawerClickableItem@MDNavigationDrawerItem>
+#    text_color: "#4a4939"
+#    text_right_color: "#4a4939"
+#    icon_color: "#4a4939"
+#    focus_color: "#e7e4c0"
+#    ripple_color: "#c5bdd2"
+#    selected_color: "#0c6c4d"
+#
+#
+#<DrawerLabelItem@MDNavigationDrawerItem>
+#    text_color: "#4a4939"
+#    icon_color: "#4a4939"
+#    focus_behavior: False
+#    selected_color: "#4a4939"
+#    _no_ripple_effect: True
+
+
+<BTDeviceListItem>:
+    IconLeftWidget:
+        icon: "bluetooth"
+
+
+<DevicesScreen>:
+    available_devices: app.available_devices
+    bonded_devices: app.bonded_devices
+    available_devices_list: _available_devices_list
+    bonded_devices_list: _bonded_devices_list
+    MDScrollView:
+        MDList:
+            OneLineListItem:
+                text: "Available Devices".upper()
+                font_style: "Button"
+                theme_text_color: "ContrastParentBackground"
+            MDSeparator:
+            MDList:
+                id: _available_devices_list
+            MDList:
+            OneLineListItem:
+                text: "Paired Devices".upper()
+                font_style: "Button"
+            MDSeparator:
+            MDList:
+                id: _bonded_devices_list
+
+<RootScreen>:
+    name: "main"
+
+    MDTopAppBar:
+        id: _top_app_bar
+        title: "Navigation Drawer"
+        elevation: 4
+        pos_hint: {"top": 1}
+        left_action_items: [["menu", lambda x: _nav_drawer.set_state("open")]]
+
+    MDNavigationLayout:
+
+        MDScreenManager:
+            id: _screen_manager
+
+            MDScreen:
+                name: "main"
+                size_hint_y: 1 - _top_app_bar.height/root.height
+                MDBoxLayout:
+                    size_hint: (1, 1)
+                    orientation: 'horizontal'
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send String - On"
+                            on_press: app.send_string('1')
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send Int - On"
+                            on_press: app.send_int(1)
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send Float - On"
+                            on_press: app.send_float(1)
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send String - Off"
+                            on_press: app.send_string('0')
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send Int - Off"
+                            on_press: app.send_int(0)
+                        MDRectangleFlatButton:
+                            size_hint: (1, 1)
+                            text: "Send Float - Off"
+                            on_press: app.send_float(0)
+            DevicesScreen:
+                name: "devices"
+                size_hint_y: 1 - _top_app_bar.height/root.height
+
+        MDNavigationDrawer:
+            id: _nav_drawer
+            enable_swiping: False
+            radius: (0, 16, 16, 0)
+
+            MDNavigationDrawerMenu:
+
+                MDNavigationDrawerHeader:
+                    title: "LED Remote Control"
+                    spacing: "4dp"
+                    padding: "12dp", 0, 0, "56dp"
+
+                MDNavigationDrawerLabel:
+                    text: "Clickable Items"
+
+                MDNavigationDrawerItem:
+                    icon: "magnify"
+                    text: "Find Devices"
+                    on_press:
+                        _screen_manager.current = "devices"
+                        _nav_drawer.set_state("close")
+#                        app.start_discovery()
+                        app.get_bonded_devices()
+
+                MDNavigationDrawerItem:
+                    icon: "bluetooth"
+                    text: "Main"
+                    on_press:
+                        _screen_manager.current = "main"
+                        _nav_drawer.set_state("close")
+
+                MDNavigationDrawerDivider:
+
+                MDNavigationDrawerLabel:
+                    text: "Labels"
+
+                MDNavigationDrawerItem:
+                    icon: "information-outline"
+                    text: "Label"
+
+                MDNavigationDrawerItem:
+                    icon: "information-outline"
+                    text: "Label"
