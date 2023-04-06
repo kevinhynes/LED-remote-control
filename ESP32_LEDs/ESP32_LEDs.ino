@@ -1,67 +1,189 @@
-// --------------------------------------------------
-//
-// Code for control of ESP32 through MIT inventor app (Bluetooth).
-// device used for tests: ESP32-WROOM-32D
-//
-// App on phone has three buttons:
-// Button 1: 11 for ON and 10 for OFF
-// Button 2: 21 for ON and 20 for OFF
-// Button 3: 31 for ON and 30 for OFF
-//
-// Written by mo thunderz (last update: 20.4.2021)
-//
-// --------------------------------------------------
-
-// This header is needed for Bluetooth Serial -> works ONLY on ESP32
+// Needed for Bluetooth Serial -> works ONLY on ESP32
 #include "BluetoothSerial.h"
-#include <stdlib.h>     /* atoi */
+// Needed for WS2812B LEDs
+#include <FastLED.h>
 
+// LED SECTION
+#define NUM_LEDS 58
+#define LED_PIN1 2
+#define LED_PIN2 5
+#define DATA_PIN 26
+CRGB leds[NUM_LEDS];
+
+void turnStripOn() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setRGB(255, 255, 255);
+  }
+  FastLED.show();
+}
+
+void turnStripOff() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB::Black;
+  }
+  FastLED.show();
+}
+
+void dimStrip(int level) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setRGB(level, level, level);
+  }
+  FastLED.show();
+}
+
+void turnStripRGB(int r, int g, int b) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setRGB(r, g, b);
+    }
+  FastLED.show();
+}
+
+void turnStripHSV(int h, int s, int v) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setHSV(h, s, v);
+  }
+  FastLED.show();
+}
+
+void moveLEDRGB(int r, int g, int b) {
+  turnStripOff();
+  int prev = -1;
+  for (int cur = 0; cur < NUM_LEDS; cur++) {
+    leds[cur].setRGB(r, g, b);
+    leds[prev].setRGB(0, 0, 0);
+    FastLED.show();
+    prev += 1;
+    delay(25);
+  }
+  leds[prev].setRGB(0, 0, 0);
+  FastLED.show();
+}
+
+void blink() {
+  turnStripOn();
+  delay(500);
+  turnStripOff();
+  delay(500);
+}
+
+// BLUETOOTH SECTION
 // Initialize Class:
 BluetoothSerial ESP_BT;
 
-// init PINs: assign any pin on ESP32
-int led_pin_1 = 5;
-int led_pin_2 = 2;
-
-// Parameters for Bluetooth interface
-int incoming;
+const unsigned int MESSAGE_LENGTH = 6; // in bytes (0-indexed)
 
 void setup() {
-  Serial.begin(19200);
+  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);  // GRB ordering is typical
+  Serial.begin(115200);
   ESP_BT.begin("ESP32_Control"); //Name of your Bluetooth interface -> will show up on your phone
+  pinMode (LED_PIN1, OUTPUT);
+  pinMode (LED_PIN2, OUTPUT);
+}
 
-  pinMode (led_pin_1, OUTPUT);
-  pinMode (led_pin_2, OUTPUT);
+bool validate_message(int message[]) {
+  Serial.println("validate_message, message:");
+  for (int i = 0; i < (sizeof(message) / sizeof(message[0])); i++) {
+    Serial.println(message[i]);
+    if (i == 0) {
+      if (!(message[i] < 10)) {
+        return false;
+      }
+    }
+    else {
+      if (!((0 <= message[i]) && (message[i] <= 255))) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 void loop() {
+  static int message[] = {-1, -1, -1, -1, -1, -1};
+  static unsigned int i = 0;
+  int cur_byte;
 
   // -------------------- Receive Bluetooth signal ----------------------
-  if (ESP_BT.available())
-  {
-    incoming = ESP_BT.read(); //Read what we receive
+  // This loop seems to run faster than message is being sent, therefore
+  // need to keep track of what byte we are on in the message
+  // static variables keep state after function is called
 
-    int value = incoming;
-    Serial.println("###############################\n");
-    Serial.println("Incoming Value:");
-    Serial.println(value);
-    Serial.println("Incoming Value:");
-    Serial.write(value);
-    Serial.println();
+  // Incoming data is in form:
+    // mode red green blue alpha -1
+  if (ESP_BT.available()) {
+    cur_byte = ESP_BT.read();
+    message[i] = cur_byte;
 
-    if (value == 1) {
-      Serial.println("Turning On");
-      Serial.println();
-      digitalWrite(led_pin_1, value);
-      digitalWrite(led_pin_2, value);
+    // Mode
+    if (i == 0) {
+      Serial.println("###############################");
+      Serial.println(cur_byte);
+      i = i + 1;
     }
-    if (value == 0) {
-      Serial.print("Turning Off");
-      Serial.println();
-      digitalWrite(led_pin_1, value);
-      digitalWrite(led_pin_2, value);
+
+    // RGB
+    else if ((1 <= i) && (i < MESSAGE_LENGTH - 2)) {
+      Serial.println(cur_byte);
+      i = i + 1;
     }
-    Serial.println("###############################\n");
+
+    // Alpha
+    else if (i == MESSAGE_LENGTH - 2) {
+      Serial.println(cur_byte);
+      Serial.println("###############################");
+      i = i + 1;
+    }
+
+    // End byte is -1
+    else {
+      Serial.println("Validating message of size:");
+      Serial.println(sizeof(message));
+      Serial.println(sizeof(message[0]));
+      if (validate_message(message)) {
+        Serial.println("Valid message received");
+        turnStripRGB(message[1], message[2], message[3]);
+      }
+      else {
+        Serial.println("Invalid message recieved");
+      }
+      // Reset variables
+      Serial.println("Resetting message...");
+      i = 0;
+      for (int i = 0; i < (sizeof(message) / sizeof(message[0])); i++) {
+        message[i] = -1;
+        Serial.println(message[i]);
+      }
+    }
     delay(50);
+
   }
+
+  /// Old using int
+  // if (ESP_BT.available())
+  // {
+  //   Serial.println("###############################\n");
+  //   Serial.println("Incoming Value:");
+  //   Serial.println(value);
+  //   Serial.println("Incoming Value:");
+  //   Serial.write(value);
+  //   Serial.println();
+
+  //   if (value == 1) {
+  //     Serial.println("Turning On");
+  //     Serial.println();
+  //     digitalWrite(LED_PIN1, value);
+  //     digitalWrite(LED_PIN2, value);
+  //     turnStripOn();
+  //   }
+  //   if (value == 0) {
+  //     Serial.print("Turning Off");
+  //     Serial.println();
+  //     digitalWrite(LED_PIN1, value);
+  //     digitalWrite(LED_PIN2, value);
+  //     turnStripOff();
+  //   }
+  //   Serial.println("###############################\n");
+  //   delay(50);
+  // }
+
 }

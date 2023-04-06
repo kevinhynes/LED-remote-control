@@ -71,12 +71,12 @@
                             on_press: app.send_string('1')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send Int - On"
-                            on_press: app.send_int(1)
+                            text: "Send String - Blue"
+                            on_press: app.send_string('2')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send Float - On"
-                            on_press: app.send_float(1)
+                            text: "Send String - Green"
+                            on_press: app.send_string('3')
                     MDBoxLayout:
                         orientation: 'vertical'
                         MDRectangleFlatButton:
@@ -85,8 +85,8 @@
                             on_press: app.send_string('0')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send Int - Off"
-                            on_press: app.send_int(0)
+                            text: "Send String - Red"
+                            on_press: app.send_string('4')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
                             text: "Send Float - Off"

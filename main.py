@@ -10,7 +10,7 @@ from kivy.properties import ListProperty, ObjectProperty
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineIconListItem
 from kivymd.uix.pickers.colorpicker import MDColorPicker
-from jnius import autoclass, cast,  java_method
+from jnius import autoclass, cast, java_method
 
 
 # Trying to get past permissions issue.
@@ -108,6 +108,7 @@ class DevicesScreen(MDScreen):
                 button.bind(on_press=partial(device.request_connection, device))
                 self.available_devices_list.add_widget(button)
 
+
 class RootScreen(MDScreen):
     pass
 
@@ -121,7 +122,7 @@ class MainApp(MDApp):
         self.theme_cls.theme_style = "Light"
         self.theme_cls.primary_palette = "Green"
         self.theme_cls.primary_hue = "500"
-
+        self.bluetooth_adapter = None
         self.send_stream = None
         self.recv_stream = None
         self.esp32 = None
@@ -319,8 +320,26 @@ class MainApp(MDApp):
     def send_string(self, val):
         print(self.__class__.__name__, func_name())
         print(val)
+        mode = 1
+        alpha = 1
+        if val == '1':
+            red, green, blue = [255, 255, 255]
+        elif val == '2':
+            red, green, blue = [0, 0, 255]
+        elif val == '3':
+            red, green, blue = [0, 255, 0]
+        elif val == '4':
+            red, green, blue = [255, 0, 0]
+        else:
+            red, green, blue = [0, 0, 0]
         if self.send_stream is not None:
-            self.send_stream.write(val.encode('utf-8'))
+            # self.send_stream.write(struct.pack('<s', b'<'))
+            self.send_stream.write(struct.pack('<B', mode))
+            self.send_stream.write(struct.pack('<B', red))
+            self.send_stream.write(struct.pack('<B', green))
+            self.send_stream.write(struct.pack('<B', blue))
+            self.send_stream.write(struct.pack('<B', alpha))
+            self.send_stream.write(struct.pack('<b', -1))
             self.send_stream.flush()
             print("Command sent.")
         else:
