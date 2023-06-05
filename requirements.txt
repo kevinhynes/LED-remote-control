@@ -1,0 +1,24 @@
+certifi==2023.5.7
+cffi==1.15.1
+charset-normalizer==3.1.0
+cryptography==41.0.1
+Cython==0.29.19
+distlib==0.3.6
+docutils==0.20.1
+filelock==3.12.0
+idna==3.4
+Kivy @ https://github.com/kivy/kivy/archive/master.zip#sha256=dac5b70185883d38c68a673363ce1de2c7a4a6f9b0e9c43bf392695206e48616
+Kivy-Garden==0.1.5
+kivymd @ https://github.com/kivymd/KivyMD/archive/master.zip#sha256=5e8a5b8b2d835644e769b594fbe635f15416b4c9d52f48abd3aa8a5e560c1fe7
+materialyoucolor==1.2.0
+parse==1.6.5
+Pillow==9.5.0
+platformdirs==3.5.1
+pycparser==2.21
+Pygments==2.15.1
+pyjnius==1.5.0
+pyparser==1.0
+pyparsing==3.0.9
+requests==2.31.0
+urllib3==2.0.2
+virtualenv==20.23.0

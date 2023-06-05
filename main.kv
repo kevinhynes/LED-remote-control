@@ -1,56 +1,145 @@
-#<DrawerClickableItem@MDNavigationDrawerItem>
-#    text_color: "#4a4939"
-#    text_right_color: "#4a4939"
-#    icon_color: "#4a4939"
-#    focus_color: "#e7e4c0"
-#    ripple_color: "#c5bdd2"
-#    selected_color: "#0c6c4d"
-#
-#
-#<DrawerLabelItem@MDNavigationDrawerItem>
-#    text_color: "#4a4939"
-#    icon_color: "#4a4939"
-#    focus_behavior: False
-#    selected_color: "#4a4939"
-#    _no_ripple_effect: True
+<Overlay@Widget>:
+    canvas:
+        Color:
+            rgba: 1, 0, 0, 0.25
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    # This works for KivyMD widgets:
+    md_bg_color: app.theme_cls.primary_light
+
+
+<TestButton@MDRectangleFlatButton>:
+    md_bg_color: app.theme_cls.primary_light
 
 
 <BTDeviceListItem>:
-    IconLeftWidget:
-        icon: "bluetooth"
+    IconLeftWidgetWithoutTouch:
+        icon: 'bluetooth'
+
+
+<DeviceConnectionDialog>:
+    radius: 20, 10, 20, 10
+
+
+<DialogContent>:
+    label: _label
+    status_container: _status_container
+    orientation: 'horizontal'
+    size_hint: (1, 1)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    adaptive_height: True
+    md_bg_color: app.theme_cls.primary_light
+    radius: 20, 10, 20, 10
+    padding: 5, 5, 5, 5
+    TestLabel:
+        id: _label
+        size_hint: (0.8, None)
+        height: self.texture_size[1]
+        halign: 'left'
+        valign: 'middle'
+        pos_hint: {'left': 0, 'center_y': 0.5}
+    StatusContainer:
+        id: _status_container
+        size_hint: (0.2, 1)
+        pos_hint: {'right': 1, 'center_y': 0.5, 'center_x': 0.5}
+
+
+<StatusSpinner>:
+    size_hint: (None, None)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    active: True
+
+
+<SuccessIcon>:
+    size_hint: (None, None)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    theme_text_color: 'Custom'
+    text_color: 0, 1, 0, 1
+    icon: 'checkbox-marked-circle-button'
+    # icon: 'check-outline'
+    # icon: 'cellphone-check'
+    # icon: 'lan-check'
+    # icon: 'wifi-check'
+    # icon: 'swap-vertical'
+    # icon: 'remote'
+    # icon: 'pipe'
+    # icon: 'led-on'
+    # icon: 'leak'
+    # icon: 'globe-light-outline'
+    # icon: 'flashlight'
+    # icon: 'desk-lamp-on'
+    # icon: 'connection'
+    # icon: 'alarm-light'
+    overlay_color: (1, 1, 1, 0)
+    on_release: self.overlay_color_ = (0, 1, 0, 1)
+
+
+<FailIcon>:
+    size_hint: (None, None)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    theme_text_color: 'Custom'
+    text_color: 0.5, 0, 0, 1
+    icon: 'close'
+    # icon: 'close-outline'
+    # icon: 'close-circle-outline'
+    # icon: 'window-close'
+    # icon: 'thumb-down'
+    # icon: 'thumb-down-outline'
+    # icon: 'sync-off'
+    # icon: 'skull-crossbones'
+    # icon: 'share-off'
+    # icon: 'remote-off'
+    # icon: 'pipe-disconnected'
+    # icon: 'minus-circle'
+    # icon: 'led-variant-off'
+    # icon: 'google-downasaur'
+    # icon: 'flashlight-off'
+    # icon: 'desk-lamp-off'
+    # icon: 'alarm-light-off'
 
 
 <DevicesScreen>:
     available_devices: app.available_devices
     bonded_devices: app.bonded_devices
-    available_devices_list: _available_devices_list
+    available_device_list: _available_devices_list
     bonded_devices_list: _bonded_devices_list
+
     MDScrollView:
         MDList:
             OneLineListItem:
-                text: "Available Devices".upper()
-                font_style: "Button"
-                theme_text_color: "ContrastParentBackground"
+                text: 'Available Devices'.upper()
+                font_style: 'Button'
             MDSeparator:
             MDList:
                 id: _available_devices_list
             MDList:
             OneLineListItem:
-                text: "Paired Devices".upper()
-                font_style: "Button"
+                text: 'Paired Devices'.upper()
+                font_style: 'Button'
             MDSeparator:
             MDList:
                 id: _bonded_devices_list
 
+
+<ControlScreen>:
+    connected_devices: app.connected_devices
+    connected_devices_list: _connected_devices_list
+    MDScrollView:
+        MDList:
+            id: _connected_devices_list
+
+
 <RootScreen>:
-    name: "main"
+    name: 'root'
+    screen_manager: _screen_manager
 
     MDTopAppBar:
         id: _top_app_bar
-        title: "Navigation Drawer"
+        title: 'LED Remote Control'
         elevation: 4
-        pos_hint: {"top": 1}
-        left_action_items: [["menu", lambda x: _nav_drawer.set_state("open")]]
+        pos_hint: {'top': 1}
+        left_action_items: [['menu', lambda x: _nav_drawer.set_state('open')]]
 
     MDNavigationLayout:
 
@@ -58,42 +147,47 @@
             id: _screen_manager
 
             MDScreen:
-                name: "main"
-                size_hint_y: 1 - _top_app_bar.height/root.height
+                name: 'main'
+                size_hint_y: 1 - _top_app_bar.height / root.height
                 MDBoxLayout:
                     size_hint: (1, 1)
                     orientation: 'horizontal'
                     MDBoxLayout:
                         orientation: 'vertical'
+                        TestButton:
+                            size_hint: (1, 1)
+                            text: 'Send String - On'
+                            on_press: app.send('1')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send String - On"
-                            on_press: app.send_string('1')
+                            text: 'Send String - Blue'
+                            on_press: app.send('2')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send String - Blue"
-                            on_press: app.send_string('2')
-                        MDRectangleFlatButton:
-                            size_hint: (1, 1)
-                            text: "Send String - Green"
-                            on_press: app.send_string('3')
+                            text: 'Send String - Red'
+                            on_press: app.send('3')
                     MDBoxLayout:
                         orientation: 'vertical'
+                        TestButton:
+                            size_hint: (1, 1)
+                            text: 'Send String - Off'
+                            on_press: app.send('0')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send String - Off"
-                            on_press: app.send_string('0')
+                            text: 'Send String - Green'
+                            on_press: app.send('4')
                         MDRectangleFlatButton:
                             size_hint: (1, 1)
-                            text: "Send String - Red"
-                            on_press: app.send_string('4')
-                        MDRectangleFlatButton:
-                            size_hint: (1, 1)
-                            text: "Send Float - Off"
-                            on_press: app.send_float(0)
+                            text: 'Send String - Spare - Off'
+                            on_press: app.send('0')
+
+            ControlScreen:
+                name: 'connected_devices'
+                size_hint_y: 1 - _top_app_bar.height / root.height
+
             DevicesScreen:
-                name: "devices"
-                size_hint_y: 1 - _top_app_bar.height/root.height
+                name: 'find_devices'
+                size_hint_y: 1 - _top_app_bar.height / root.height
 
         MDNavigationDrawer:
             id: _nav_drawer
@@ -103,38 +197,117 @@
             MDNavigationDrawerMenu:
 
                 MDNavigationDrawerHeader:
-                    title: "LED Remote Control"
-                    spacing: "4dp"
-                    padding: "12dp", 0, 0, "56dp"
+                    title: 'LED Remote Control'
+                    spacing: '4dp'
+                    padding: '12dp', 0, 0, '56dp'
 
                 MDNavigationDrawerLabel:
-                    text: "Clickable Items"
+                    text: 'Clickable Items'
 
                 MDNavigationDrawerItem:
-                    icon: "magnify"
-                    text: "Find Devices"
+                    icon: 'magnify'
+                    text: 'Find Devices'
                     on_press:
-                        _screen_manager.current = "devices"
-                        _nav_drawer.set_state("close")
-#                        app.start_discovery()
+                        _screen_manager.current = 'find_devices'
+                        _nav_drawer.set_state('close')
+                        # app.start_discvoery()
                         app.get_bonded_devices()
 
                 MDNavigationDrawerItem:
-                    icon: "bluetooth"
-                    text: "Main"
+                    icon: 'bluetooth'
+                    text: 'Main'
                     on_press:
-                        _screen_manager.current = "main"
-                        _nav_drawer.set_state("close")
+                        _screen_manager.current = 'main'
+                        _nav_drawer.set_state('close')
+
+                MDNavigationDrawerItem:
+                    icon: 'bluetooth'
+                    text: 'Connected Devices'
+                    on_press:
+                        _screen_manager.current = 'connected_devices'
+                        _nav_drawer.set_state('close')
 
                 MDNavigationDrawerDivider:
 
                 MDNavigationDrawerLabel:
-                    text: "Labels"
+                    text: 'Labels'
 
                 MDNavigationDrawerItem:
-                    icon: "information-outline"
-                    text: "Label"
+                    icon: 'information-outline'
+                    text: 'Label'
 
                 MDNavigationDrawerItem:
-                    icon: "information-outline"
-                    text: "Label"
+                    icon: 'information-outline'
+                    text: 'Label'
+
+
+<DeviceController>:
+    power_button: _power_button
+    dimmer: _dimmer
+    orientation: 'vertical'
+    adaptive_height: True
+    # md_bg_color: app.theme_cls.primary_light
+    radius: (25, 5, 5, 5)
+    border_color: (1, 0, 0, 1)
+    border_width: 1
+    MDLabel:
+        size_hint: (1, None)
+        height: dp(50)
+        padding: dp(20), dp(0)
+        md_bg_color: app.theme_cls.primary_dark
+        text: root.device.name
+        radius: self.height / 2
+    MDBoxLayout:
+        orientation: 'horizontal'
+        spacing: dp(20)
+        padding: dp(20), dp(15)
+        adaptive_height: True
+
+        MDIconButton:
+            id: _power_button
+            icon: 'power'
+            line_color: (1, 0, 0, 1)
+            md_bg_color: app.theme_cls.bg_darkest
+            on_press: root.power()
+
+        MDSlider:
+            id: _dimmer
+            hint: False
+            min: 0
+            max: 100
+            size_hint_y: None
+            height: dp(50)
+            on_value: root.dim()
+            disabled: False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
