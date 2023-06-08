@@ -49,15 +49,17 @@ class FakeDevice:
 
     def connect_as_client(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()}`')
+        asyncio.create_task(self._connect_as_client())
 
     async def _connect_as_client(self, *args):
         print(f'Request for {self.address} received with args: {args}')
         dcd = DeviceConnectionDialog(
+            title="gay",
             type='custom',
             content_cls=DialogContent(),
         )
         dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + self.name
-        # dcd.content_cls.dialog = dcd #???
+        dcd.content_cls.dialog = dcd #???
         dcd.open()
         await asyncio.sleep(1)
 
@@ -71,7 +73,7 @@ class FakeDevice:
 
 class DeviceConnectionDialog(MDDialog):
 
-    def __init__(self, *kwargs):
+    def __init__(self, **kwargs):
         # Struggling to make this look right; overriding some source code
         # MDDialog is a ModalView, which is an AnchorLayout
         #       dialog (MDDialog)
@@ -122,7 +124,17 @@ class DialogContent(MDBoxLayout):
     def update_success(self, device):
         self.status_container.remove_widget(self.spinner)
         self.label.text = 'Successfully conntected to ' + device.name
-        self.label.teme_text_color = 'Custom'
+        self.label.theme_text_color = 'Custom'
+        self.label.text_color = (0, 1, 0, 1)
+        self.status_container.add_widget(self.success_icon)
+        app = MDApp.get_running_app()
+        app.connected_devices.append(device)
+        app.root_screen.screen_manager.current = 'connected_devices'
+
+    def update_failure(self, device):
+        self.status_container.remove_widget(self.spinner)
+        self.label.text = 'Failed to connect to ' + device.name
+        self.label.theme_text_color = 'Custom'
         self.label.text_color = (1, 0, 0, 1)
         self.status_container.add_widget(self.fail_icon)
         app = MDApp.get_running_app()
@@ -138,7 +150,7 @@ class DialogContent(MDBoxLayout):
 
     def retry(self, device, *args):
         self.dialog.dismiss()
-        device.connected_as_client()
+        device.connect_as_client()
 
 
 class StatusContainer(MDFloatLayout):

@@ -71,7 +71,7 @@ class Border(Widget):
         self.update_border_rect()
 
     def on_size(self, *args):
-        self.udpate_border_rect()
+        self.update_border_rect()
 
     def update_border_rect(self):
         self.border_rect.rectangle = [self.x, self.y, self.width - self.border_width / 2, self.height - self.border_width / 2]
