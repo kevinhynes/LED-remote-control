@@ -99,7 +99,7 @@
     # icon: 'alarm-light-off'
 
 
-<DevicesScreen>:
+<FindDevicesScreen>:
     available_devices: app.available_devices
     bonded_devices: app.bonded_devices
     available_device_list: _available_devices_list
@@ -108,18 +108,17 @@
     MDScrollView:
         MDList:
             OneLineListItem:
-                text: 'Available Devices'.upper()
-                font_style: 'Button'
-            MDSeparator:
-            MDList:
-                id: _available_devices_list
-            MDList:
-            OneLineListItem:
                 text: 'Paired Devices'.upper()
                 font_style: 'Button'
             MDSeparator:
             MDList:
                 id: _bonded_devices_list
+            OneLineListItem:
+                text: 'Available Devices'.upper()
+                font_style: 'Button'
+            MDSeparator:
+            MDList:
+                id: _available_devices_list
 
 
 <ControlScreen>:
@@ -185,7 +184,7 @@
                 name: 'connected_devices'
                 size_hint_y: 1 - _top_app_bar.height / root.height
 
-            DevicesScreen:
+            FindDevicesScreen:
                 name: 'find_devices'
                 size_hint_y: 1 - _top_app_bar.height / root.height
 

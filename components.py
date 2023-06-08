@@ -3,8 +3,9 @@ import random
 import sys
 import string
 from functools import partial
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty
 from kivy.core.window import Window
+from kivy.clock import mainthread
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty
 from kivy.metrics import dp, sp
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -47,28 +48,27 @@ class FakeDevice:
         name = ''.join(temp_name)
         return name
 
-    def connect_as_client(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        asyncio.create_task(self._connect_as_client())
-
-    async def _connect_as_client(self, *args):
-        print(f'Request for {self.address} received with args: {args}')
-        dcd = DeviceConnectionDialog(
-            title="gay",
-            type='custom',
-            content_cls=DialogContent(),
-        )
-        dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + self.name
-        dcd.content_cls.dialog = dcd #???
-        dcd.open()
-        await asyncio.sleep(1)
-
-        if random.choice([0, 1]):
-            self.is_connected = True
-            dcd.content_cls.update_success(self)
-        else:
-            dcd.content_cls.update_failure(self)
-            self.is_connected = False
+    # def connect_as_client(self, *args):
+    #     print(f'`{self.__class__.__name__}.{func_name()}`')
+    #     asyncio.create_task(self._connect_as_client())
+    #
+    # async def _connect_as_client(self, *args):
+    #     print(f'Request for {self.address} received with args: {args}')
+    #     dcd = DeviceConnectionDialog(
+    #         type='custom',
+    #         content_cls=DialogContent(),
+    #     )
+    #     dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + self.name
+    #     dcd.content_cls.dialog = dcd  # back-reference to parent
+    #     dcd.open()
+    #     await asyncio.sleep(1)
+    #
+    #     if random.choice([0, 1]):
+    #         self.is_connected = True
+    #         dcd.content_cls.update_success(self)
+    #     else:
+    #         dcd.content_cls.update_failure(self)
+    #         self.is_connected = False
 
 
 class DeviceConnectionDialog(MDDialog):
@@ -94,6 +94,7 @@ class DeviceConnectionDialog(MDDialog):
         # Dialog can't keep Dialog.content_cls contained / centered within it if Window is resized
         Window.unbind(on_resize=self.update_width)
 
+    @mainthread
     def update_height(self, *args):
         # Resize spacer_top_box, container, dialog window as DialogContent changes.
         self.ids.spacer_top_box.height = self.content_cls.height
@@ -116,14 +117,16 @@ class DialogContent(MDBoxLayout):
         self.fail_icon = FailIcon()
         self.status_container.add_widget(self.spinner)
 
+    @mainthread
     def on_size(self, *args):
         self.spinner.size = (self.success_icon.width * 0.8, self.success_icon.width * 0.8)
         self.dialog.update_height()
         self.pos = self.dialog.pos
 
+    @mainthread
     def update_success(self, device):
         self.status_container.remove_widget(self.spinner)
-        self.label.text = 'Successfully conntected to ' + device.name
+        self.label.text = 'Successfully connected to ' + device.name
         self.label.theme_text_color = 'Custom'
         self.label.text_color = (0, 1, 0, 1)
         self.status_container.add_widget(self.success_icon)
@@ -131,6 +134,7 @@ class DialogContent(MDBoxLayout):
         app.connected_devices.append(device)
         app.root_screen.screen_manager.current = 'connected_devices'
 
+    @mainthread
     def update_failure(self, device):
         self.status_container.remove_widget(self.spinner)
         self.label.text = 'Failed to connect to ' + device.name
@@ -148,9 +152,12 @@ class DialogContent(MDBoxLayout):
         self.dialog.create_buttons()
         self.dialog.update_height()
 
-    def retry(self, device, *args):
+    @mainthread
+    def retry(self, device, retry_btn):
+        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, retry_btn}`')
         self.dialog.dismiss()
-        device.connect_as_client()
+        app = MDApp.get_running_app()
+        app.connect_as_client(device, retry_btn)
 
 
 class StatusContainer(MDFloatLayout):

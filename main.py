@@ -1,5 +1,6 @@
 import asyncio
 import struct
+from threading import Thread
 from jnius import autoclass
 from kivymd.theming import ThemeManager
 
@@ -56,6 +57,7 @@ class MainApp(MDApp):
         self.theme_cls.primary_palette = 'Blue'
         self.theme_cls.primary_hue = '700'
         self.bluetooth_adapter = None
+        self.bluetooth_socket = None
         self.send_stream = None
         self.recv_stream = None
         self.esp32 = None
@@ -114,13 +116,13 @@ class MainApp(MDApp):
 
     def start_discovery(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        asyncio.create_task(self.start_discovery())
+        asyncio.create_task(self._start_discovery())
 
     async def _start_discovery(self):
         print(self.__class__.__name__, func_name())
         await asyncio.sleep(0.5)
         if platform == 'linux':
-            new_devices = [FakeDevice() for _ in range(20)]
+            new_devices = [FakeDevice() for _ in range(10)]
             self.available_devices[:] = new_devices
             if platform == 'android':
                 try:
@@ -156,7 +158,7 @@ class MainApp(MDApp):
         print(f'`{self.__class__.__name__}.{func_name()}`')
         await asyncio.sleep(0.5)
         if platform == 'linux':
-            new_devices = [FakeDevice() for _ in range(20)]
+            new_devices = [FakeDevice() for _ in range(10)]
             self.bonded_devices[:] = new_devices
         if platform == 'android':
             self.bonded_devices = self.bluetooth_adapter.getBondedDevices().toArray()
@@ -191,21 +193,70 @@ class MainApp(MDApp):
         return device_info
 
     def connect_as_client(self, device, button):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        print(device.getUuids())
+        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
+        if platform == 'android':
+            asyncio.create_task(self._connect_as_client_android(device, button))
+        if platform == 'linux':
+            asyncio.create_task(self._connect_as_client_linux(device, button))
+
+    async def _connect_as_client_android(self, device, button):
+        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
+        # print(device.getUuids())
+        dcd = DeviceConnectionDialog(
+            type='custom',
+            content_cls=DialogContent(),
+        )
+        dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.getName()
+        dcd.content_cls.dialog = dcd  # back-reference to parent
+        dcd.open()
+        t = Thread(target=self._connect_BluetoothSocket, args=[device, dcd])
+        t.start()
+
+    def _connect_BluetoothSocket(self, device, dcd):
+        '''
+        Create and open the android.bluetooth.BluetoothSocket connection to the ESP32.
+        BluetoothSocket.connect() is a blocking call that stops the main Kivy thread from executing
+        and pauses the GUI; execute this function in a separate thread to avoid this problem.
+        Similarly, Kivy GUI (graphics) instructions cannot be changed from outside main Kivy thread.
+        Use kivy.clock @mainthread decorator on the MDDialog methods that are initiated here to
+        keep graphics instructions in the main thread.
+        '''
+        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
         try:
             UUID = autoclass('java.util.UUID')
-            socket = device.createRfcommSocketToServiceRecord(
-                UUID.fromString('00001101-0000-1000-8000-00805F9B34FB'))
-            self.recv_stream = socket.getInputStream()
-            self.send_stream = socket.getOutputStream()
-            socket.connect()
+            print(f'Creating BluetoothSocket')
+            esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
+            self.bluetooth_socket = device.createRfcommSocketToServiceRecord(
+                UUID.fromString(esp32_UUID))
+            print(f'BluetoothSocket.connect()')
+            self.bluetooth_socket.connect()
+            self.recv_stream = self.bluetooth_socket.getInputStream()
+            self.send_stream = self.bluetooth_socket.getOutputStream()
         except Exception as e:
             print(f'Failed to open socket. Exception {e}')
+            # Note: @mainthread needed on DeviceConnectionDialog methods to avoid error.
+            dcd.content_cls.update_failure(device)
         else:
             print(f'Successfully opened socket')
-            success_dialog = MDDialog(text='Device connected successfully')
-            success_dialog.open()
+            # Note: @mainthread needed on DeviceConnectionDialog methods to avoid error.
+            dcd.content_cls.update_success(device)
+
+    async def _connect_as_client_linux(self, device, button):
+        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
+        dcd = DeviceConnectionDialog(
+            type='custom',
+            content_cls=DialogContent(),
+        )
+        dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.name
+        dcd.content_cls.dialog = dcd  # back-reference to parent
+        dcd.open()
+        await asyncio.sleep(1)
+        if random.choice([0, 1]):
+            self.is_connected = True
+            dcd.content_cls.update_success(device)
+        else:
+            self.is_connected = False
+            dcd.content_cls.update_failure(device)
 
     def send(self, val):
         print(f'`{self.__class__.__name__}.{func_name()}`')
