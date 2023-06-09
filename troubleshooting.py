@@ -33,8 +33,15 @@ class Overlay(Widget):
     Can also be done very simply using KivyMD theming:
     <TestWidget@MDWidget>:
         md_bg_color: app.theme_cls.primary_light
-    """
 
+    or using KivyMD with a ColorProperty:
+        - a collection of 3-4 floats between 0-1 (RGB, RGBA)
+        - a string in the format #rrggbb or #rrggbbaa
+        - a string representing color name from this list:
+            https://www.w3.org/TR/SVG11/types.html#ColorKeywords
+    <TestWidget@MDWidget>:
+        md_bg_color: (1, 1, 0, 0)
+    """
     # overlay_color is used for some kivy widgets.
     overlay_color_ = ListProperty([1, 0, 0, 0.25])
 
@@ -59,7 +66,7 @@ class Overlay(Widget):
 
 class Border(Widget):
     border_color = ListProperty([1, 0, 0, 1])
-    border_width = NumericProperty(1)
+    border_width = NumericProperty(4)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

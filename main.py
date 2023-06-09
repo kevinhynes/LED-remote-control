@@ -56,6 +56,7 @@ class MainApp(MDApp):
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'Blue'
         self.theme_cls.primary_hue = '700'
+        self.theme_cls.material_style = 'M3'
         self.bluetooth_adapter = None
         self.bluetooth_socket = None
         self.send_stream = None
@@ -114,41 +115,41 @@ class MainApp(MDApp):
         else:
             print(f'Success: PythonActivity.mActivity.startActivityForResult')
 
-    def start_discovery(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        asyncio.create_task(self._start_discovery())
-
-    async def _start_discovery(self):
-        print(self.__class__.__name__, func_name())
-        await asyncio.sleep(0.5)
-        if platform == 'linux':
-            new_devices = [FakeDevice() for _ in range(10)]
-            self.available_devices[:] = new_devices
-            if platform == 'android':
-                try:
-                    print('In try block')
-                    # This is kind of working?
-                    # self.broadcast_receiver = BroadcastReceiver(self.on_broadcast, actions=['airplane_mode_changed'])
-                    # self.broadcast_receiver.start()
-                    # activity = PythonActivity.mActivity
-                    # intent_filter = IntentFilter()
-                    # intent_filter.addAction(BluetoothDevice.ACTION_FOUND)
-                    # activity.registerReceiver(self.bluetooth_discovery_receiver, intent_filter)
-                    # self.bluetooth_adapter.startDiscovery()
-                    # Wait for discovery to complete...
-                    # activity.unregisterReceiver(self.bluetooth_discovery_receiver)
-                except Exception as e:
-                    print(f'BroadcastReceiver failed with Exception: {e}')
-                else:
-                    print(f'BroadcastReceiver success?')
-
-    def on_broadcast(self, context, intent):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        print(context, intent)
-        action = intent.getAction()
-        if BluetoothDevice.ACTION_FOUND == action:
-            device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-            print('Found device: ', device.getName(), device.getAddress())
+    # def start_discovery(self, *args):
+    #     print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+    #     asyncio.create_task(self._start_discovery())
+    #
+    # async def _start_discovery(self):
+    #     print(self.__class__.__name__, func_name())
+    #     await asyncio.sleep(0.5)
+    #     if platform == 'linux':
+    #         new_devices = [FakeDevice() for _ in range(10)]
+    #         self.available_devices[:] = new_devices
+    #         if platform == 'android':
+    #             try:
+    #                 print('In try block')
+    #                 # This is kind of working?
+    #                 # self.broadcast_receiver = BroadcastReceiver(self.on_broadcast, actions=['airplane_mode_changed'])
+    #                 # self.broadcast_receiver.start()
+    #                 # activity = PythonActivity.mActivity
+    #                 # intent_filter = IntentFilter()
+    #                 # intent_filter.addAction(BluetoothDevice.ACTION_FOUND)
+    #                 # activity.registerReceiver(self.bluetooth_discovery_receiver, intent_filter)
+    #                 # self.bluetooth_adapter.startDiscovery()
+    #                 # Wait for discovery to complete...
+    #                 # activity.unregisterReceiver(self.bluetooth_discovery_receiver)
+    #             except Exception as e:
+    #                 print(f'BroadcastReceiver failed with Exception: {e}')
+    #             else:
+    #                 print(f'BroadcastReceiver success?')
+    #
+    # def on_broadcast(self, context, intent):
+    #     print(f'`{self.__class__.__name__}.{func_name()}`')
+    #     print(context, intent)
+    #     action = intent.getAction()
+    #     if BluetoothDevice.ACTION_FOUND == action:
+    #         device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
+    #         print('Found device: ', device.getName(), device.getAddress())
 
     def get_bonded_devices(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -209,6 +210,7 @@ class MainApp(MDApp):
         dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.getName()
         dcd.content_cls.dialog = dcd  # back-reference to parent
         dcd.open()
+        # Must use separate thread for connecting to Bluetooth device to keep GUI functional.
         t = Thread(target=self._connect_BluetoothSocket, args=[device, dcd])
         t.start()
 
@@ -217,7 +219,7 @@ class MainApp(MDApp):
         Create and open the android.bluetooth.BluetoothSocket connection to the ESP32.
         BluetoothSocket.connect() is a blocking call that stops the main Kivy thread from executing
         and pauses the GUI; execute this function in a separate thread to avoid this problem.
-        Similarly, Kivy GUI (graphics) instructions cannot be changed from outside main Kivy thread.
+        Inversely, Kivy GUI (graphics) instructions cannot be changed from outside main Kivy thread.
         Use kivy.clock @mainthread decorator on the MDDialog methods that are initiated here to
         keep graphics instructions in the main thread.
         '''
@@ -250,12 +252,10 @@ class MainApp(MDApp):
         dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.name
         dcd.content_cls.dialog = dcd  # back-reference to parent
         dcd.open()
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         if random.choice([0, 1]):
-            self.is_connected = True
             dcd.content_cls.update_success(device)
         else:
-            self.is_connected = False
             dcd.content_cls.update_failure(device)
 
     def send(self, val):

@@ -64,6 +64,10 @@ class ControlScreen(MDScreen):
                 self.connected_devices_list.add_widget(controller)
 
 
+class MainScreen(MDScreen):
+    pass
+
+
 class RootScreen(MDScreen):
     pass
 
