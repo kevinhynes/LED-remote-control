@@ -79,15 +79,15 @@ class DeviceConnectionDialog(MDDialog):
         # Dialog can't keep Dialog.content_cls contained / centered within it if Window is resized
         Window.unbind(on_resize=self.update_width)
 
-    @mainthread
-    def on_open(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        print(self.height, self.ids.container.height, self.content_cls.height)
+    # @mainthread
+    # def on_open(self, *args):
+    #     print(f'`{self.__class__.__name__}.{func_name()}`')
+    #     print(self.height, self.ids.container.height, self.content_cls.height)
 
     @mainthread
     def update_height(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        print('Before: ', self.height, self.ids.container.height, self.content_cls.height)
+        # print(f'`{self.__class__.__name__}.{func_name()}`')
+        # print('Before: ', self.height, self.ids.container.height, self.content_cls.height)
         # Resize spacer_top_box, container, dialog window as DialogContent changes.
         # spacer_top_box.height is bound to MDDialog._spacer_top
         self.ids.spacer_top_box.height = self.content_cls.height
@@ -96,8 +96,7 @@ class DeviceConnectionDialog(MDDialog):
         #                             self.ids.spacer_bottom_box.height + \
         #                             self.ids.root_button_box.height
         self.height = self.ids.container.height
-        print('After: ', self.height, self.ids.container.height, self.content_cls.height)
-
+        # print('After: ', self.height, self.ids.container.height, self.content_cls.height)
 
 
 class DialogContent(MDBoxLayout):
@@ -115,12 +114,12 @@ class DialogContent(MDBoxLayout):
 
     @mainthread
     def on_size(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        print('Before: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
+        # print(f'`{self.__class__.__name__}.{func_name()}`')
+        # print('Before: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
         self.spinner.size = (self.success_icon.width * 0.8, self.success_icon.width * 0.8)
         self.dialog.update_height()
         self.pos = self.dialog.pos
-        print('After: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
+        # print('After: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
 
     @mainthread
     def update_success(self, device):

@@ -207,7 +207,7 @@ class MainApp(MDApp):
             type='custom',
             content_cls=DialogContent(),
         )
-        dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.getName()
+        dcd.content_cls.label.text = 'Connecting to... ... ... ' * 10 + device.name
         dcd.content_cls.dialog = dcd  # back-reference to parent
         dcd.open()
         # Must use separate thread for connecting to Bluetooth device to keep GUI functional.

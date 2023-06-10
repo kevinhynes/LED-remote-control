@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = LEDScratch
+title = LED-RC
 
 # (str) Package name
-package.name = LEDscratch
+package.name = ledrc
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.ledscratch
+package.domain = org.ledrc
 
 # (str) Source code where the main.py live
 source.dir = .

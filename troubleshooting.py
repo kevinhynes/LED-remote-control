@@ -66,7 +66,7 @@ class Overlay(Widget):
 
 class Border(Widget):
     border_color = ListProperty([1, 0, 0, 1])
-    border_width = NumericProperty(4)
+    border_width = NumericProperty(2)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
