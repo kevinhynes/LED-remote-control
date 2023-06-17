@@ -1,9 +1,12 @@
 from kivy.uix.widget import Widget
 from kivy.properties import ListProperty, NumericProperty
-from kivy.graphics import Line, Color, Rectangle
+from kivy.graphics import Line, Color, Rectangle, Ellipse
+from kivy.metrics import dp
+from kivymd.uix.label import MDLabel
+from kivymd.uix.selectioncontrol import MDSwitch
 
 
-class Overlay(Widget):
+class Overlay_(Widget):
     """Convenience class to put a colored Rectangle on any widget's canvas, defined by and bound
     to the widget's size and pattern.
 
@@ -65,37 +68,52 @@ class Overlay(Widget):
 
 
 class Border(Widget):
-    border_color = ListProperty([1, 0, 0, 1])
+    border_color_ = ListProperty([1, 0, 0, 0.75])
     border_width = NumericProperty(2)
+    border_rect = Line()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        with self.canvas.before:
-            Color(*self.border_color)
+        with self.canvas.after:
+            Color(*self.border_color_)
             self.border_rect = Line(rectangle=[0, 0, 0, 0], width=self.border_width)
+        self.bind(pos=self.update_border_rect,
+                  size=self.update_border_rect,
+                  border_color_=self.update_border_rect)
 
-    def on_pos(self, *args):
-        self.update_border_rect()
+    # def on_pos(self, *args):
+    #     self.update_border_rect()
+    #
+    # def on_size(self, *args):
+    #     self.update_border_rect()
 
-    def on_size(self, *args):
-        self.update_border_rect()
-
-    def update_border_rect(self):
+    def update_border_rect(self, *args):
         self.border_rect.rectangle = [self.x, self.y, self.width - self.border_width / 2, self.height - self.border_width / 2]
 
 
+class Dot(Widget):
+    dot_color_ = ListProperty([1, 0, 0, 0.75])
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.after:
+            Color(*self.dot_color_)
+            self.dot = Ellipse()
+        self.dot.size = (dp(10), dp(10))
+        self.bind(pos=self.update_dot,
+                  size=self.update_dot,
+                  dot_color_=self.update_dot)
+
+    def update_dot(self, *args):
+        self.dot.pos = (self.x - dp(5), self.y - dp(5))
 
 
+class BorderedMDLabel(MDLabel, Border):
+    pass
 
 
-
-
-
-
-
-
-
-
+class BorderedMDSwitch(MDSwitch, Border):
+    pass
 
 
 

@@ -183,7 +183,7 @@ class TestLabel(MDLabel):
     overlay_color_ = ListProperty([0.5, 0, 0.5, 0.5])
 
 
-class DeviceController(BaseListItem, Border):
+class DeviceController(BaseListItem):
     device = ObjectProperty()
     power_button = ObjectProperty()
     dimmer = ObjectProperty()
@@ -199,7 +199,7 @@ class DeviceController(BaseListItem, Border):
             # self.dimmer.value = 0
         else:
             self.power_button.state = 'normal'
-            self.md_bg_color = app.theme_cls.primary_light
+            self.md_bg_color = app.theme_cls.primary_dark
             # self.dimmer.disabled = False
             # self.dimmer.value = 50
 

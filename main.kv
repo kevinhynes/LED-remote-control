@@ -11,6 +11,13 @@
     md_bg_color: 'palegreen'
     # https://www.w3.org/TR/SVG11/types.html#ColorKeywords
 
+# Note: Padding adds space between the border of a layout and its widgets.
+# VariableListProperty defaults to [0, 0, 0, 0].
+# [padding_left, padding_top, padding_right, padding_bottom] or
+# [padding_horizontal, padding_vertical] or
+# [padding]
+
+
 <TestButton@MDRectangleFlatButton>:
     md_bg_color: app.theme_cls.primary_light
 
@@ -36,7 +43,7 @@
     md_bg_color: (0, 0, 1, 0.25)
     radius: 20, 10, 20, 10
     padding: 5, 5, 5, 5
-    TestLabel:
+    MDLabel:
         id: _label
         size_hint: (0.8, None)
         height: self.texture_size[1]
@@ -106,54 +113,78 @@
 
 
 <DeviceController>:
-#    power_button: _power_button
-#    dimmer: _dimmer
-#    ripple_scale: 0
+    power_button: _power_button
+    dimmer: _dimmer
     _no_ripple_effect: True
     divider: None
-    radius: dp(20), dp(20), dp(20), dp(20)
+    radius: dp(15), dp(15), dp(15), dp(15)
+    height: dp(120)
 
     MDCard:
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        size_hint: (0.9, 1)
-        radius: dp(20), dp(20), dp(20), dp(20)
-        style: 'outlined'
+        id: card
         orientation: 'vertical'
-#        padding: dp(10), dp(10), dp(10), dp(10)
-#        adaptive_height: True
-#        md_bg_color: app.theme_cls.primary_light
-#        border_color: (0.5, 0.5, 0, 1)
-#        border_width: 1
-#        MDLabel:
-#            size_hint: (1, None)
-#            height: dp(50)
-#            padding: dp(20), dp(0)
-#            md_bg_color: app.theme_cls.primary_dark
-#            text: root.device.alias
-##            radius: self.height / 2
-#            pos_hint_y: {'top': 1}
-#        MDBoxLayout:
-#            orientation: 'horizontal'
+        size_hint: (0.9, 1)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        style: 'elevated'
+        elevation: dp(4)
+        padding: dp(10), dp(10), dp(10), dp(10)
+        radius: dp(15), dp(15), dp(15), dp(15)
+        md_bg_color: app.theme_cls.primary_light
+
+        MDBoxLayout:
+            id: card_top
+            orientation: 'horizontal'
+            size_hint: (1, None)
+            height: dp(50)
+            radius: dp(15), dp(15), dp(15), dp(15)
+            md_bg_color: app.theme_cls.primary_dark
+
+            BorderedMDLabel:
+                size_hint: (0.65, 1)
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                height: self.texture_size[1] + dp(20)
+                padding: dp(20), dp(0)
+#                md_bg_color: app.theme_cls.primary_light
+                text: root.device.alias if root.device else 'oops'
+                valign: 'middle'
+            MDRelativeLayout:
+                size_hint: (0.25, 1)
+
+                BorderedMDSwitch:
+                    widget_style: 'ios'
+#                    size_hint: (0.25, 1)
+                    pos_hint: {'right': 1, 'center_y': 0.5}
+            MDFloatLayout:
+                size_hint: (0.1, 1)
+
+        MDBoxLayout:
+            id: card_bottom
+            orientation: 'horizontal'
 #            spacing: dp(20)
+            size_hint: (1, None)
+            height: dp(50)
 #            padding: dp(20), dp(15)
 #            adaptive_height: True
-#
-#            MDIconButton:
-#                id: _power_button
-#                icon: 'power'
+
+            MDIconButton:
+                id: _power_button
+                icon: 'power'
 #                line_color: (1, 0, 0, 1)
-#                md_bg_color: app.theme_cls.bg_darkest
-#                on_press: root.power()
-#
-#            MDSlider:
-#                id: _dimmer
-#                hint: False
-#                min: 0
-#                max: 100
+                on_press: root.power()
+
+            MDSlider:
+                id: _dimmer
+                hint: False
+                min: 0
+                max: 100
 #                size_hint_y: None
 #                height: dp(50)
-#                on_value: root.dim(self)
-#                disabled: False
+                on_value: root.dim(self)
+                disabled: False
+                md_bg_color: (1, 0, 0, 0.25)
+
+
+
 
 
 <FindDevicesScreen>:

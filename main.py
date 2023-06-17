@@ -38,7 +38,7 @@ if platform == 'android':
 
 if platform == 'linux':
     from kivy.core.window import Window
-    Window.size = (330, 580)
+    Window.size = (300, 600)
 
 
 def func_name():
@@ -55,8 +55,8 @@ class MainApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'Blue'
-        self.theme_cls.primary_hue = '700'
-        self.theme_cls.material_style = 'M3'
+        # self.theme_cls.primary_hue = '700'
+        # self.theme_cls.material_style = 'M2'
         self.bluetooth_adapter = None
         self.bluetooth_socket = None
         self.send_stream = None
