@@ -131,58 +131,68 @@
         radius: dp(15), dp(15), dp(15), dp(15)
         md_bg_color: app.theme_cls.primary_light
 
-        MDBoxLayout:
-            id: card_top
-            orientation: 'horizontal'
-            size_hint: (1, None)
-            height: dp(50)
-            radius: dp(15), dp(15), dp(15), dp(15)
-            md_bg_color: app.theme_cls.primary_dark
+        MDRelativeLayout:
+            # Add card_bottom first so the shadow effect works.
 
-            BorderedMDLabel:
-                size_hint: (0.65, 1)
-#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                height: self.texture_size[1] + dp(20)
+            MDCard:
+                id: card_bottom
+                orientation: 'horizontal'
+                pos_hint: {'bottom': 0}
+                size_hint: (1, None)
+                height: dp(75)
                 padding: dp(20), dp(0)
-#                md_bg_color: app.theme_cls.primary_light
-                text: root.device.alias if root.device else 'oops'
-                valign: 'middle'
-            MDRelativeLayout:
-                size_hint: (0.25, 1)
+                style: 'elevated'
+                elevation: dp(2)
+                radius: dp(0), dp(0), dp(15), dp(15)
+                md_bg_color: app.theme_cls.primary_light
 
-                BorderedMDSwitch:
-                    widget_style: 'ios'
-#                    size_hint: (0.25, 1)
-                    pos_hint: {'right': 1, 'center_y': 0.5}
-            MDFloatLayout:
-                size_hint: (0.1, 1)
+                MDSlider:
+                    id: _dimmer
+                    pos_hint: {'bottom': 0}
+                    size_hint: (1, None)
+                    height: dp(50)
+                    hint: False
+                    show_off: False
+    #                track_color_active: app.theme_cls.opposite_bg_normal
+                    min: 0
+                    max: 100
+                    step: 1
+                    on_value: root.dim(self)
 
-        MDBoxLayout:
-            id: card_bottom
-            orientation: 'horizontal'
-#            spacing: dp(20)
-            size_hint: (1, None)
-            height: dp(50)
-#            padding: dp(20), dp(15)
-#            adaptive_height: True
+            MDCard:
+                id: card_top
+                orientation: 'horizontal'
+                pos_hint: {'top': 1}
+                size_hint: (1, None)
+                height: dp(50)
+                style: 'elevated'
+                elevation: dp(2)
+                radius: dp(15), dp(15), dp(15), dp(15)
+                md_bg_color: app.theme_cls.primary_dark
 
-            MDIconButton:
-                id: _power_button
-                icon: 'power'
-#                line_color: (1, 0, 0, 1)
-                on_press: root.power()
+                MDLabel:
+                    size_hint: (0.65, 1)
+    #                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    #                height: self.texture_size[1] + dp(20)
+                    padding: dp(20), dp(0)
+                    text: root.device.alias if root.device else 'oops'
+                    valign: 'middle'
 
-            MDSlider:
-                id: _dimmer
-                hint: False
-                min: 0
-                max: 100
-#                size_hint_y: None
-#                height: dp(50)
-                on_value: root.dim(self)
-                disabled: False
-                md_bg_color: (1, 0, 0, 0.25)
+                MDBoxLayout:
+                    size_hint: (0.25, 1)
 
+                    PowerButton:
+                        id: _power_button
+                        pos_hint: {'right': 1, 'center_y': 0.5}
+                        widget_style: 'ios'
+                        width: dp(45)
+                        on_active: root.power()
+
+                MDFloatLayout:
+                    # MDSwitch widget_style: 'ios' and material design 'M3' versions' right
+                    # side extends outside of the widget's boundary. Including this layout
+                    # as padding to make it look right.
+                    size_hint: (0.1, 1)
 
 
 
@@ -214,15 +224,11 @@
 <ControlScreen>:
     connected_devices: app.connected_devices
     connected_devices_list: _connected_devices_list
+    md_bg_color: app.theme_cls.bg_light
     MDScrollView:
         do_scroll_x: False
-#        scroll_distance: dp(300)
+        scroll_distance: dp(300)
 #        scroll_timeout: 250
-#        MDList:
-#            md_bg_color: app.theme_cls.primary_light
-#            OneLineListItem:
-#                text: 'Test'.upper()
-#                font_style: 'Button'
         MDList:
             id: _connected_devices_list
             spacing: dp(20)

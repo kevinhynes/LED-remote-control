@@ -54,14 +54,13 @@ class MainApp(MDApp):
 
     def build(self):
         self.theme_cls.theme_style = 'Dark'
-        self.theme_cls.primary_palette = 'Blue'
-        # self.theme_cls.primary_hue = '700'
-        # self.theme_cls.material_style = 'M2'
+        self.theme_cls.primary_palette = 'BlueGray'
+        self.theme_cls.primary_hue = '400'
+        # self.theme_cls.material_style = 'M3'  # 'M3' breaks MDSwitch
         self.bluetooth_adapter = None
         self.bluetooth_socket = None
         self.send_stream = None
         self.recv_stream = None
-        self.esp32 = None
 
         if platform == 'android':
             self.bluetooth_adapter = BluetoothAdapter.getDefaultAdapter()
@@ -165,8 +164,8 @@ class MainApp(MDApp):
             self.bonded_devices = self.bluetooth_adapter.getBondedDevices().toArray()
 
     def on_bonded_devices(self, *args):
+        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         if platform == 'android':
-            print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
             for num, device in enumerate(self.bonded_devices):
                 print(num, device)
                 for k, v in self.get_device_info(device).items():
@@ -202,7 +201,8 @@ class MainApp(MDApp):
 
     async def _connect_as_client_android(self, device, button):
         print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
-        # print(device.getUuids())
+        for k, v in self.get_device_info(device).items():
+            print(k, ': ', v)
         dcd = DeviceConnectionDialog(
             type='custom',
             content_cls=DialogContent(),
@@ -288,5 +288,6 @@ class MainApp(MDApp):
 
 if __name__ == '__main__':
     app = MainApp()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(app.async_run(async_lib='asyncio'))
+    # loop = asyncio.get_event_loop()
+    # loop.run_until_complete(app.async_run(async_lib='asyncio'))
+    app.run()

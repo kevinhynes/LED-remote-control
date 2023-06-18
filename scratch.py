@@ -1,65 +1,36 @@
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
-from kivy.uix.boxlayout import BoxLayout
-
 from kivymd.app import MDApp
-from kivymd.uix.button import MDFlatButton
-from kivymd.uix.dialog import MDDialog
 
 KV = '''
-<Content>
-    orientation: "vertical"
-    spacing: "12dp"
-    size_hint_y: None
-    height: "120dp"
+RelativeLayout:
+    MDCard:
+        size_hint: None, None
+        size: "280dp", "180dp"
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        elevation: 10  # Adjust elevation to control shadow intensity
+        radius: [15,]
+        elevation_normal: 0  # Remove default shadow
 
-    MDTextField:
-        hint_text: "City"
+    MDCard:
+        size_hint: None, None
+        size: "280dp", "180dp"
+        pos_hint: {"center_x": 0.6, "center_y": 0.6}
+        elevation: 10  # Adjust elevation to control shadow intensity
+        radius: [15,]
+        elevation_normal: 0  # Remove default shadow
 
-    MDTextField:
-        hint_text: "Street"
-
-
-MDFloatLayout:
-
-    MDFlatButton:
-        text: "ALERT DIALOG"
-        pos_hint: {'center_x': .5, 'center_y': .5}
-        on_release: app.show_confirmation_dialog()
+    MDIconButton:
+        icon: "circle"
+        theme_text_color: "Custom"
+        text_color: 0, 0, 0, 0.2  # Adjust opacity to control shadow intensity
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        size_hint: None, None
+        size: "280dp", "180dp"
 '''
 
-
-class Content(BoxLayout):
-    pass
-
-
-class Example(MDApp):
-    dialog = None
-
+class MyApp(MDApp):
     def build(self):
-        self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Orange"
         return Builder.load_string(KV)
 
-    def show_confirmation_dialog(self):
-        if not self.dialog:
-            self.dialog = MDDialog(
-                title="Address:",
-                type="custom",
-                content_cls=Content(),
-                buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        theme_text_color="Custom",
-                        text_color=self.theme_cls.primary_color,
-                    ),
-                    MDFlatButton(
-                        text="OK",
-                        theme_text_color="Custom",
-                        text_color=self.theme_cls.primary_color,
-                    ),
-                ],
-            )
-        self.dialog.open()
-
-
-Example().run()
+MyApp().run()
