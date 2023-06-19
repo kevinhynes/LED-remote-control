@@ -1,0 +1,139 @@
+<ColorPresetButton@MDRoundFlatButton>:
+    size_hint: (None, 0.9)
+    width: self.height
+    md_bg_color: (0.2, 0.1, 0.7, 0.25)
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(1.1)
+
+
+<RenameDeviceTextField>:
+    size_hint: (None, None)
+    mode: 'rectangle'
+    helper_text: 'Rename your device'
+    helper_text_mode: 'persistent'
+    helper_text_color_normal: 'white'
+    helper_text_color_focus: 'white'
+    text_color_normal: 'white'
+    text_color_focus: 'white'
+
+
+<DeviceController>:
+    power_button: _power_button
+    dimmer: _dimmer
+    device: FakeDevice()
+    _no_ripple_effect: True
+    divider: None
+    radius: dp(15), dp(15), dp(15), dp(15)
+    height: dp(165)
+
+
+    MDCard:
+        id: _card
+        orientation: 'vertical'
+        size_hint: (0.9, 1)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        style: 'elevated'
+        elevation: dp(4)
+        padding: dp(10), dp(10), dp(10), dp(10)
+        radius: dp(15), dp(15), dp(15), dp(15)
+        md_bg_color: app.theme_cls.primary_color
+
+        MDRelativeLayout:
+            # Add card_bottom first so the shadow effect works. Use RelativeLayout to position
+            # the sections correctly.
+
+            MDCard:
+                id: _card_bottom
+                orientation: 'horizontal'
+                pos_hint: {'top': 1}
+                size_hint: (1, None)
+                height: dp(100)
+                padding: dp(20), dp(0)
+                style: 'elevated'
+                elevation: dp(2)
+                radius: dp(15), dp(15), dp(15), dp(15)
+                md_bg_color: app.theme_cls.primary_light
+
+                MDSlider:
+                    id: _dimmer
+                    pos_hint: {'bottom': 0}
+                    size_hint: (1, None)
+                    height: dp(50)
+                    hint: False
+                    show_off: False
+                    min: 0
+                    max: 100
+                    step: 1
+                    on_value: root.dim(self)
+
+            MDCard:
+                id: _card_top
+                orientation: 'horizontal'
+                pos_hint: {'top': 1}
+                size_hint: (1, None)
+                height: dp(50)
+                style: 'elevated'
+                elevation: dp(2)
+                radius: dp(15), dp(15), dp(15), dp(15)
+                md_bg_color: app.theme_cls.primary_dark
+
+                MDRelativeLayout:
+                    id: _label_container
+                    size_hint: (0.65, 1)
+
+                    MDLabel:
+                        id: _label
+        #                height: self.texture_size[1] + dp(20)
+                        padding: dp(20), dp(0)
+                        text: root.device.alias if root.device else 'oops'
+                        valign: 'middle'
+
+                MDBoxLayout:
+                    size_hint: (0.25, 1)
+
+                    MDSwitch:
+                        id: _power_button
+                        pos_hint: {'right': 1, 'center_y': 0.5}
+                        widget_style: 'ios'
+                        width: dp(45)
+                        on_active: root.power()
+
+                MDFloatLayout:
+                    # MDSwitch widget_style: 'ios' and material design 'M3' versions' right
+                    # side extends outside of the widget's boundary. Including this layout
+                    # as padding to make it look right.
+                    size_hint: (0.1, 1)
+
+            MDBoxLayout:
+                id: _presets
+                pos_hint: {'bottom': 0}
+                size_hint: (1, None)
+                height: dp(40)
+                orientation: 'horizontal'
+                spacing: dp(7)
+                padding: dp(10), dp(2), dp(0), dp(2)
+#                md_bg_color: (1, 0, 0, 0.25)
+
+                ColorPresetButton:
+                ColorPresetButton:
+                ColorPresetButton:
+                ColorPresetButton:
+                ColorPresetButton:
+                MDRelativeLayout:
+                    MDIconButton:
+                        icon: 'dots-vertical'
+                        icon_size: dp(20)
+                        pos_hint: {'center_x': .75, 'center_y': 0.45}
+                        ripple_alpha: 0.5
+#                        ripple_scale: 0.5
+                        on_release: root.open_options_menu(self)
+
+    MDRelativeLayout:
+        id: _card_overlay
+        size_hint: (0.9, 1)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        radius: dp(15), dp(15), dp(15), dp(15)
+#        md_bg_color: app.theme_cls.primary_color
+        md_bg_color: 'gray'
+        opacity: 0

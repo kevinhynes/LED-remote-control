@@ -15,12 +15,13 @@ from kivymd.uix.button import MDIconButton, MDFlatButton, MDRectangleFlatButton
 from kivymd.uix.list import TwoLineAvatarIconListItem
 from kivymd.uix.spinner import MDSpinner
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import OneLineListItem, BaseListItem
+from kivymd.uix.list import BaseListItem, OneLineIconListItem, OneLineListItem
 from kivymd.uix.card import MDCard
 from kivymd.uix.selectioncontrol import MDSwitch
 from kivymd.uix.slider import MDSlider
-from kivy.uix.behaviors import ButtonBehavior
-
+from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelOneLine
+from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
 
 from troubleshooting import *
@@ -84,11 +85,6 @@ class DeviceConnectionDialog(MDDialog):
         # Dialog can't keep Dialog.content_cls contained / centered within it if Window is resized
         Window.unbind(on_resize=self.update_width)
 
-    # @mainthread
-    # def on_open(self, *args):
-    #     print(f'`{self.__class__.__name__}.{func_name()}`')
-    #     print(self.height, self.ids.container.height, self.content_cls.height)
-
     @mainthread
     def update_height(self, *args):
         # print(f'`{self.__class__.__name__}.{func_name()}`')
@@ -102,7 +98,7 @@ class DeviceConnectionDialog(MDDialog):
         #                             self.ids.root_button_box.height
         self.height = self.ids.container.height
         # print('After: ', self.height, self.ids.container.height, self.content_cls.height)
-
+        self.elevation = 1 if self.elevation == 0 else 0
 
 class DialogContent(MDBoxLayout):
     dialog = ObjectProperty()
@@ -188,23 +184,7 @@ class TestLabel(MDLabel):
     overlay_color_ = ListProperty([0.5, 0, 0.5, 0.5])
 
 
-class PowerButton(MDSwitch, ButtonBehavior):
-
-    # def on_touch_up(self, touch):
-    #     if self.collide_point(touch.x, touch.y):
-    #         print('Touch INSIDE PowerButton')
-    #         return True
-    # print('Touch OUTSIDE of PowerButton')
-    pass
-
-
-class Dimmer(MDSlider):
-
-    # def on_touch_up(self, touch):
-    #     if self.collide_point(touch.x, touch.y):
-    #         print('Touch INSIDE Dimmer')
-    #         return True
-    #     print('Touch OUTSIDE of Dimmer')
+class RenameDeviceTextField(MDTextField):
     pass
 
 
@@ -213,12 +193,12 @@ class DeviceController(BaseListItem):
     power_button = ObjectProperty()
     dimmer = ObjectProperty()
     brightness = NumericProperty(50)
-    num = NumericProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self._initialize_slider, 0.5)
         Clock.schedule_once(self._initialize_switch, 1.65)
+        # Clock.schedule_once(self._initialize_expansion_panel, 1)
 
     def _initialize_slider(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
@@ -233,20 +213,17 @@ class DeviceController(BaseListItem):
         self.power_button.ids.thumb._no_ripple_effect = True
         # self.power_button.ids.thumb.ids.icon.icon = 'power'
 
-    # def on_touch_down(self, touch):
-    #     print(f'`{self.__class__.__name__}.{func_name()}` called with args: {touch}')
-    #     if self.dimmer.collide_point(touch.x, touch.y):
-    #         print('Touch INSIDE Dimmer')
-    #         return True
-    #     elif self.power_button.collide_point(touch.x, touch.y):
-    #         print('Touch INSIDE PowerButton')
-    #         return True
-    #     elif self.collide_point(touch.x, touch.y):
-    #         print('Touch INSIDE DeviceController')
-    #         return True
-    #     else:
-    #         print('Touch OUTSIDE DeviceController')
-    #     return super(DeviceController, self).on_touch_up(touch)
+    def _initialize_expansion_panel(self, *args):
+        self.ids.card.add_widget(MDExpansionPanel(
+            content=OneLineIconListItem(
+                # icon='arrow',
+                text='Content Text'
+            ),
+            panel_cls=MDExpansionPanelOneLine(
+                # icon='lightbulb',
+                text='Panel Text',
+            )
+        ))
 
     def power(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -280,18 +257,6 @@ class DeviceController(BaseListItem):
             print(f'`{self.__class__.__name__}.{func_name()}`')
             print('Grabbing touch_down INSIDE Dimmer')
             touch.grab(dimmer)
-            # return True
-        # return super(DeviceController, dimmer).on_touch_up(touch)
-        # if dimmer == self.dimmer:
-        #     print(f'`{self.__class__.__name__}.{func_name()}`')
-        #     if self.dimmer.value == 0:
-        #         self.dimmer.disabled = True
-        #         self.power_button.active = False
-        #         self.dimmer._offset = dp(15), dp(15)
-        #     else:
-        #         self.dimmer.offset = 0, 0
-        #         self.dimmer.disabled = False
-        # print('')
 
     def dimmer_touch_up(self, dimmer, touch):
         if touch.grab_current is dimmer:
@@ -304,4 +269,53 @@ class DeviceController(BaseListItem):
                 dimmer.disabled = True
                 self.power_button.active = False
             touch.ungrab(dimmer)
-            # return True
+
+    def open_options_menu(self, button):
+        print(f'`{self.__class__.__name__}.{func_name()}`')
+        rename = {'text': 'Rename Device',
+                  'on_release': self.rename_device}
+        settings = {'text': 'Settings', 'on_release': self.open_settings}
+        menu_items = [rename, settings]
+        self.menu = MDDropdownMenu(caller=button, items=menu_items)
+        self.menu.open()
+
+    def rename_device(self, *args):
+        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.menu.dismiss()
+
+        _label = self.ids._label
+        scrollview = self.parent.parent
+
+        _label.opacity = 0
+        self.ids._card.opacity = 0.3
+        self.ids._card_overlay.opacity = 0.6
+        for child in self.ids._card.children:
+            child.disabled = True
+
+        width, height = _label.width,  _label.height
+        wx, wy = _label.to_window(_label.x, _label.y)
+        x, y = self.ids._card_overlay.to_widget(wx, wy)
+
+        sx, sy = scrollview.pos
+        print(x, y, width, height)
+        self.text_field = RenameDeviceTextField(size=(width, height), pos=(x, y-dp(10)))
+        self.text_field.bind(on_text_validate=self.rename_device_validate)
+        self.ids._card_overlay.add_widget(self.text_field)
+        scrollview.update_from_scroll()
+
+    def rename_device_validate(self, text_field):
+        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
+        name = text_field.text
+        if name is None or name == '':
+            return
+        self.device.alias = name
+        self.ids._label.text = name
+        self.ids._label.opacity = 1
+        self.ids._card.opacity = 1
+        self.ids._card_overlay.opacity = 0
+        self.ids._card_overlay.remove_widget(self.text_field)
+        for child in self.ids._card.children:
+            child.disabled = False
+
+    def open_settings(self, *args):
+        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')

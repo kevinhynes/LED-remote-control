@@ -2,6 +2,7 @@ import asyncio
 import struct
 from threading import Thread
 from jnius import autoclass
+from kivy.lang import Builder
 from kivymd.theming import ThemeManager
 
 from screens import *
@@ -69,6 +70,9 @@ class MainApp(MDApp):
             else:
                 print('Bluetooth is disabled...')
                 self.enable_bluetooth()
+
+        Builder.load_file('device_controller.kv')
+        Builder.load_file('device_connection_dialog.kv')
 
         self.root_screen = RootScreen()
         return self.root_screen
@@ -288,6 +292,6 @@ class MainApp(MDApp):
 
 if __name__ == '__main__':
     app = MainApp()
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(app.async_run(async_lib='asyncio'))
-    app.run()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(app.async_run(async_lib='asyncio'))
+    # app.run()

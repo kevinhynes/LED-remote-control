@@ -69,26 +69,26 @@ class Overlay_(Widget):
 
 class Border(Widget):
     border_color_ = ListProperty([1, 0, 0, 0.75])
-    border_width = NumericProperty(2)
-    border_rect = Line()
+    border_width_ = NumericProperty(2)
+    border_rect_ = Line()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas.after:
             Color(*self.border_color_)
-            self.border_rect = Line(rectangle=[0, 0, 0, 0], width=self.border_width)
+            self.border_rect_ = Line(rectangle=[0, 0, 0, 0],
+                                     width=self.border_width_)
         self.bind(pos=self.update_border_rect,
                   size=self.update_border_rect,
-                  border_color_=self.update_border_rect)
-
-    # def on_pos(self, *args):
-    #     self.update_border_rect()
-    #
-    # def on_size(self, *args):
-    #     self.update_border_rect()
+                  border_color_=self.update_border_rect,
+                  border_width_=self.update_border_rect)
 
     def update_border_rect(self, *args):
-        self.border_rect.rectangle = [self.x, self.y, self.width - self.border_width / 2, self.height - self.border_width / 2]
+        # self.canvas.clear()
+        with self.canvas.after:
+            Color(*self.border_color_)
+            self.border_rect_.rectangle = [self.x, self.y, self.width - self.border_width_ / 2,
+                                          self.height - self.border_width_ / 2]
 
 
 class Dot(Widget):

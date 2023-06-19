@@ -1,36 +1,46 @@
-from kivy.uix.relativelayout import RelativeLayout
 from kivy.lang import Builder
+from kivy.metrics import dp
+
 from kivymd.app import MDApp
+from kivymd.uix.menu import MDDropdownMenu
 
 KV = '''
-RelativeLayout:
-    MDCard:
-        size_hint: None, None
-        size: "280dp", "180dp"
-        pos_hint: {"center_x": 0.5, "center_y": 0.5}
-        elevation: 10  # Adjust elevation to control shadow intensity
-        radius: [15,]
-        elevation_normal: 0  # Remove default shadow
+MDScreen:
 
-    MDCard:
-        size_hint: None, None
-        size: "280dp", "180dp"
-        pos_hint: {"center_x": 0.6, "center_y": 0.6}
-        elevation: 10  # Adjust elevation to control shadow intensity
-        radius: [15,]
-        elevation_normal: 0  # Remove default shadow
-
-    MDIconButton:
-        icon: "circle"
-        theme_text_color: "Custom"
-        text_color: 0, 0, 0, 0.2  # Adjust opacity to control shadow intensity
-        pos_hint: {"center_x": 0.5, "center_y": 0.5}
-        size_hint: None, None
-        size: "280dp", "180dp"
+    MDRaisedButton:
+        id: button
+        text: "PRESS ME"
+        pos_hint: {"center_x": .5, "center_y": .5}
+        on_release: app.menu.open()
 '''
 
-class MyApp(MDApp):
-    def build(self):
-        return Builder.load_string(KV)
 
-MyApp().run()
+class Test(MDApp):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.screen = Builder.load_string(KV)
+        menu_items = [
+            {
+                "text": f"Item {i}",
+                "leading_icon": "web",
+                "trailing_icon": "apple-keyboard-command",
+                "trailing_text": "+Shift+X",
+                "trailing_icon_color": "grey",
+                "trailing_text_color": "grey",
+                "on_release": lambda x=f"Item {i}": self.menu_callback(x),
+            } for i in range(5)
+        ]
+        self.menu = MDDropdownMenu(
+            md_bg_color="#bdc6b0",
+            caller=self.screen.ids.button,
+            items=menu_items,
+        )
+
+    def menu_callback(self, text_item):
+        print(text_item)
+
+    def build(self):
+        return self.screen
+
+
+Test().run()
