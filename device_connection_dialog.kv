@@ -10,9 +10,9 @@
     size_hint: (1, 1)
     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
     adaptive_height: True
-#    md_bg_color: app.theme_cls.primary_light
-    md_bg_color: (0, 0, 1, 0.25)
-    radius: 20, 10, 20, 10
+    md_bg_color: app.theme_cls.bg_light
+#    md_bg_color: (0, 0, 1, 0.25)
+    radius: 15, 15, 15, 15
     padding: 5, 5, 5, 5
     MDLabel:
         id: _label
@@ -21,6 +21,7 @@
         halign: 'left'
         valign: 'middle'
         pos_hint: {'left': 0, 'center_y': 0.5}
+        padding: dp(10), dp(5)
     StatusContainer:
         id: _status_container
         size_hint: (0.2, 1)

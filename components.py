@@ -11,11 +11,11 @@ from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDIconButton, MDFlatButton, MDRectangleFlatButton
+from kivymd.uix.button import MDIconButton, MDRoundFlatButton, MDRectangleFlatButton
 from kivymd.uix.list import TwoLineAvatarIconListItem
 from kivymd.uix.spinner import MDSpinner
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import BaseListItem, OneLineIconListItem, OneLineListItem
+from kivymd.uix.list import BaseListItem, OneLineIconListItem, TwoLineListItem
 from kivymd.uix.card import MDCard
 from kivymd.uix.selectioncontrol import MDSwitch
 from kivymd.uix.slider import MDSlider
@@ -23,8 +23,12 @@ from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelOneLine
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
+from kivy.utils import platform
+from kivy.uix.screenmanager import SlideTransition
 
 from troubleshooting import *
+from device_controller import *
+from device_connection_dialog import *
 
 
 def func_name():
@@ -35,11 +39,21 @@ class BTDeviceListItem(TwoLineAvatarIconListItem):
     pass
 
 
+class DeviceInfoListItem(BaseListItem):
+    heading_label = ObjectProperty()
+    content_label = ObjectProperty()
+
+    def __init__(self, heading='', content='', **kwargs):
+        super().__init__(**kwargs)
+        self.heading_label.text = heading
+        self.content_label.text = content
+
+
 class FakeDevice:
     def __init__(self):
         self.name = self.generate_name()
         self.address = self.generate_MAC()
-        self.alias = 'FakeDevice.alias'
+        self.alias = 'FakeDevice.alias\n' * 10
 
     @staticmethod
     def generate_MAC():
@@ -56,266 +70,18 @@ class FakeDevice:
         name = ''.join(temp_name)
         return name
 
-    def rename(self, new_alias):
+    # Mimic the Java / custom methods to avoid checking platform.
+    def setAlias(self, new_alias):
         self.alias = str(new_alias)
 
-
-class DeviceConnectionDialog(MDDialog):
-
-    def __init__(self, **kwargs):
-        '''
-        Struggling to make this look right; overriding some source code
-        MDDialog is a ModalView, which is an AnchorLayout
-              dialog (MDDialog)
-                  container (MDCard)
-                      title
-                      spacer_top_box
-                          content_cls  <--- this is where content_cls is added if type=='custom'
-                      text             <--- gets removed when type=='custom'
-                      scroll           <--- gets removed when type=='custom'
-                          box_items
-                      spacer_bottom_box
-                      root_button_box
-                          button_box
-        '''
-        super().__init__(**kwargs)
-        self.ids.container.padding = (dp(10), dp(10), dp(10), dp(10))
-        self.ids.container.remove_widget(self.ids.title)
-        self.ids.spacer_top_box.padding = (0, 0, 0, 0)
-        # Dialog can't keep Dialog.content_cls contained / centered within it if Window is resized
-        Window.unbind(on_resize=self.update_width)
-
-    @mainthread
-    def update_height(self, *args):
-        # print(f'`{self.__class__.__name__}.{func_name()}`')
-        # print('Before: ', self.height, self.ids.container.height, self.content_cls.height)
-        # Resize spacer_top_box, container, dialog window as DialogContent changes.
-        # spacer_top_box.height is bound to MDDialog._spacer_top
-        self.ids.spacer_top_box.height = self.content_cls.height
-        # self._spacer_top = self.content_cls.height
-        # self.ids.container.height = self.content_cls.height + \
-        #                             self.ids.spacer_bottom_box.height + \
-        #                             self.ids.root_button_box.height
-        self.height = self.ids.container.height
-        # print('After: ', self.height, self.ids.container.height, self.content_cls.height)
-        self.elevation = 1 if self.elevation == 0 else 0
-
-class DialogContent(MDBoxLayout):
-    dialog = ObjectProperty()
-    overlay_color_ = ListProperty([0, 1, 0, 0.25])
-    label = ObjectProperty()
-    status_container = ObjectProperty()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.spinner = StatusSpinner()
-        self.success_icon = SuccessIcon()
-        self.fail_icon = FailIcon()
-        self.status_container.add_widget(self.spinner)
-
-    @mainthread
-    def on_size(self, *args):
-        # print(f'`{self.__class__.__name__}.{func_name()}`')
-        # print('Before: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
-        self.spinner.size = (self.success_icon.width * 0.8, self.success_icon.width * 0.8)
-        self.dialog.update_height()
-        self.pos = self.dialog.pos
-        # print('After: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
-
-    @mainthread
-    def update_success(self, device):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        self.status_container.remove_widget(self.spinner)
-        self.label.text = 'Successfully connected to ' * 5 + device.name
-        self.label.theme_text_color = 'Custom'
-        self.label.text_color = (0, 1, 0, 1)
-        self.status_container.add_widget(self.success_icon)
-        app = MDApp.get_running_app()
-        app.connected_devices.append(device)
-        app.root_screen.screen_manager.current = 'connected_devices'
-
-    @mainthread
-    def update_failure(self, device):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        self.status_container.remove_widget(self.spinner)
-        self.label.text = 'Failed to connect to ' * 5 + device.name
-        self.label.theme_text_color = 'Custom'
-        self.label.text_color = (1, 0, 0, 1)
-        self.status_container.add_widget(self.fail_icon)
-        app = MDApp.get_running_app()
-        retry_btn = MDRectangleFlatButton(text='Retry?',
-                                          on_release=partial(self.retry, device),
-                                          line_color=app.theme_cls.primary_dark,
-                                          )
-        self.dialog.buttons.append(retry_btn)
-        # Dialog gives root_button_box some height in __init__ if there are buttons.
-        # Giving it height here since we're re-using the same Dialog window.
-        self.dialog.ids.root_button_box.height = dp(46)
-        self.dialog.create_buttons()
-        self.dialog.update_height()
-
-    @mainthread
-    def retry(self, device, retry_btn):
-        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, retry_btn}`')
-        self.dialog.dismiss()
-        app = MDApp.get_running_app()
-        app.connect_as_client(device, retry_btn)
-
-
-class StatusContainer(MDFloatLayout):
-    overlay_color_ = ListProperty([0, 1, 0.75, 0.25])
-
-
-class StatusSpinner(MDSpinner):
-    overlay_color_ = ListProperty([0, 1, 0, 0.25])
-
-
-class SuccessIcon(MDIconButton):
-    # overlay_color_ = ListProperty([0, 0, 1, 0.3])
-    font_size = sp(50)
-
-
-class FailIcon(MDIconButton):
-    # overlay_color_ = ListProperty([0, 0, 1, 0.3])
-    font_size = sp(50)
+    def get_device_info(self, device):
+        device_info = {'Name': self.name,
+                       'Address': self.address,
+                       'Alias': self.alias}
+        return device_info
 
 
 class TestLabel(MDLabel):
     overlay_color_ = ListProperty([0.5, 0, 0.5, 0.5])
 
 
-class RenameDeviceTextField(MDTextField):
-    pass
-
-
-class DeviceController(BaseListItem):
-    device = ObjectProperty()
-    power_button = ObjectProperty()
-    dimmer = ObjectProperty()
-    brightness = NumericProperty(50)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        Clock.schedule_once(self._initialize_slider, 0.5)
-        Clock.schedule_once(self._initialize_switch, 1.65)
-        # Clock.schedule_once(self._initialize_expansion_panel, 1)
-
-    def _initialize_slider(self, *args):
-        # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
-        # instantiated, change it and then change it back to 0.
-        self.dimmer.value = 1
-        self.dimmer.value = 0
-        self.dimmer.disabled = True
-        self.dimmer.bind(on_touch_down=self.dimmer_touch_down)
-        self.dimmer.bind(on_touch_up=self.dimmer_touch_up)
-
-    def _initialize_switch(self, *args):
-        self.power_button.ids.thumb._no_ripple_effect = True
-        # self.power_button.ids.thumb.ids.icon.icon = 'power'
-
-    def _initialize_expansion_panel(self, *args):
-        self.ids.card.add_widget(MDExpansionPanel(
-            content=OneLineIconListItem(
-                # icon='arrow',
-                text='Content Text'
-            ),
-            panel_cls=MDExpansionPanelOneLine(
-                # icon='lightbulb',
-                text='Panel Text',
-            )
-        ))
-
-    def power(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        if self.power_button.active:
-            print('LIGHTS ON!')
-            self.dimmer.value = self.brightness
-            self.dimmer.disabled = False
-        else:
-            print('LIGHTS OFF!')
-            self.brightness = self.dimmer.value
-            self.dimmer.value = 0
-            self.dimmer.disabled = True
-        print('')
-
-    def dim(self, dimmer):
-        print(f'`{self.__class__.__name__}.{func_name()}`'
-              f'called with dimmer.value == {dimmer.value}')
-        print('')
-        pass
-
-    def dimmer_touch_down(self, dimmer, touch):
-        # Reducing the slider to 0 should also turn off the power button, but only after releasing
-        # the slider at 0 - in case slider is moved to 0 and back up again.
-        #
-        # Therefore need the on_touch_up event, but if the touch_up occurs outside of the slider,
-        # it isn't possible to know which slider it was for.
-        #
-        # Grab the touch event for the slider to check the touch_up event later. Don't return True
-        # so that KivyMD's slider animations can complete.
-        if dimmer.collide_point(touch.x, touch.y) and not dimmer.disabled:
-            print(f'`{self.__class__.__name__}.{func_name()}`')
-            print('Grabbing touch_down INSIDE Dimmer')
-            touch.grab(dimmer)
-
-    def dimmer_touch_up(self, dimmer, touch):
-        if touch.grab_current is dimmer:
-            print('Found touch_up...')
-            if dimmer.collide_point(touch.x, touch.y):
-                print('               ...INSIDE Dimmer')
-            else:
-                print('               ...OUTSIDE Dimmer')
-            if dimmer.value == 0:
-                dimmer.disabled = True
-                self.power_button.active = False
-            touch.ungrab(dimmer)
-
-    def open_options_menu(self, button):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
-        rename = {'text': 'Rename Device',
-                  'on_release': self.rename_device}
-        settings = {'text': 'Settings', 'on_release': self.open_settings}
-        menu_items = [rename, settings]
-        self.menu = MDDropdownMenu(caller=button, items=menu_items)
-        self.menu.open()
-
-    def rename_device(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        self.menu.dismiss()
-
-        _label = self.ids._label
-        scrollview = self.parent.parent
-
-        _label.opacity = 0
-        self.ids._card.opacity = 0.3
-        self.ids._card_overlay.opacity = 0.6
-        for child in self.ids._card.children:
-            child.disabled = True
-
-        width, height = _label.width,  _label.height
-        wx, wy = _label.to_window(_label.x, _label.y)
-        x, y = self.ids._card_overlay.to_widget(wx, wy)
-
-        sx, sy = scrollview.pos
-        print(x, y, width, height)
-        self.text_field = RenameDeviceTextField(size=(width, height), pos=(x, y-dp(10)))
-        self.text_field.bind(on_text_validate=self.rename_device_validate)
-        self.ids._card_overlay.add_widget(self.text_field)
-        scrollview.update_from_scroll()
-
-    def rename_device_validate(self, text_field):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
-        name = text_field.text
-        if name is None or name == '':
-            return
-        self.device.alias = name
-        self.ids._label.text = name
-        self.ids._label.opacity = 1
-        self.ids._card.opacity = 1
-        self.ids._card_overlay.opacity = 0
-        self.ids._card_overlay.remove_widget(self.text_field)
-        for child in self.ids._card.children:
-            child.disabled = False
-
-    def open_settings(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')

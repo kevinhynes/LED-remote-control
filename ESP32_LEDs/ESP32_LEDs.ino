@@ -66,9 +66,22 @@ void blink() {
   delay(500);
 }
 
-// BLUETOOTH SECTION
+
 // Initialize Class:
 BluetoothSerial ESP_BT;
+
+// Global master values
+int mode = 1;
+int masterRed = 255;
+int masterGreen = 255;
+int masterBlue = 255;
+int masterBrightness = 100;
+
+// Dimmer / processed values
+int dimmedRed = 255;
+int dimmedGreen = 255;
+int dimmedBlue = 255;
+
 
 const unsigned int MESSAGE_LENGTH = 6; // in bytes (0-indexed)
 
@@ -79,6 +92,7 @@ void setup() {
   pinMode (LED_PIN1, OUTPUT);
   pinMode (LED_PIN2, OUTPUT);
 }
+
 
 bool validate_message(int message[]) {
   Serial.println("validate_message, message:");
@@ -94,9 +108,27 @@ bool validate_message(int message[]) {
         return false;
       }
     }
+    mode = message[0];
+    // "Color Mode" - change color, keep brightness
+    if (mode == 1) {
+      masterRed = message[1];
+      masterGreen = message[2];
+      masterBlue = message[3];
+      dimmedRed = int(masterRed * masterBrightness / 100);
+      dimmedGreen = int(masterGreen * masterBrightness / 100);
+      dimmedBlue = int(masterBlue * masterBrightness / 100);
+    }
+    // "Dimmer Mode" - keep color, change brightness
+    if (mode == 2) {
+      masterBrightness = message[4];
+      dimmedRed = int(masterRed * masterBrightness / 100);
+      dimmedGreen = int(masterGreen * masterBrightness / 100);
+      dimmedBlue = int(masterBlue * masterBrightness / 100);
+    }
   }
   return true;
 }
+
 
 void loop() {
   static int message[] = {-1, -1, -1, -1, -1, -1};
@@ -141,7 +173,7 @@ void loop() {
       Serial.println(sizeof(message[0]));
       if (validate_message(message)) {
         Serial.println("Valid message received");
-        turnStripRGB(message[1], message[2], message[3]);
+          turnStripRGB(dimmedRed, dimmedGreen, dimmedBlue);
       }
       else {
         Serial.println("Invalid message recieved");
@@ -154,36 +186,6 @@ void loop() {
         Serial.println(message[i]);
       }
     }
-    delay(50);
+    // delay(50);
 
   }
-
-  /// Old using int
-  // if (ESP_BT.available())
-  // {
-  //   Serial.println("###############################\n");
-  //   Serial.println("Incoming Value:");
-  //   Serial.println(value);
-  //   Serial.println("Incoming Value:");
-  //   Serial.write(value);
-  //   Serial.println();
-
-  //   if (value == 1) {
-  //     Serial.println("Turning On");
-  //     Serial.println();
-  //     digitalWrite(LED_PIN1, value);
-  //     digitalWrite(LED_PIN2, value);
-  //     turnStripOn();
-  //   }
-  //   if (value == 0) {
-  //     Serial.print("Turning Off");
-  //     Serial.println();
-  //     digitalWrite(LED_PIN1, value);
-  //     digitalWrite(LED_PIN2, value);
-  //     turnStripOff();
-  //   }
-  //   Serial.println("###############################\n");
-  //   delay(50);
-  // }
-
-}

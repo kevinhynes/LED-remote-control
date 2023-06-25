@@ -7,6 +7,12 @@
 # I don't think it's necessary to include .buildozer folder
 .buildozer*
 
+# Remove the pycache
+__pycache__/
+
+# User's saved devices
+my_data.json
+
 ## User-specific stuff
 #.idea/**/workspace.xml
 #.idea/**/tasks.xml

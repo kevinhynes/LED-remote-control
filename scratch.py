@@ -1,46 +1,46 @@
 from kivy.lang import Builder
-from kivy.metrics import dp
-
 from kivymd.app import MDApp
-from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.list import TwoLineListItem
 
 KV = '''
-MDScreen:
+BoxLayout:
+    orientation: 'vertical'
 
-    MDRaisedButton:
-        id: button
-        text: "PRESS ME"
-        pos_hint: {"center_x": .5, "center_y": .5}
-        on_release: app.menu.open()
+    WrapTwoLineListItem:
+        text: "Primary Text"
+        secondary_text: "Long secondary text that should wrap to the next line"
+    WrapTwoLineListItem:
+        text: "Another Item"
+        secondary_text: "Short secondary text"
+        
+<WrapTwoLineListItem>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: pri_label.height + secondary_label.height
+    padding: "16dp"
+    
+    MDLabel:
+        id: pri_label
+        text: root.text
+        theme_text_color: "Primary"
+        
+    MDLabel:
+        id: secondary_label
+        text: root.secondary_text
+        theme_text_color: "Secondary"
+        size_hint_y: None
+        height: self.texture_size[1]
+        text_size: self.width, None
 '''
 
 
-class Test(MDApp):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.screen = Builder.load_string(KV)
-        menu_items = [
-            {
-                "text": f"Item {i}",
-                "leading_icon": "web",
-                "trailing_icon": "apple-keyboard-command",
-                "trailing_text": "+Shift+X",
-                "trailing_icon_color": "grey",
-                "trailing_text_color": "grey",
-                "on_release": lambda x=f"Item {i}": self.menu_callback(x),
-            } for i in range(5)
-        ]
-        self.menu = MDDropdownMenu(
-            md_bg_color="#bdc6b0",
-            caller=self.screen.ids.button,
-            items=menu_items,
-        )
+class WrapTwoLineListItem(TwoLineListItem):
+    pass
 
-    def menu_callback(self, text_item):
-        print(text_item)
 
+class MyApp(MDApp):
     def build(self):
-        return self.screen
+        return Builder.load_string(KV)
 
 
-Test().run()
+MyApp().run()
