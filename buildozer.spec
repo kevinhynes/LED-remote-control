@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = LED-RC
+title = LEDRC
 
 # (str) Package name
 package.name = ledrc
@@ -102,7 +102,7 @@ android.permissions = BLUETOOTH,BLUETOOTH_CONNECT,BLUETOOTH_ADMIN,BLUETOOTH_SCAN
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-#android.api = 31
+android.api = 28
 
 # (int) Minimum API your APK / AAB will support.
 #android.minapi = 21

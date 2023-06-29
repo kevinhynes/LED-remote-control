@@ -66,9 +66,15 @@
             id: _connected_devices_list
             spacing: dp(20)
             DeviceController:
-            DeviceController:
-            DeviceController:
-            DeviceController:
+            BaseListItem:
+                _no_ripple_effect: True
+                MDFloatingActionButton:
+                    id: _add_device_button
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    icon: 'plus'
+                    on_release:
+                        app.root_screen.screen_manager.current = 'find_devices'
+#                        app.get_bonded_devices()
 
 
 <DeviceInfoScreen>:
@@ -173,7 +179,7 @@
                         _screen_manager.current = 'find_devices'
                         _nav_drawer.set_state('close')
                         # app.start_discovery()
-                        app.get_bonded_devices()
+#                        app.get_bonded_devices()
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'

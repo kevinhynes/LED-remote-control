@@ -2,6 +2,7 @@ import asyncio
 import random
 import sys
 import string
+import logging
 from functools import partial
 from kivy.core.window import Window
 from kivy.clock import mainthread
@@ -51,7 +52,6 @@ class DeviceController(BaseListItem):
         super().__init__(**kwargs)
         Clock.schedule_once(self._initialize_slider, 0.5)
         Clock.schedule_once(self._initialize_switch, 1.65)
-        # Clock.schedule_once(self._initialize_expansion_panel, 1)
 
     def _initialize_slider(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
@@ -66,42 +66,27 @@ class DeviceController(BaseListItem):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
 
-    # def _initialize_expansion_panel(self, *args):
-    #     self.ids.card.add_widget(MDExpansionPanel(
-    #         content=OneLineIconListItem(
-    #             # icon='arrow',
-    #             text='Content Text'
-    #         ),
-    #         panel_cls=MDExpansionPanelOneLine(
-    #             # icon='lightbulb',
-    #             text='Panel Text',
-    #         )
-    #     ))
-
     def on_device(self, *args):
         self.save_device()
 
     def save_device(self):
-        app = MDApp.get_running_app()
-        # app.storage.put()
+        pass
 
     def power(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         if self.power_button.active:
-            print('LIGHTS ON!')
+            logging.debug('LIGHTS ON!')
             self.dimmer.value = self.brightness
             self.dimmer.disabled = False
         else:
-            print('LIGHTS OFF!')
+            logging.debug('LIGHTS OFF!')
             self.brightness = self.dimmer.value
             self.dimmer.value = 0
             self.dimmer.disabled = True
-        print('')
 
     def dim(self, dimmer):
-        print(f'`{self.__class__.__name__}.{func_name()}`'
-              f'called with dimmer.value == {dimmer.value}')
-        print('')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`'
+                      f'called with dimmer.value == {dimmer.value}')
         self.app = MDApp.get_running_app()
         self.app.send(2, dimmer.value)
 
@@ -115,24 +100,25 @@ class DeviceController(BaseListItem):
         # Grab the touch event for the slider to check the touch_up event later. Don't return True
         # so that KivyMD's slider animations can complete.
         if dimmer.collide_point(touch.x, touch.y) and not dimmer.disabled:
-            print(f'`{self.__class__.__name__}.{func_name()}`')
-            print('Grabbing touch_down INSIDE Dimmer')
+            logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+            logging.debug('Grabbing touch_down INSIDE Dimmer')
             touch.grab(dimmer)
 
     def dimmer_touch_up(self, dimmer, touch):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         if touch.grab_current is dimmer:
-            print('Found touch_up...')
+            logging.debug('Found touch_up...')
             if dimmer.collide_point(touch.x, touch.y):
-                print('               ...INSIDE Dimmer')
+                logging.debug('               ...INSIDE Dimmer')
             else:
-                print('               ...OUTSIDE Dimmer')
+                logging.debug('               ...OUTSIDE Dimmer')
             if dimmer.value == 0:
                 dimmer.disabled = True
                 self.power_button.active = False
             touch.ungrab(dimmer)
 
     def open_options_menu(self, button):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         rename = {'text': 'Rename Device',
                   'on_release': self.rename_device}
         info = {'text': 'Device Info',
@@ -144,7 +130,7 @@ class DeviceController(BaseListItem):
         self.menu.open()
 
     def rename_device(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
         _label = self.ids._label
         scrollview = self.parent.parent
@@ -166,7 +152,8 @@ class DeviceController(BaseListItem):
         scrollview.update_from_scroll()  # Should reset the view, doesn't always work
 
     def rename_device_validate(self, text_field):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
+        # print(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
         name = text_field.text
         # Fail
         if not name.isalnum():
@@ -177,7 +164,7 @@ class DeviceController(BaseListItem):
             Clock.schedule_once(self.set_text_field_focus, 0.1)
             return
         # Success
-        self.device.setAlias(name)
+        self.device.user_assigned_alias = name
         self.ids._label.text = name
         self.ids._label.opacity = 1
         self.ids._card.opacity = 1
@@ -201,5 +188,6 @@ class DeviceController(BaseListItem):
         app.root_screen.screen_manager.current = 'device_info'
 
     def open_settings(self, *args):
-        print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        # print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()

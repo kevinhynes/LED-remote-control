@@ -11,11 +11,29 @@ def func_name():
     return sys._getframe(1).f_code.co_name
 
 
+class BTDeviceListItem(TwoLineAvatarIconListItem):
+    pass
+
+
+class DeviceInfoListItem(BaseListItem):
+    heading_label = ObjectProperty()
+    content_label = ObjectProperty()
+
+    def __init__(self, heading='', content='', **kwargs):
+        super().__init__(**kwargs)
+        self.heading_label.text = heading
+        self.content_label.text = content
+
+
 class FindDevicesScreen(MDScreen):
     bonded_devices = ListProperty()
     bonded_devices_list = ObjectProperty()
     available_devices = ListProperty()
     available_devices_list = ObjectProperty()
+
+    def on_pre_enter(self, *args):
+        app = MDApp.get_running_app()
+        app.find_bluetooth_devices()
 
     def on_bonded_devices(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
@@ -23,16 +41,16 @@ class FindDevicesScreen(MDScreen):
         for child in buttons_to_remove:
             self.bonded_devices_list.remove_widget(child)
         app = MDApp.get_running_app()
-        if platform == 'android':
-            for device in self.bonded_devices:
-                button = BTDeviceListItem(text=device.getName(), secondary_text=device.getAddress())
-                button.bind(on_press=partial(app.connect_as_client, device))
-                self.bonded_devices_list.add_widget(button)
-        if platform == 'linux':
-            for device in self.bonded_devices:
-                button = BTDeviceListItem(text=device.name, secondary_text=device.address)
-                button.bind(on_press=partial(app.connect_as_client, device))
-                self.bonded_devices_list.add_widget(button)
+        # if platform == 'android':
+        for device in self.bonded_devices:
+            button = BTDeviceListItem(text=device.getName(), secondary_text=device.getAddress())
+            button.bind(on_press=partial(app.connect_as_client, device))
+            self.bonded_devices_list.add_widget(button)
+        # if platform == 'linux':
+        #     for device in self.bonded_devices:
+        #         button = BTDeviceListItem(text=device.name, secondary_text=device.address)
+        #         button.bind(on_press=partial(app.connect_as_client, device))
+        #         self.bonded_devices_list.add_widget(button)
 
     def on_available_devices(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
@@ -52,17 +70,19 @@ class ControlScreen(MDScreen):
 
     def on_connected_devices(self, *args):
         print(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
-        buttons_to_remove = [child for child in self.connected_devices_list.children]
+        add_device_button = self.ids._add_device_button
+        buttons_to_remove = [child for child in self.connected_devices_list.children
+                             if child is not add_device_button]
         for child in buttons_to_remove:
             self.connected_devices_list.remove_widget(child)
-        if platform == 'android':
-            for device in self.connected_devices:
-                controller = DeviceController(device=device)
-                self.connected_devices_list.add_widget(controller)
-        if platform == 'linux':
-            for device in self.connected_devices:
-                controller = DeviceController(device=device)
-                self.connected_devices_list.add_widget(controller)
+        # if platform == 'android':
+        for device in self.connected_devices:
+            controller = DeviceController(device=device)
+            self.connected_devices_list.add_widget(controller)
+        # if platform == 'linux':
+        #     for device in self.connected_devices:
+        #         controller = DeviceController(device=device)
+        #         self.connected_devices_list.add_widget(controller)
 
 
 class DeviceInfoScreen(MDScreen):
@@ -72,32 +92,29 @@ class DeviceInfoScreen(MDScreen):
     def on_pre_enter(self, *args):
         app = MDApp.get_running_app()
         app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        if self.device:
+            self.on_device()
 
     def on_device(self, *args):
         labels_to_remove = [child for child in self.info_list.children]
-        app = MDApp.get_running_app()
         for child in labels_to_remove:
             self.info_list.remove_widget(child)
-        if platform == 'android':
-            for k, v in app.get_device_info(self.device).items():
-                if k == 'UUIDs':
-                    content_text = ''
-                    uuid_count = 0
-                    for uuid in v:
-                        content_text += uuid.toString()
-                        content_text += '\n'
-                        uuid_count += 1
-                    if uuid_count > 1:
-                        content_text = content_text[:-1]
-                    line_item = DeviceInfoListItem(k, content_text)
-                else:
-                    line_item = DeviceInfoListItem(k, str(v))
-                self.info_list.add_widget(line_item)
 
-        if platform == 'linux':
-            for attr in [self.device.name, self.device.address, self.device.alias]:
-                line_item = DeviceInfoListItem('key', attr)
-                self.info_list.add_widget(line_item)
+        device_info = self.device.get_device_info()
+        for k, v in device_info.items():
+            if k == 'UUIDs':
+                content_text = ''
+                uuid_count = 0
+                for uuid in v:
+                    content_text += uuid.toString()
+                    content_text += '\n'
+                    uuid_count += 1
+                if uuid_count > 1:
+                    content_text = content_text[:-1]
+                line_item = DeviceInfoListItem(k, content_text)
+            else:
+                line_item = DeviceInfoListItem(k, str(v))
+            self.info_list.add_widget(line_item)
 
     def go_back(self, *args):
         app = MDApp.get_running_app()
