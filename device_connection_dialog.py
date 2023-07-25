@@ -2,6 +2,7 @@ import asyncio
 import random
 import sys
 import string
+import logging
 from functools import partial
 from kivy.core.window import Window
 from kivy.clock import mainthread
@@ -60,8 +61,6 @@ class DeviceConnectionDialog(MDDialog):
 
     @mainthread
     def update_height(self, *args):
-        # print(f'`{self.__class__.__name__}.{func_name()}`')
-        # print('Before: ', self.height, self.ids.container.height, self.content_cls.height)
         # Resize spacer_top_box, container, dialog window as DialogContent changes.
         # spacer_top_box.height is bound to MDDialog._spacer_top
         self.ids.spacer_top_box.height = self.content_cls.height
@@ -70,7 +69,6 @@ class DeviceConnectionDialog(MDDialog):
         #                             self.ids.spacer_bottom_box.height + \
         #                             self.ids.root_button_box.height
         self.height = self.ids.container.height
-        # print('After: ', self.height, self.ids.container.height, self.content_cls.height)
         # Force redraw of shadow or it misbehaves
         self.elevation = 1 if self.elevation == 0 else 0
 
@@ -90,16 +88,13 @@ class DialogContent(MDBoxLayout):
 
     @mainthread
     def on_size(self, *args):
-        # print(f'`{self.__class__.__name__}.{func_name()}`')
-        # print('Before: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
         self.spinner.size = (self.success_icon.width * 0.8, self.success_icon.width * 0.8)
         self.dialog.update_height()
         self.pos = self.dialog.pos
-        # print('After: ', self.dialog.height, self.dialog.ids.container.height, self.dialog.content_cls.height)
 
     @mainthread
     def update_success(self, device):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.status_container.remove_widget(self.spinner)
         self.label.text = 'Successfully connected to ' + device.name
         self.label.theme_text_color = 'Custom'
@@ -111,7 +106,7 @@ class DialogContent(MDBoxLayout):
 
     @mainthread
     def update_failure(self, device):
-        print(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.status_container.remove_widget(self.spinner)
         self.label.text = 'Failed to connect to ' + device.name
         self.label.theme_text_color = 'Custom'
@@ -131,7 +126,7 @@ class DialogContent(MDBoxLayout):
 
     @mainthread
     def retry(self, device, retry_btn):
-        print(f'`{self.__class__.__name__}.{func_name()} called with args: {device, retry_btn}`')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device, retry_btn}`')
         self.dialog.dismiss()
         app = MDApp.get_running_app()
         app.connect_as_client(device, retry_btn)

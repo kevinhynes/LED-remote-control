@@ -3,10 +3,12 @@ import random
 import sys
 import string
 import logging
+import jnius
+import struct
 from functools import partial
 from kivy.core.window import Window
 from kivy.clock import mainthread
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty
 from kivy.metrics import dp, sp
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -16,7 +18,7 @@ from kivymd.uix.button import MDIconButton, MDRoundFlatButton, MDRectangleFlatBu
 from kivymd.uix.list import TwoLineAvatarIconListItem
 from kivymd.uix.spinner import MDSpinner
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import BaseListItem, OneLineIconListItem, TwoLineListItem
+from kivymd.uix.list import BaseListItem, OneLineListItem, OneLineAvatarIconListItem, IRightBodyTouch
 from kivymd.uix.card import MDCard
 from kivymd.uix.selectioncontrol import MDSwitch
 from kivymd.uix.slider import MDSlider
@@ -26,12 +28,10 @@ from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
+from kivymd.uix.pickers import MDColorPicker
+from kivy.uix.modalview import ModalView
 
 from troubleshooting import *
-
-
-def func_name():
-    return sys._getframe(1).f_code.co_name
 
 
 class RenameDeviceTextField(MDTextField):
@@ -50,14 +50,42 @@ class DeviceController(BaseListItem):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.rename_active = False
+        rename = {'text': 'Rename Device',
+                  'on_release': self.rename_device,
+                  'viewclass': 'OneLineListItem',
+                  'height': dp(54)
+                  }
+        info = {'text': 'Device Info',
+                'on_release': self.show_device_info,
+                'viewclass': 'OneLineListItem',
+                'height': dp(54)
+                }
+        settings = {'text': 'Settings',
+                    'on_release': self.open_settings,
+                    'viewclass': 'OneLineListItem',
+                    'height': dp(54)
+                    }
+        forget = {'text': 'Forget Device',
+                  'on_release': self.forget_device,
+                  'viewclass': 'OneLineListItem',
+                  'height': dp(54)
+                  }
+        menu_items = [rename, info, settings, forget]
+        self.menu = MDDropdownMenu(caller=self.ids._menu_button,
+                                   items=menu_items,
+                                   hor_growth='left',
+                                   width_mult=3)
         Clock.schedule_once(self._initialize_slider, 0.5)
         Clock.schedule_once(self._initialize_switch, 1.65)
 
     def _initialize_slider(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
         # instantiated, change it and then change it back to 0.
-        self.dimmer.value = 1
-        self.dimmer.value = 0
+
+        # This might not be working / necessary anymore
+        # self.dimmer.value = -1
+        # self.dimmer.value = 0
         self.dimmer.disabled = True
         self.dimmer.bind(on_touch_down=self.dimmer_touch_down)
         self.dimmer.bind(on_touch_up=self.dimmer_touch_up)
@@ -66,11 +94,12 @@ class DeviceController(BaseListItem):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
 
-    def on_device(self, *args):
-        self.save_device()
-
-    def save_device(self):
-        pass
+    def on_touch_up(self, touch):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {touch}')
+        if self.rename_active and not self.collide_point(touch.x, touch.y):
+            Clock.schedule_once(self.exit_rename)
+        # Returning False alone should work, not sure why this is necessary.
+        self.ids._card.dispatch('on_touch_up', touch)
 
     def power(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -87,8 +116,7 @@ class DeviceController(BaseListItem):
     def dim(self, dimmer):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`'
                       f'called with dimmer.value == {dimmer.value}')
-        self.app = MDApp.get_running_app()
-        self.app.send(2, dimmer.value)
+        self.send(2, dimmer.value)
 
     def dimmer_touch_down(self, dimmer, touch):
         # Reducing the slider to 0 should also turn off the power button, but only after releasing
@@ -119,19 +147,12 @@ class DeviceController(BaseListItem):
 
     def open_options_menu(self, button):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        rename = {'text': 'Rename Device',
-                  'on_release': self.rename_device}
-        info = {'text': 'Device Info',
-                'on_release': self.show_device_info}
-        settings = {'text': 'Settings',
-                    'on_release': self.open_settings}
-        menu_items = [rename, info, settings]
-        self.menu = MDDropdownMenu(caller=button, items=menu_items, hor_growth='left')
         self.menu.open()
 
     def rename_device(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
+        self.rename_active = True
         _label = self.ids._label
         scrollview = self.parent.parent
         # Create a blur / disabled look
@@ -152,7 +173,6 @@ class DeviceController(BaseListItem):
         scrollview.update_from_scroll()  # Should reset the view, doesn't always work
 
     def rename_device_validate(self, text_field):
-        # print(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
         name = text_field.text
         # Fail
@@ -166,17 +186,31 @@ class DeviceController(BaseListItem):
         # Success
         self.device.user_assigned_alias = name
         self.ids._label.text = name
+        self.exit_rename()
+        self.save_device()
+
+    def set_text_field_focus(self, dt):
+        text_field = self.text_field
+        text_field.focus = True
+
+    def exit_rename(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.ids._label.opacity = 1
         self.ids._card.opacity = 1
         self.ids._card_overlay.opacity = 0
         self.ids._card_overlay.remove_widget(self.text_field)
         for child in self.ids._card.children:
             child.disabled = False
-        self.save_device()
+        self.rename_active = False
 
-    def set_text_field_focus(self, dt):
-        text_field = self.text_field
-        text_field.focus = True
+    def save_device(self):
+        app = MDApp.get_running_app()
+        app.save_device(self.device)
+
+    def forget_device(self, *args):
+        self.menu.dismiss()
+        app = MDApp.get_running_app()
+        app.forget_device(self.device)
 
     def show_device_info(self, *args):
         self.menu.dismiss()
@@ -188,6 +222,75 @@ class DeviceController(BaseListItem):
         app.root_screen.screen_manager.current = 'device_info'
 
     def open_settings(self, *args):
-        # print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
+        color_picker = MDColorPicker(size_hint=(None, None),
+                                     size=(dp(250), dp(400)))
+        color_picker.bind(on_select_color=self.on_select_color)
+        color_picker.open()
+
+    def on_select_color(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+
+    def launch_color_picker(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        color_picker = MDColorPicker(
+            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+            # size_hint=(None, None),
+            # size=Window.size
+        )
+        color_picker.bind(on_select_color=self.on_select_color)
+        color_picker.open()
+
+    def send(self, mode, val):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'\tmode={mode}, val={val}')
+        red, green, blue = [0, 0, 0]
+        brightness = 100
+        # Color Mode - ESP32 will maintain it's current brightness level.
+        if mode == 1:
+            # White
+            if val == 1:
+                red, green, blue = [255, 255, 255]
+            # Red
+            elif val == 2:
+                red, green, blue = [255, 0, 0]
+            # Orange
+            elif val == 3:
+                red, green, blue = [255, 130, 0]
+            # Yellow
+            elif val == 4:
+                red, green, blue = [255, 255, 0]
+            # Green
+            elif val == 5:
+                red, green, blue = [0, 255, 0]
+            # Blue
+            elif val == 6:
+                red, green, blue = [0, 0, 255]
+
+        # Dimmer Mode - ESP32 will maintain it's current color.
+        if mode == 2:
+            brightness = int(val)
+        try:
+            self.device.send_stream.write(struct.pack('<B', mode))
+            self.device.send_stream.write(struct.pack('<B', red))
+            self.device.send_stream.write(struct.pack('<B', green))
+            self.device.send_stream.write(struct.pack('<B', blue))
+            self.device.send_stream.write(struct.pack('<B', brightness))
+            self.device.send_stream.write(struct.pack('<b', -1))
+            self.device.send_stream.flush()
+        except jnius.JavaException as e:
+            if isinstance(e.__java__object__, jnius.JavaIOException):
+                # Handle the IOException (Broken pipe) error
+                logging.debug("IOException occurred: Broken pipe")
+                # Perform any necessary cleanup or recovery actions
+            else:
+                # Handle other types of Java exceptions
+                logging.debug(f'Other Java exception occurred: {e}')
+                # Perform appropriate actions for other exceptions
+        except Exception as e:
+            # Handle any other Python exceptions
+            logging.debug(f'Python exception occurred: {e}')
+            # Perform appropriate actions for other exceptions
+        else:
+            logging.debug('Command sent.')

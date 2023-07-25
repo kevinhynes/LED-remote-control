@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy==master,https://github.com/kivymd/KivyMD/archive/master.zip,pillow,pygments,cffi,pyjnius
+requirements = python3,kivy==master, git+https://github.com/kivymd/KivyMD.git@7ff6733c890bd9e21184c7b6b6400f4f7b43027f,pillow,pygments,cffi,pyjnius,olefile
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -102,7 +102,7 @@ android.permissions = BLUETOOTH,BLUETOOTH_CONNECT,BLUETOOTH_ADMIN,BLUETOOTH_SCAN
 #android.features = android.hardware.usb.host
 
 # (int) Target Android API, should be as high as possible.
-android.api = 28
+android.api = 31
 
 # (int) Minimum API your APK / AAB will support.
 #android.minapi = 21

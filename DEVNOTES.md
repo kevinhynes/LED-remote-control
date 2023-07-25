@@ -135,5 +135,16 @@ and reinstall:
 - 6/17/23 - must use `kivy==2.2.0` for linux
 - 6/18/23 - actually `kivymd` master branch does work on linux, only `kivy` is the problem.
 - 6/25/23 - **UPDATE** - `buildozer` will download and use whichever packages are listed in the
-  requirements section of `buildozer.spec` when building the APK, so uninstalling / reinstalling
-  `kivy` and `kivymd` is not necessary.
+requirements section of `buildozer.spec` when building the APK, so uninstalling / reinstalling
+`kivy` and `kivymd` is not necessary.
+- 7/10/23 - must use kivymd=1.1.1 for MDColorPicker to work. Issues with MDDropDownMenu b/w 1.1.1
+1.2.0.
+- 7/11/23 - UGH MDColorPicker doesn't work on Android with kivymd==1.1.1 or dev branch, even after 
+adding olefile to buildozer.spec.  Known bug.  Other  stuff:
+  - Need to handle loading DeviceController for saved devices on launch
+  - Reconnecting BluetoothSocket
+  - Ending BluetoothSocket on forget_device, etc
+  - Increase Android API version
+  - Create 'rooms' feature to control multiple lights at once?
+  - Remove 3 of the 4 Bluetooth checks
+  - https://github.com/kivy/python-for-android/blob/master/pythonforandroid/recipes/android/src/android/permissions.py

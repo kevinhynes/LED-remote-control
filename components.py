@@ -2,6 +2,8 @@ import asyncio
 import random
 import sys
 import string
+import struct
+import jnius
 from functools import partial
 from kivy.core.window import Window
 from kivy.clock import mainthread
@@ -32,10 +34,6 @@ from device_controller import *
 from device_connection_dialog import *
 
 
-def func_name():
-    return sys._getframe(1).f_code.co_name
-
-#
 # class BTDeviceListItem(TwoLineAvatarIconListItem):
 #     pass
 #
@@ -55,17 +53,16 @@ def func_name():
 # except Exception as e:
 #     logging.debug(f'Exception occurred: {e}')
 
-class CustomBluetoothDevice:
 
-    def __init__(self, bluetooth_device, user_assigned_alias=''):
+class CustomBluetoothDevice:
+    # To allow user to rename device and save, I think this class is necessary?
+
+    def __init__(self, bluetooth_device=None, user_assigned_alias=''):
         self.bluetooth_device = bluetooth_device
         self.user_assigned_alias = user_assigned_alias
-
-    def get_bluetooth_device(self):
-        return self.bluetooth_device
-
-    def get_user_assigned_alias(self):
-        return self.user_assigned_alias
+        self.bluetooth_socket = None
+        self.recv_stream = None
+        self.send_stream = None
 
     def __getattr__(self, attr):
         if hasattr(self.bluetooth_device, attr):
@@ -73,31 +70,32 @@ class CustomBluetoothDevice:
         raise AttributeError(f"'CustomBluetoothDevice' object has no attribute '{attr}'")
 
     def get_device_info(self):
-        bluetooth_class = self.getBluetoothClass()
+        if self.bluetooth_device is None:
+            return {}
         name = self.getName()
         address = self.getAddress()
         alias = self.getAlias()
         bond_state = self.getBondState()
         type = self.getType()
         UUIDs = self.getUuids()
-        string_representation = self.toString()
-        device_info = {'BluetoothClass': bluetooth_class,
-                       'Name': name,
+        device_info = {'Name': name,
                        'Alias': alias,
                        'User Assigned Alias': self.user_assigned_alias,
                        'Address': address,
                        'Type': type,
                        'BondState': bond_state,
                        'UUIDs': UUIDs,
-                       'StringRepresentation': string_representation,
                        }
         return device_info
 
 
 class FakeUUID:
 
-    def __init__(self):
-        self.uuid = self.generate_uuid()
+    def __init__(self, uuid=''):
+        if uuid == '':
+            self.uuid = self.generate_uuid()
+        else:
+            self.load_uuid(uuid)
 
     def generate_uuid(self):
         uuid = 0
@@ -108,6 +106,7 @@ class FakeUUID:
             else:
                 uuid = uuid << 1
                 uuid = uuid | bit
+        logging.debug(f'`FakeUUID generated {uuid}')
         return uuid
 
     def toString(self):
@@ -116,17 +115,26 @@ class FakeUUID:
                    f'{uuid_str[20:]}'
         return uuid_str
 
+    def load_uuid(self, uuid_str):
+        # Convert the saved string UUID back to hex
+        uuid_str = uuid_str.replace('-', '')
+        self.uuid = int(uuid_str, 16)
+        logging.debug(f'`FakeUUID loaded {self.uuid}')
+
 
 class FakeDevice:
 
-    def __init__(self):
-        self.name = self.generate_name()
-        self.alias = 'FakeDevice.alias'
-        self.user_assigned_alias = ''
-        self.address = self.generate_MAC()
-        self.type = random.randrange(1, 10)
-        self.bond_state = random.randrange(1, 12)
-        self.uuids = [FakeUUID() for _ in range(10)]
+    def __init__(self, device_info={}):
+        if device_info == {}:
+            self.name = self.generate_name()
+            self.alias = 'FakeDevice.alias'
+            self.user_assigned_alias = ''
+            self.address = self.generate_MAC()
+            self.type = random.randrange(1, 10)
+            self.bond_state = random.randrange(1, 12)
+            self.uuids = [FakeUUID() for _ in range(10)]
+        else:
+            self.load_device_info(device_info)
 
     @staticmethod
     def generate_MAC():
@@ -161,11 +169,24 @@ class FakeDevice:
                        }
         return device_info
 
+    def load_device_info(self, device_info):
+        self.name = device_info['Name']
+        self.address = device_info['Address']
+        self.alias = device_info['Alias']
+        self.user_assigned_alias = device_info['User Assigned Alias']
+        self.type = device_info['Type']
+        self.bond_state = device_info['BondState']
+        # Convert saved UUIDs from string back to hex
+        self.uuids = [FakeUUID(uuid) for uuid in device_info['UUIDs']]
+
     def isConnected(self):
         return random.choice([0, 1])
 
+    def disconnected_status(self, *args):
+        pass
 
-class TestLabel(MDLabel):
-    overlay_color_ = ListProperty([0.5, 0, 0.5, 0.5])
+    def connected_status(self, *args):
+        pass
+
 
 

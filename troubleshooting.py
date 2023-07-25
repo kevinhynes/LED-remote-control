@@ -1,9 +1,14 @@
+import sys
 from kivy.uix.widget import Widget
 from kivy.properties import ListProperty, NumericProperty
 from kivy.graphics import Line, Color, Rectangle, Ellipse
 from kivy.metrics import dp
 from kivymd.uix.label import MDLabel
 from kivymd.uix.selectioncontrol import MDSwitch
+
+
+def func_name():
+    return sys._getframe(1).f_code.co_name
 
 
 class Overlay_(Widget):
