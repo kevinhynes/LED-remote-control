@@ -101,6 +101,9 @@
                 height: dp(3)
 
 
+<ColorPickerScreen>:
+
+
 <MainScreen>:
     MDBoxLayout:
         size_hint: (1, 1)
@@ -171,6 +174,9 @@
                 name: 'device_info'
                 size_hint_y: 1 - _top_app_bar.height / root.height
 
+            ColorPickerScreen:
+                name: 'color_picker'
+                size_hint_y: 1 - _top_app_bar.height / root.height
 
         MDNavigationDrawer:
             id: _nav_drawer
@@ -185,7 +191,7 @@
                     padding: '12dp', 0, 0, '56dp'
 
                 MDNavigationDrawerLabel:
-                    text: 'Clickable Items'
+                    text: 'Menu'
 
                 MDNavigationDrawerItem:
                     icon: 'magnify'
@@ -232,15 +238,3 @@
                         app.show_saved_data()
                         _nav_drawer.set_state('close')
 
-                MDNavigationDrawerDivider:
-
-                MDNavigationDrawerLabel:
-                    text: 'Labels'
-
-                MDNavigationDrawerItem:
-                    icon: 'information-outline'
-                    text: 'Label'
-
-                MDNavigationDrawerItem:
-                    icon: 'information-outline'
-                    text: 'Label'

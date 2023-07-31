@@ -116,6 +116,48 @@ class DeviceInfoScreen(MDScreen):
         app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
 
 
+class ColorPickerScreen(MDScreen):
+    device_controller = ObjectProperty()
+
+    def on_pre_enter(self, *args):
+        app = MDApp.get_running_app()
+        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+
+    def on_enter(self, *args):
+        self.open_color_picker()
+
+    def go_back(self, *args):
+        app = MDApp.get_running_app()
+        slide_right = SlideTransition(direction='right')
+        app.root_screen.screen_manager.transition = slide_right
+        app.root_screen.screen_manager.current = 'connected_devices'
+        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
+        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+
+    def open_color_picker(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.color_picker = MDColorPicker(size_hint=(0.85, 0.85))
+        self.color_picker.bind(
+            on_select_color=self.on_select_color,
+            on_release=self.get_selected_color,
+            on_open=self.remove_color_type_buttons
+        )
+        self.color_picker.open()
+
+    def on_select_color(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+
+    def get_selected_color(self, instance_color_picker: MDColorPicker, type_color: str,
+                           selected_color: Union[list, str],):
+        '''Return selected color.'''
+
+        logging.debug(f'Selected color is {selected_color}')
+
+    def remove_color_type_buttons(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.color_picker.remove_widget(self.color_picker.ids.type_color_button_box)
+
+
 class MainScreen(MDScreen):
     pass
 

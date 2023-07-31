@@ -6,6 +6,7 @@ import logging
 import threading
 from jnius import autoclass, cast, java_method
 from threading import Thread
+from kivy.config import Config
 from kivy.lang import Builder
 from kivymd.theming import ThemeManager
 from kivy.storage.jsonstore import JsonStore
@@ -15,7 +16,6 @@ from screens import *
 logging.basicConfig(level=logging.DEBUG)
 
 # Developer Mode:
-# from kivy.config import Config
 # Config.set('kivy', 'log_level', 'debug')
 
 # Needed for Python code to communicate with Android operating system, sensors, etc.
@@ -38,7 +38,7 @@ if platform == 'android':
     # BroadcastReceiver needed for discovering devices to pair with through the app, difficult to
     # get working right. At current, pairing needs to be done via Android OS.  Once paired, app
     # can connect to 'bonded' devices.
-    # BroadcastReceiver = autoclass('android.content.BroadcastReceiver')
+    BroadcastReceiver = autoclass('android.content.BroadcastReceiver')
     # try:
     #     from android.broadcast import BroadcastReceiver
     # except Exception as e:
@@ -62,9 +62,6 @@ class MainApp(MDApp):
         super().__init__(**kwargs)
         self.bluetooth_manager = None
         self.bluetooth_adapter = None
-        self.bluetooth_socket = None
-        self.send_stream = None
-        self.recv_stream = None
         self.saved_data = None
 
     def build(self):
@@ -100,20 +97,15 @@ class MainApp(MDApp):
         # This method is called when the application is paused (e.g., when the home button is pressed).
         # You can save application state or perform any necessary cleanup here.
         logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
-        
         return True
 
     def on_stop(self, *args):
-        # This method is called when the application is stopped (e.g., when the app is closed).
-        # You can perform any necessary cleanup here.
+        # This method is supposed to be called when the application is stopped (e.g., when the app
+        # is closed) but it doesn't appear to ever get called.
         logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
         if platform == 'android':
             close_thread = threading.Thread(target=self.close_sockets)
             close_thread.start()
-
-    def on_request_close(self, *args):
-        logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
-        pass
 
     def close_sockets(self, *args):
         logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
@@ -208,7 +200,6 @@ class MainApp(MDApp):
                 logging.debug(f'Bluetooth is disabled...')
                 Clock.schedule_once(self.enable_bluetooth)
                 Clock.schedule_once(self.get_paired_devices)
-
         if platform == 'linux':
             self.get_paired_devices()
 
@@ -250,45 +241,36 @@ class MainApp(MDApp):
         # else:
         #     logging.debug(f'Success: PythonActivity.mActivity.startActivityForResult')
 
-    # def start_discovery(self, *args):
-    #     print(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-    #     asyncio.create_task(self._start_discovery())
-    #
-    # async def _start_discovery(self):
-    #     print(self.__class__.__name__, func_name())
-    #     await asyncio.sleep(0.5)
-    #     if platform == 'linux':
-    #         new_devices = [FakeDevice() for _ in range(10)]
-    #         self.available_devices[:] = new_devices
-    #         if platform == 'android':
-    #             try:
-    #                 print('In try block')
-    #                 # This is kind of working?
-    #                 # self.broadcast_receiver = BroadcastReceiver(self.on_broadcast, actions=['airplane_mode_changed'])
-    #                 # self.broadcast_receiver.start()
-    #                 # activity = PythonActivity.mActivity
-    #                 # intent_filter = IntentFilter()
-    #                 # intent_filter.addAction(BluetoothDevice.ACTION_FOUND)
-    #                 # activity.registerReceiver(self.bluetooth_discovery_receiver, intent_filter)
-    #                 # self.bluetooth_adapter.startDiscovery()
-    #                 # Wait for discovery to complete...
-    #                 # activity.unregisterReceiver(self.bluetooth_discovery_receiver)
-    #             except Exception as e:
-    #                 print(f'BroadcastReceiver failed with Exception: {e}')
-    #             else:
-    #                 print(f'BroadcastReceiver success?')
-    #
-    # def on_broadcast(self, context, intent):
-    #     print(f'`{self.__class__.__name__}.{func_name()}`')
-    #     print(context, intent)
-    #     action = intent.getAction()
-    #     if BluetoothDevice.ACTION_FOUND == action:
-    #         device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-    #         print('Found device: ', device.getName(), device.getAddress())
+    def start_discovery(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
+        if platform == 'linux':
+            new_devices = [FakeDevice() for _ in range(10)]
+            self.available_devices[:] = new_devices
+        if platform == 'android':
+            try:
+                print('In try block')
+                # This is kind of working?
+                # self.broadcast_receiver = BroadcastReceiver(self.on_broadcast, actions=['airplane_mode_changed'])
+                # self.broadcast_receiver.start()
+                # activity = PythonActivity.mActivity
+                # intent_filter = IntentFilter()
+                # intent_filter.addAction(BluetoothDevice.ACTION_FOUND)
+                # activity.registerReceiver(self.bluetooth_discovery_receiver, intent_filter)
+                # self.bluetooth_adapter.startDiscovery()
+                # Wait for discovery to complete...
+                # activity.unregisterReceiver(self.bluetooth_discovery_receiver)
+            except Exception as e:
+                print(f'BroadcastReceiver failed with Exception: {e}')
+            else:
+                print(f'BroadcastReceiver success?')
 
-    # def get_paired_devices(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-    #     asyncio.create_task(self._get_paired_devices())
+    def on_broadcast(self, context, intent):
+        print(f'`{self.__class__.__name__}.{func_name()}`')
+        print(context, intent)
+        action = intent.getAction()
+        if BluetoothDevice.ACTION_FOUND == action:
+            device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
+            print('Found device: ', device.getName(), device.getAddress())
 
     def get_paired_devices(self, *args):
         # FindDevicesScreen.paired_devices bound to app.paired_devices
@@ -331,7 +313,7 @@ class MainApp(MDApp):
             type='custom',
             content_cls=DialogContent(),
         )
-        dcd.content_cls.label.text = 'Connecting to...' + device.name
+        dcd.content_cls.label.text = 'Connecting to... ' + device.name
         dcd.content_cls.dialog = dcd  # back-reference to parent
         dcd.open()
         # Must use separate thread for connecting to Bluetooth device to keep GUI functional.
@@ -382,11 +364,11 @@ class MainApp(MDApp):
 
     def _reconnect_BluetoothSocket(self, device):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
-        # if device.isConnected():
-        #     dialog = MDDialog(text='Device already connected')
-        #     dialog.open()
-        #     Clock.schedule_once(dialog.dismiss, 3)
-        #     return
+        if device.isConnected():
+            dialog = MDDialog(text='Device already connected')
+            dialog.open()
+            Clock.schedule_once(dialog.dismiss, 3)
+            # return
         try:
             logging.debug(f'Creating BluetoothSocket')
             UUID = autoclass('java.util.UUID')
@@ -400,6 +382,14 @@ class MainApp(MDApp):
         except Exception as e:
             logging.debug(f'Failed to open socket. Exception {e}')
             logging.debug(f'Retrying...')
+            self._retry_BluetoothSocket(device)
+        else:
+            logging.debug(f'Successfully opened socket')
+
+    def _retry_BluetoothSocket(self, device):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
+        try:
+            logging.debug(f'Retrying to create BluetoothSocket')
             UUID = autoclass('java.util.UUID')
             esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
             device.bluetooth_socket = device.createRfcommSocketToServiceRecord(
@@ -408,8 +398,14 @@ class MainApp(MDApp):
             device.bluetooth_socket.connect()
             device.recv_stream = device.bluetooth_socket.getInputStream()
             device.send_stream = device.bluetooth_socket.getOutputStream()
+        except Exception as e:
+            logging.debug(f'Failed to open socket. Exception {e}')
+            if device.isConnected():
+                dialog = MDDialog(text='Device off or out of range.')
+                dialog.open()
+                Clock.schedule_once(dialog.dismiss, 3)
         else:
-            logging.debug(f'Successfully opened socket')
+            logging.debug(f'Successfully opened socket on retry.')
 
     def _connect_as_client_linux(self, device, button):
         logging.debug(

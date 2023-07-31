@@ -4,10 +4,10 @@
 #include <FastLED.h>
 
 // LED SECTION
-#define NUM_LEDS 58
+#define NUM_LEDS 60
 #define LED_PIN1 2
 #define LED_PIN2 5
-#define DATA_PIN 26
+#define DATA_PIN 22
 CRGB leds[NUM_LEDS];
 
 void turnStripOn() {
@@ -37,6 +37,14 @@ void turnStripRGB(int r, int g, int b) {
     }
   FastLED.show();
 }
+
+void turnStripGRB(int g, int r, int b) {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setRGB(g, r, b);
+    }
+  FastLED.show();
+}
+
 
 void turnStripHSV(int h, int s, int v) {
   for (int i = 0; i < NUM_LEDS; i++) {
@@ -173,7 +181,8 @@ void loop() {
       Serial.println(sizeof(message[0]));
       if (validate_message(message)) {
         Serial.println("Valid message received");
-          turnStripRGB(dimmedRed, dimmedGreen, dimmedBlue);
+          // GRB ordering for WS2812B
+          turnStripGRB(dimmedGreen, dimmedRed, dimmedBlue);
       }
       else {
         Serial.println("Invalid message recieved");
@@ -187,5 +196,5 @@ void loop() {
       }
     }
     // delay(50);
-
   }
+}

@@ -6,6 +6,7 @@ import logging
 import jnius
 import struct
 from functools import partial
+from typing import Union
 from kivy.core.window import Window
 from kivy.clock import mainthread
 from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty
@@ -61,17 +62,29 @@ class DeviceController(BaseListItem):
                 'viewclass': 'OneLineListItem',
                 'height': dp(54)
                 }
-        settings = {'text': 'Settings',
-                    'on_release': self.open_settings,
-                    'viewclass': 'OneLineListItem',
-                    'height': dp(54)
-                    }
         forget = {'text': 'Forget Device',
                   'on_release': self.forget_device,
                   'viewclass': 'OneLineListItem',
                   'height': dp(54)
                   }
-        menu_items = [rename, info, settings, forget]
+        reconnect = {'text': 'Reconnect Device',
+                     'on_release': self.reconnect,
+                     'viewclass': 'OneLineListItem',
+                     'height': dp(54)}
+        disconnect = {'text': 'Disconnect Device',
+                      'on_release': self.disconnect,
+                      'viewclass': 'OneLineListItem',
+                      'height': dp(54)}
+        color = {'text': 'Choose Color',
+                      'on_release': self.open_color_picker,
+                      'viewclass': 'OneLineListItem',
+                      'height': dp(54)}
+        color_screen = {'text': 'Open Color Picker Screen',
+                        'on_release': self.open_color_picker_screen,
+                        'viewclass': 'OneLineListItem',
+                        'height': dp(54)
+                        }
+        menu_items = [rename, info, forget, reconnect, disconnect, color, color_screen]
         self.menu = MDDropdownMenu(caller=self.ids._menu_button,
                                    items=menu_items,
                                    hor_growth='left',
@@ -221,26 +234,60 @@ class DeviceController(BaseListItem):
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'device_info'
 
-    def open_settings(self, *args):
+    def open_color_picker_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
-        color_picker = MDColorPicker(size_hint=(None, None),
-                                     size=(dp(250), dp(400)))
-        color_picker.bind(on_select_color=self.on_select_color)
-        color_picker.open()
+        app = MDApp.get_running_app()
+        color_picker_screen = app.root_screen.screen_manager.get_screen('color_picker')
+        color_picker_screen.device_controller = self
+        slide_left = SlideTransition(direction='left')
+        app.root_screen.screen_manager.transition = slide_left
+        app.root_screen.screen_manager.current = 'color_picker'
 
-    def on_select_color(self, *args):
+    def open_color_picker(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-
-    def launch_color_picker(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        color_picker = MDColorPicker(
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            # size_hint=(None, None),
-            # size=Window.size
+        self.menu.dismiss()
+        self.color_picker = MDColorPicker(size_hint=(0.95, 0.85))
+        self.color_picker.open()
+        self.color_picker.bind(
+            on_select_color=self.on_select_color,
+            on_release=self.get_selected_color,
         )
-        color_picker.bind(on_select_color=self.on_select_color)
-        color_picker.open()
+        # self.color_picker.ids.gradient_widget.bind(on_touch_move=self.gradient_on_touch_move)
+
+    # def gradient_on_touch_move(self, touch):
+    #     """Handles the ``self.ids.gradient_widget`` touch event."""
+    #     gradient_widget = self.color_picker.ids.gradient_widget
+    #     if gradient_widget.collide_point(*touch.pos):
+    #         color = gradient_widget.get_rgba_color_from_touch_region(gradient_widget, touch)
+    #         self.color_picker.dispatch(
+    #             "on_select_color", [x / 255.0 for x in color]
+    #         )
+    #     return super(Widget, self).on_touch_down(touch)
+
+    def on_select_color(self, color_picker, rgba):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` '
+                      f'called with args: {color_picker, rgba}')
+        for i, color in enumerate(rgba):
+            rgba[i] = int(color * 255)
+        self.send(1, rgba)
+
+    def get_selected_color(self, instance_color_picker: MDColorPicker, type_color: str,
+            selected_color: Union[list, str],):
+        '''Return selected color.'''
+        logging.debug(f'Selected color is {selected_color}')
+
+    def disconnect(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        if self.device.bluetooth_socket:
+            self.device.bluetooth_socket.close()
+        else:
+            pass
+
+    def reconnect(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        app = MDApp.get_running_app()
+        app._reconnect_BluetoothSocket(self.device)
 
     def send(self, mode, val):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -267,6 +314,8 @@ class DeviceController(BaseListItem):
             # Blue
             elif val == 6:
                 red, green, blue = [0, 0, 255]
+            elif type(val) is list:
+                red, green, blue = val[0], val[1], val[2]
 
         # Dimmer Mode - ESP32 will maintain it's current color.
         if mode == 2:
