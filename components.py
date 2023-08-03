@@ -27,31 +27,11 @@ from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
-from jnius import autoclass
+from jnius import autoclass, java_method, PythonJavaClass
 
 from troubleshooting import *
 from device_controller import *
 from device_connection_dialog import *
-
-
-# class BTDeviceListItem(TwoLineAvatarIconListItem):
-#     pass
-#
-#
-# class DeviceInfoListItem(BaseListItem):
-#     heading_label = ObjectProperty()
-#     content_label = ObjectProperty()
-#
-#     def __init__(self, heading='', content='', **kwargs):
-#         super().__init__(**kwargs)
-#         self.heading_label.text = heading
-#         self.content_label.text = content
-
-
-# try:
-#     BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
-# except Exception as e:
-#     logging.debug(f'Exception occurred: {e}')
 
 
 class CustomBluetoothDevice:

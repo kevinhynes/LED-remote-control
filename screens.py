@@ -2,14 +2,30 @@ from functools import partial
 from kivy.utils import platform
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.list import TwoLineListItem
+from kivymd.uix.list import TwoLineListItem, OneLineRightIconListItem
 from kivymd.uix.scrollview import MDScrollView
 from kivy.event import EventDispatcher
+from kivymd.uix.pickers import MDColorPicker
+from kivymd.uix.relativelayout import MDRelativeLayout
+
 
 from components import *
 
 
 ########## Find Devices Screen ##########
+class PairedDevicesHeader(OneLineListItem):
+    info_button = ObjectProperty()
+
+    def give_info(self, *args):
+        app = MDApp.get_running_app()
+        d = MDDialog(title="Don't see your microcontroller?",
+                     text="Use your phone's Bluetooth menu to pair with your microcontroller first, "
+                          "then is should appear in this list.",
+                     buttons=[MDFlatButton(text='Open Bluetooth Menu',
+                                           on_release=lambda x: app.open_bluetooth_settings())]
+                     )
+        d.open()
+
 
 class BTDeviceListItem(TwoLineAvatarIconListItem):
     pass
@@ -18,13 +34,11 @@ class BTDeviceListItem(TwoLineAvatarIconListItem):
 class FindDevicesScreen(MDScreen):
     paired_devices = ListProperty()
     paired_devices_list = ObjectProperty()
-    available_devices = ListProperty()
-    available_devices_list = ObjectProperty()
 
     def on_pre_enter(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         app = MDApp.get_running_app()
-        app.find_bluetooth_devices()
+        app.get_paired_devices()
 
     def on_paired_devices(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
@@ -37,36 +51,24 @@ class FindDevicesScreen(MDScreen):
             button.bind(on_press=partial(app.connect_as_client, device))
             self.paired_devices_list.add_widget(button)
 
-    def on_available_devices(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
-        buttons_to_remove = [child for child in self.avaiable_devices_list.children]
-        for child in buttons_to_remove:
-            self.available_devices_list.remove_widget(child)
-        app = MDApp.get_running_app()
-        for device in self.available_devies:
-            button = BTDeviceListItem(text=device.name, secondary_text=device.address)
-            button.bind(on_press=partial(app.connect_as_client, device))
-            self.available_devices_list.add_widget(button)
-
 
 ########## Device Controller Screen ##########
-
 class ControlScreen(MDScreen):
     connected_devices = ListProperty()
     connected_devices_list = ObjectProperty()
 
     def on_connected_devices(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
-        # add_device_button = self.ids._add_device_button
-        buttons_to_remove = [child for child in self.connected_devices_list.children]
-        for child in buttons_to_remove:
-            self.connected_devices_list.remove_widget(child)
+        controllers_to_remove = [child for child in self.connected_devices_list.children]
+        for controller in controllers_to_remove:
+            controller.broadcast_receiver.stop()
+            self.connected_devices_list.remove_widget(controller)
         for device in self.connected_devices:
             controller = DeviceController(device=device)
             self.connected_devices_list.add_widget(controller)
 
-########## Device Info Screen ##########
 
+########## Device Info Screen ##########
 class DeviceInfoListItem(BaseListItem):
     heading_label = ObjectProperty()
     content_label = ObjectProperty()
@@ -156,10 +158,6 @@ class ColorPickerScreen(MDScreen):
     def remove_color_type_buttons(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.color_picker.remove_widget(self.color_picker.ids.type_color_button_box)
-
-
-class MainScreen(MDScreen):
-    pass
 
 
 class RootScreen(MDScreen):

@@ -100,9 +100,9 @@ class DialogContent(MDBoxLayout):
         self.label.theme_text_color = 'Custom'
         self.label.text_color = (0, 1, 0, 1)
         self.status_container.add_widget(self.success_icon)
-        app = MDApp.get_running_app()
-        app.connected_devices.append(device)
-        app.root_screen.screen_manager.current = 'connected_devices'
+        # app = MDApp.get_running_app()
+        # app.connected_devices.append(device)
+        # app.root_screen.screen_manager.current = 'connected_devices'
 
     @mainthread
     def update_failure(self, device):

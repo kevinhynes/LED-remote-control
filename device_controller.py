@@ -5,6 +5,7 @@ import string
 import logging
 import jnius
 import struct
+from jnius import cast, autoclass
 from functools import partial
 from typing import Union
 from kivy.core.window import Window
@@ -30,9 +31,14 @@ from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.pickers import MDColorPicker
-from kivy.uix.modalview import ModalView
+from kivymd.uix.button import MDFlatButton
 
 from troubleshooting import *
+
+if platform == 'android':
+    from android.broadcast import BroadcastReceiver
+    BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
+    BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
 
 
 class RenameDeviceTextField(MDTextField):
@@ -68,11 +74,11 @@ class DeviceController(BaseListItem):
                   'height': dp(54)
                   }
         reconnect = {'text': 'Reconnect Device',
-                     'on_release': self.reconnect,
+                     'on_release': self.reconnect_BluetoothSocket,
                      'viewclass': 'OneLineListItem',
                      'height': dp(54)}
         disconnect = {'text': 'Disconnect Device',
-                      'on_release': self.disconnect,
+                      'on_release': self.disconnect_BluetoothSocket,
                       'viewclass': 'OneLineListItem',
                       'height': dp(54)}
         color = {'text': 'Choose Color',
@@ -89,8 +95,41 @@ class DeviceController(BaseListItem):
                                    items=menu_items,
                                    hor_growth='left',
                                    width_mult=3)
+        self.broadcast_receiver = self._get_broadcast_receiver() if platform == 'android' else None
         Clock.schedule_once(self._initialize_slider, 0.5)
-        Clock.schedule_once(self._initialize_switch, 1.65)
+        Clock.schedule_once(self._initialize_switch, 0.5)
+
+    def _get_broadcast_receiver(self):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        actions = [BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                   BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED,
+                   BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED,]
+        br = BroadcastReceiver(self.on_receive, actions)
+        br.start()
+        return br
+
+    def on_receive(self, context, intent):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {context, intent}')
+        action = intent.getAction()
+        device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
+        logging.debug(f'This device: {self.device.getName()}, '
+                      f'{self.device.getAddress()},'
+                      f'{self.device.user_assigned_alias}')
+        logging.debug(f'Found device: {device.getName()} '
+                      f'{device.getAddress()}')
+        try:
+            if action == BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                logging.debug(f'{device.getName(), device.getAddress()} disconnected')
+            elif action == BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED:
+                logging.debug(f'{device.getName(), device.getAddress()} disconnect requested')
+            elif action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+                state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
+                if state == BluetoothAdapter.STATE_CONNECTED:
+                    logging.debug(f'{device.getName(), device.getAddress()} connected state')
+                elif state == BluetoothAdapter.STATE_DISCONNECTED:
+                    logging.debug(f'{device.getName(), device.getAddress()} disconnected state')
+        except Exception as e:
+            logging.debug(f'Error getting device info using intent.getParceableExtra: {e}')
 
     def _initialize_slider(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
@@ -277,21 +316,51 @@ class DeviceController(BaseListItem):
         '''Return selected color.'''
         logging.debug(f'Selected color is {selected_color}')
 
-    def disconnect(self, *args):
+    def disconnect_BluetoothSocket(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        if self.device.bluetooth_socket:
+        if not self.device.bluetooth_socket:
+            d = MDDialog(text='No BluetoothSocket found.')
+            d.open()
+        elif self.device.bluetooth_socket.isConnected():
             self.device.bluetooth_socket.close()
-        else:
-            pass
+            d = MDDialog(text='BluetoothSocket closed.')
+            d.open()
+        elif not self.device.bluetooth_socket.isConnected():
+            d = MDDialog(text='BluetoothSocket is alredy closed.')
+            d.open()
 
-    def reconnect(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        app = MDApp.get_running_app()
-        app._reconnect_BluetoothSocket(self.device)
+    def reconnect_BluetoothSocket(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
+        if self.device.bluetooth_socket and self.device.bluetooth_socket.isConnected():
+            d = MDDialog(text='Device already connected')
+            d.open()
+            return
+        try:
+            logging.debug(f'Creating BluetoothSocket')
+            UUID = autoclass('java.util.UUID')
+            esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
+            self.device.bluetooth_socket = self.device.createRfcommSocketToServiceRecord(
+                UUID.fromString(esp32_UUID))
+            logging.debug(f'BluetoothSocket.connect()')
+            self.device.bluetooth_socket.connect()
+            self.device.recv_stream = self.device.bluetooth_socket.getInputStream()
+            self.device.send_stream = self.device.bluetooth_socket.getOutputStream()
+        except Exception as e:
+            logging.debug(f'Failed to open socket. Exception {e}')
+            d = MDDialog(text='Failed to open BluetoothSocket. Device may be out of range.')
+            d.open()
+        else:
+            logging.debug(f'Successfully opened socket')
+            d = MDDialog(text='Successfully reconnected BluetoothSocket.')
+            d.open()
 
     def send(self, mode, val):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         logging.debug(f'\tmode={mode}, val={val}')
+        if platform == 'android' and \
+                (not self.device.bluetooth_socket or not self.device.bluetooth_socket.isConnected()):
+            self.reconnect_BluetoothSocket()
+
         red, green, blue = [0, 0, 0]
         brightness = 100
         # Color Mode - ESP32 will maintain it's current brightness level.
@@ -329,17 +398,14 @@ class DeviceController(BaseListItem):
             self.device.send_stream.write(struct.pack('<b', -1))
             self.device.send_stream.flush()
         except jnius.JavaException as e:
-            if isinstance(e.__java__object__, jnius.JavaIOException):
-                # Handle the IOException (Broken pipe) error
-                logging.debug("IOException occurred: Broken pipe")
-                # Perform any necessary cleanup or recovery actions
-            else:
-                # Handle other types of Java exceptions
-                logging.debug(f'Other Java exception occurred: {e}')
-                # Perform appropriate actions for other exceptions
+            # if isinstance(e.__java__object__, jnius.JavaIOException):
+            #     # Handle the IOException (Broken pipe) error
+            #     logging.debug("IOException occurred: Broken pipe")
+            #     # Perform any necessary cleanup or recovery actions
+            logging.debug(f'During device_controller.send, a Java exception occurred: {e}')
         except Exception as e:
             # Handle any other Python exceptions
-            logging.debug(f'Python exception occurred: {e}')
+            logging.debug(f'During device_controller.send, a Python exception occurred: {e}')
             # Perform appropriate actions for other exceptions
         else:
             logging.debug('Command sent.')
