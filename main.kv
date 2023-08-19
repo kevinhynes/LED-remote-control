@@ -51,8 +51,10 @@
 
 
 <FindDevicesScreen>:
+    loaded_devices: app.loaded_devices
+    loaded_devices_list: loaded_devices_list_
     paired_devices: app.paired_devices
-    paired_devices_list: _paired_devices_list
+    paired_devices_list: paired_devices_list_
 
     MDScrollView:
 #        on_overscroll: app.get_paired_devices()
@@ -61,12 +63,18 @@
             PairedDevicesHeader:
             MDSeparator:
             MDList:
-                id: _paired_devices_list
+                id: paired_devices_list_
+            OneLineListItem:
+                text: 'Saved Devices'.upper()
+                font_style: 'Button'
+                _no_ripple_effect: True
+            MDSeparator:
+            MDList:
+                id: loaded_devices_list_
 
-
-<ControlScreen>:
-    connected_devices: app.connected_devices
-    connected_devices_list: _connected_devices_list
+<ControllersScreen>:
+    loaded_devices: app.loaded_devices
+    controllers_list: controllers_list_
     md_bg_color: app.theme_cls.bg_light
 
     MDScrollView:
@@ -74,7 +82,7 @@
         scroll_distance: dp(300)
 #        scroll_timeout: 250
         MDList:
-            id: _connected_devices_list
+            id: controllers_list_
             spacing: dp(20)
 #            DeviceController:
 #            BaseListItem:
@@ -88,19 +96,27 @@
 
 
 <DeviceInfoScreen>:
-    info_list: _info_list
+    info_list: info_list_
     MDScrollView:
         do_scroll_x: False
         scroll_distance: dp(300)
-#        scroll_timeout: 250
         MDList:
-            id: _info_list
+            id: info_list_
             MDSeparator:
                 height: dp(3)
 
 
 <ColorPickerScreen>:
 
+
+<NumLEDsScreen>:
+    MDRelativeLayout:
+        MDTextField:
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            size_hint: (0.8, 0.1)
+            hint_text: 'Number of LEDs this device controls'
+            mode: 'rectangle'
+            on_text_validate: root.validate_num_leds(self)
 
 <RootScreen>:
     name: 'root'
@@ -121,8 +137,8 @@
             id: _screen_manager
             transition: SlideTransition(direction='right')
 
-            ControlScreen:
-                name: 'connected_devices'
+            ControllersScreen:
+                name: 'controllers'
                 size_hint_y: 1 - _top_app_bar.height / root.height
                 pos_hint_y: {'y': 0}
 
@@ -136,6 +152,10 @@
 
             ColorPickerScreen:
                 name: 'color_picker'
+                size_hint_y: 1 - _top_app_bar.height / root.height
+
+            NumLEDsScreen:
+                name: 'num_leds'
                 size_hint_y: 1 - _top_app_bar.height / root.height
 
         MDNavigationDrawer:
@@ -165,12 +185,12 @@
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'
-                    text: 'Connected Devices'
+                    text: 'Controllers'
                     theme_text_color: 'Custom'
                     text_color: 'white'
                     _no_ripple_effect: True
                     on_press:
-                        _screen_manager.current = 'connected_devices'
+                        _screen_manager.current = 'controllers'
                         _nav_drawer.set_state('close')
 
                 MDNavigationDrawerItem:

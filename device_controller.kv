@@ -19,9 +19,11 @@
 
 
 <DeviceController>:
-    power_button: _power_button
-    dimmer: _dimmer
-#    device: FakeDevice()
+    power_button: power_button_
+    dimmer: dimmer_
+    red_slider: red_slider_
+    green_slider: green_slider_
+    blue_slider: blue_slider_
     _no_ripple_effect: True
     divider: None
     radius: dp(15), dp(15), dp(15), dp(15)
@@ -43,7 +45,7 @@
             # the sections correctly.
 
             MDCard:
-                id: _card_bottom
+                id: card_bottom_
                 orientation: 'horizontal'
                 pos_hint: {'top': 1}
                 size_hint: (1, None)
@@ -54,17 +56,72 @@
                 radius: dp(15), dp(15), dp(15), dp(15)
                 md_bg_color: app.theme_cls.primary_light
 
-                MDSlider:
-                    id: _dimmer
-                    pos_hint: {'bottom': 0}
-                    size_hint: (1, None)
-                    height: dp(50)
-                    hint: False
-                    show_off: False
-                    min: 0
-                    max: 100
-                    step: 1
-                    on_value: root.dim(self)
+                MDBoxLayout:
+                    id: slider_container_
+                    adaptive_height: True
+                    orientation: 'vertical'
+#                    md_bg_color: (1, 0, 0, 0.5)
+
+                    MDSlider:
+                        id: dimmer_
+                        pos_hint: {'bottom': 0}
+                        size_hint: (1, None)
+                        height: dp(50)
+                        hint: False
+                        show_off: False
+                        min: 0
+                        max: 100
+                        step: 1
+                        on_value: root.dim(self)
+                    MDSlider:
+                        id: red_slider_
+                        color: (0.8, 0, 0, 0.75)
+                        thumb_color_active: (0.8, 0, 0, 0.75)
+                        thumb_color_inactive: (0.8, 0, 0, 0.75)
+                        thumb_color_disabled: (0.8, 0, 0, 0.75)
+                        size_hint: (1, None)
+                        height: dp(50)
+                        hint: False
+                        show_off: False
+                        min: 0
+                        max: 255
+                        step: 1
+                        disabled: True
+                    MDSlider:
+                        id: green_slider_
+                        color: (0, 0.8, 0, 0.75)
+                        thumb_color_active: (0, 0.8, 0, 0.75)
+                        thumb_color_inactive: (0, 0.8, 0, 0.75)
+                        thumb_color_disabled: (0, 0.8, 0, 0.75)
+                        size_hint: (1, None)
+                        height: dp(50)
+                        hint: False
+                        show_off: False
+                        min: 0
+                        max: 255
+                        step: 1
+                        disabled: True
+                    MDSlider:
+                        id: blue_slider_
+                        color: (0, 0, 0.8, 0.75)
+                        thumb_color_active: (0, 0, 0.8, 0.75)
+                        thumb_color_inactive: (0, 0, 0.8, 0.75)
+                        thumb_color_disabled: (0, 0, 0.8, 0.75)
+                        size_hint: (1, None)
+                        height: dp(50)
+                        hint: False
+                        show_off: False
+                        min: 0
+                        max: 255
+                        step: 1
+                        disabled: True
+
+                MDIconButton:
+                    id: expand_btn_
+                    icon: 'chevron-down'
+                    theme_icon_color: 'Custom'
+                    icon_color: 'white'
+                    on_release: root.expand_rgb_sliders()
 
             MDCard:
                 id: _card_top
@@ -85,7 +142,7 @@
                         id: _status_icon
                         icon: 'circle-medium'
                         theme_icon_color: 'Custom'
-                        icon_color: 'green'
+                        icon_color: 'red'
 
                 MDRelativeLayout:
                     id: _label_container
@@ -95,7 +152,7 @@
                         id: _label
         #                height: self.texture_size[1] + dp(20)
                         padding: dp(20), dp(0)
-                        text: root.device.user_assigned_alias if root.device.user_assigned_alias else root.device.name
+                        text: root.device.nickname if root.device.nickname else root.device.getName()
                         text_size: self.size
                         valign: 'middle'
 
@@ -103,7 +160,7 @@
                     size_hint: (0.25, 1)
 
                     MDSwitch:
-                        id: _power_button
+                        id: power_button_
                         pos_hint: {'right': 1, 'center_y': 0.5}
                         widget_style: 'ios'
                         width: dp(45)
@@ -173,3 +230,7 @@
 #        md_bg_color: app.theme_cls.primary_color
         md_bg_color: 'gray'
         opacity: 0
+    MDRelativeLayout:
+        id: off_screen_
+        x: root.right + dp(100)
+        md_bg_color: (1, 0, 0, 0.5)

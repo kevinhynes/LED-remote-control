@@ -32,6 +32,8 @@ class BTDeviceListItem(TwoLineAvatarIconListItem):
 
 
 class FindDevicesScreen(MDScreen):
+    loaded_devices = ListProperty()
+    loaded_devices_list = ObjectProperty()
     paired_devices = ListProperty()
     paired_devices_list = ObjectProperty()
 
@@ -40,6 +42,17 @@ class FindDevicesScreen(MDScreen):
         app = MDApp.get_running_app()
         app.get_paired_devices()
 
+    def on_loaded_devices(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
+        saved_device_list_items_to_remove = [child for child in self.loaded_devices_list.children]
+        for device_list_item in saved_device_list_items_to_remove:
+            self.loaded_devices_list.remove_widget(device_list_item)
+        for device in self.loaded_devices:
+            button = BTDeviceListItem(text=device.getName(),
+                                      secondary_text=device.getAddress(),
+                                      disabled=True)
+            self.loaded_devices_list.add_widget(button)
+
     def on_paired_devices(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         buttons_to_remove = [child for child in self.paired_devices_list.children]
@@ -47,26 +60,33 @@ class FindDevicesScreen(MDScreen):
             self.paired_devices_list.remove_widget(child)
         app = MDApp.get_running_app()
         for device in self.paired_devices:
-            button = BTDeviceListItem(text=device.getName(), secondary_text=device.getAddress())
+            button = BTDeviceListItem(text=device.getName(),
+                                      secondary_text=device.getAddress())
             button.bind(on_press=partial(app.connect_as_client, device))
             self.paired_devices_list.add_widget(button)
 
 
 ########## Device Controller Screen ##########
-class ControlScreen(MDScreen):
-    connected_devices = ListProperty()
-    connected_devices_list = ObjectProperty()
+class ControllersScreen(MDScreen):
+    loaded_devices = ListProperty()
+    controllers_list = ObjectProperty()
 
-    def on_connected_devices(self, *args):
+    def on_loaded_devices(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
-        controllers_to_remove = [child for child in self.connected_devices_list.children]
+        controllers_to_remove = [child for child in self.controllers_list.children]
         for controller in controllers_to_remove:
-            controller.broadcast_receiver.stop()
-            self.connected_devices_list.remove_widget(controller)
-        for device in self.connected_devices:
+            self.controllers_list.remove_widget(controller)
+        for device in self.loaded_devices:
             controller = DeviceController(device=device)
-            self.connected_devices_list.add_widget(controller)
+            self.controllers_list.add_widget(controller)
 
+    def update_controller_connection_status(self, device_address, is_connected):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: '
+                      f'{device_address, is_connected}`')
+        for controller in self.controllers_list.children:
+            if controller.device.getAddress() == device_address:
+                controller.is_connected = is_connected
+                break
 
 ########## Device Info Screen ##########
 class DeviceInfoListItem(BaseListItem):
@@ -113,7 +133,7 @@ class DeviceInfoScreen(MDScreen):
         app = MDApp.get_running_app()
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
-        app.root_screen.screen_manager.current = 'connected_devices'
+        app.root_screen.screen_manager.current = 'controllers'
         open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
         app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
 
@@ -132,7 +152,7 @@ class ColorPickerScreen(MDScreen):
         app = MDApp.get_running_app()
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
-        app.root_screen.screen_manager.current = 'connected_devices'
+        app.root_screen.screen_manager.current = 'controllers'
         open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
         app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
 
@@ -158,6 +178,47 @@ class ColorPickerScreen(MDScreen):
     def remove_color_type_buttons(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.color_picker.remove_widget(self.color_picker.ids.type_color_button_box)
+
+
+class NumLEDsScreen(MDScreen):
+    device_controller = ObjectProperty()
+
+    def on_pre_enter(self, *args):
+        app = MDApp.get_running_app()
+        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+
+    def go_back(self, *args):
+        app = MDApp.get_running_app()
+        slide_right = SlideTransition(direction='right')
+        app.root_screen.screen_manager.transition = slide_right
+        app.root_screen.screen_manager.current = 'controllers'
+        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
+        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+
+    def validate_num_leds(self, text_field):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
+        num_leds = text_field.text
+        for char in num_leds:
+            if not char.isdigit():
+                text_field.error = True
+                text_field.focus = True
+                text_field.helper_text_mode = 'on_error'
+                text_field.helper_text = "Must be a whole number less than 65535"
+                return
+        # Let the maximum number of LEDs be 65535 (way more than enough) so it can fit in 2 bytes.
+        num_leds = int(num_leds)
+        max_leds = 0
+        for bit in range(16):
+            max_leds = max_leds << 1
+            max_leds += 1
+        if not 0 <= num_leds <= max_leds:
+            text_field.error = True
+            text_field.focus = True
+            text_field.helper_text_mode = 'on_error'
+            text_field.helper_text = "Must be a whole number"
+            return
+        self.device_controller.num_leds = num_leds
+        self.go_back()
 
 
 class RootScreen(MDScreen):

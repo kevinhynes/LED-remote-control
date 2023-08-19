@@ -5,12 +5,13 @@ import string
 import logging
 import jnius
 import struct
+from threading import Thread
 from jnius import cast, autoclass
 from functools import partial
 from typing import Union
 from kivy.core.window import Window
 from kivy.clock import mainthread
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty, BooleanProperty
 from kivy.metrics import dp, sp
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -33,10 +34,10 @@ from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.pickers import MDColorPicker
 from kivymd.uix.button import MDFlatButton
 
+from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import *
 
 if platform == 'android':
-    from android.broadcast import BroadcastReceiver
     BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
     BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
 
@@ -53,10 +54,20 @@ class DeviceController(BaseListItem):
     device = ObjectProperty()
     power_button = ObjectProperty()
     dimmer = ObjectProperty()
-    brightness = NumericProperty(50)
+    red_slider = ObjectProperty()
+    green_slider = ObjectProperty()
+    blue_slider = ObjectProperty()
+    brightness = NumericProperty(100)
+    r = NumericProperty(255)
+    g = NumericProperty(255)
+    b = NumericProperty(255)
+    is_connected = BooleanProperty(False)
+    is_expanded = BooleanProperty(False)
+    num_leds = NumericProperty(60)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.num_leds = 60
         self.rename_active = False
         rename = {'text': 'Rename Device',
                   'on_release': self.rename_device,
@@ -81,7 +92,7 @@ class DeviceController(BaseListItem):
                       'on_release': self.disconnect_BluetoothSocket,
                       'viewclass': 'OneLineListItem',
                       'height': dp(54)}
-        color = {'text': 'Choose Color',
+        color = {'text': 'Open Color Picker',
                       'on_release': self.open_color_picker,
                       'viewclass': 'OneLineListItem',
                       'height': dp(54)}
@@ -90,112 +101,62 @@ class DeviceController(BaseListItem):
                         'viewclass': 'OneLineListItem',
                         'height': dp(54)
                         }
-        menu_items = [rename, info, forget, reconnect, disconnect, color, color_screen]
+        configure = {'text': 'Choose Number of LEDs',
+                     'on_release': self.open_num_leds_screen,
+                     'viewclass': 'OneLineListItem',
+                     'height': dp(54)}
+        menu_items = [rename, info, forget, reconnect, disconnect, color, color_screen, configure]
         self.menu = MDDropdownMenu(caller=self.ids._menu_button,
                                    items=menu_items,
                                    hor_growth='left',
                                    width_mult=3)
-        self.broadcast_receiver = self._get_broadcast_receiver() if platform == 'android' else None
-        Clock.schedule_once(self._initialize_slider, 0.5)
+        Clock.schedule_once(self._initialize_dimmer, 0.5)
+        Clock.schedule_once(self._initialize_sliders, 0.5)
         Clock.schedule_once(self._initialize_switch, 0.5)
 
-    def _get_broadcast_receiver(self):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        actions = [BluetoothDevice.ACTION_ACL_DISCONNECTED,
-                   BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED,
-                   BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED,]
-        br = BroadcastReceiver(self.on_receive, actions)
-        br.start()
-        return br
-
-    def on_receive(self, context, intent):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {context, intent}')
-        action = intent.getAction()
-        device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-        logging.debug(f'This device: {self.device.getName()}, '
-                      f'{self.device.getAddress()},'
-                      f'{self.device.user_assigned_alias}')
-        logging.debug(f'Found device: {device.getName()} '
-                      f'{device.getAddress()}')
-        try:
-            if action == BluetoothDevice.ACTION_ACL_DISCONNECTED:
-                logging.debug(f'{device.getName(), device.getAddress()} disconnected')
-            elif action == BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED:
-                logging.debug(f'{device.getName(), device.getAddress()} disconnect requested')
-            elif action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
-                state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
-                if state == BluetoothAdapter.STATE_CONNECTED:
-                    logging.debug(f'{device.getName(), device.getAddress()} connected state')
-                elif state == BluetoothAdapter.STATE_DISCONNECTED:
-                    logging.debug(f'{device.getName(), device.getAddress()} disconnected state')
-        except Exception as e:
-            logging.debug(f'Error getting device info using intent.getParceableExtra: {e}')
-
-    def _initialize_slider(self, *args):
+    def _initialize_dimmer(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
         # instantiated, change it and then change it back to 0.
 
         # This might not be working / necessary anymore
         # self.dimmer.value = -1
         # self.dimmer.value = 0
-        self.dimmer.disabled = True
-        self.dimmer.bind(on_touch_down=self.dimmer_touch_down)
-        self.dimmer.bind(on_touch_up=self.dimmer_touch_up)
+        # self.dimmer.bind(on_touch_down=self.dimmer_touch_down)
+        # self.dimmer.bind(on_touch_up=self.dimmer_touch_up)
+        # self.dimmer.disabled = True
+        pass
+
+    def _initialize_sliders(self, *args):
+        # self.dimmer.bind(on_touch_down=self.red_slider_touch_down)
+        # self.dimmer.bind(on_touch_up=self.red_slider_touch_up)
+        # self.dimmer.bind(on_touch_down=self.green_slider_touch_down)
+        # self.dimmer.bind(on_touch_up=self.green_slider_touch_up)
+        # self.dimmer.bind(on_touch_down=self.blue_slider_touch_down)
+        # self.dimmer.bind(on_touch_up=self.blue_slider_touch_up)
+        self.ids.slider_container_.remove_widget(self.red_slider)
+        self.ids.slider_container_.remove_widget(self.green_slider)
+        self.ids.slider_container_.remove_widget(self.blue_slider)
+        self.ids.off_screen_.add_widget(self.red_slider)
+        self.ids.off_screen_.add_widget(self.green_slider)
+        self.ids.off_screen_.add_widget(self.blue_slider)
 
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
 
+    def on_is_connected(self, *args):
+        if self.is_connected:
+            self.ids._status_icon.icon_color = 'green'
+        else:
+            self.ids._status_icon.icon_color = 'red'
+
     def on_touch_up(self, touch):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {touch}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {touch}'
+                      f'from device: {self.device.getAddress()}')
         if self.rename_active and not self.collide_point(touch.x, touch.y):
             Clock.schedule_once(self.exit_rename)
         # Returning False alone should work, not sure why this is necessary.
         self.ids._card.dispatch('on_touch_up', touch)
-
-    def power(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        if self.power_button.active:
-            logging.debug('LIGHTS ON!')
-            self.dimmer.value = self.brightness
-            self.dimmer.disabled = False
-        else:
-            logging.debug('LIGHTS OFF!')
-            self.brightness = self.dimmer.value
-            self.dimmer.value = 0
-            self.dimmer.disabled = True
-
-    def dim(self, dimmer):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`'
-                      f'called with dimmer.value == {dimmer.value}')
-        self.send(2, dimmer.value)
-
-    def dimmer_touch_down(self, dimmer, touch):
-        # Reducing the slider to 0 should also turn off the power button, but only after releasing
-        # the slider at 0 - in case slider is moved to 0 and back up again.
-        #
-        # Therefore need the on_touch_up event, but if the touch_up occurs outside of the slider,
-        # it isn't possible to know which slider it was for.
-        #
-        # Grab the touch event for the slider to check the touch_up event later. Don't return True
-        # so that KivyMD's slider animations can complete.
-        if dimmer.collide_point(touch.x, touch.y) and not dimmer.disabled:
-            logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-            logging.debug('Grabbing touch_down INSIDE Dimmer')
-            touch.grab(dimmer)
-
-    def dimmer_touch_up(self, dimmer, touch):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        if touch.grab_current is dimmer:
-            logging.debug('Found touch_up...')
-            if dimmer.collide_point(touch.x, touch.y):
-                logging.debug('               ...INSIDE Dimmer')
-            else:
-                logging.debug('               ...OUTSIDE Dimmer')
-            if dimmer.value == 0:
-                dimmer.disabled = True
-                self.power_button.active = False
-            touch.ungrab(dimmer)
 
     def open_options_menu(self, button):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -236,7 +197,7 @@ class DeviceController(BaseListItem):
             Clock.schedule_once(self.set_text_field_focus, 0.1)
             return
         # Success
-        self.device.user_assigned_alias = name
+        self.device.nickname = name
         self.ids._label.text = name
         self.exit_rename()
         self.save_device()
@@ -316,6 +277,53 @@ class DeviceController(BaseListItem):
         '''Return selected color.'''
         logging.debug(f'Selected color is {selected_color}')
 
+    def expand_rgb_sliders(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        if self.is_expanded:
+            if platform == 'android':
+                self.height -= 275
+                self.ids.card_bottom_.height -= 275
+            else:
+                self.height -= 100
+                self.ids.card_bottom_.height -= 100
+            self.ids.expand_btn_.icon = 'chevron-down'
+            self.ids.slider_container_.remove_widget(self.red_slider)
+            self.ids.slider_container_.remove_widget(self.green_slider)
+            self.ids.slider_container_.remove_widget(self.blue_slider)
+            self.ids.off_screen_.add_widget(self.green_slider)
+            self.ids.off_screen_.add_widget(self.red_slider)
+            self.ids.off_screen_.add_widget(self.blue_slider)
+            self.ids.off_screen_.remove_widget(self.dimmer)
+            self.ids.slider_container_.add_widget(self.dimmer)
+            self.is_expanded = False
+        else:
+            if platform == 'android':
+                self.height += 275
+                self.ids.card_bottom_.height += 275
+            else:
+                self.height += 100
+                self.ids.card_bottom_.height += 100
+            self.ids.expand_btn_.icon = 'chevron-up'
+            self.ids.slider_container_.remove_widget(self.dimmer)
+            self.ids.off_screen_.add_widget(self.dimmer)
+            self.ids.off_screen_.remove_widget(self.red_slider)
+            self.ids.off_screen_.remove_widget(self.green_slider)
+            self.ids.off_screen_.remove_widget(self.blue_slider)
+            self.ids.slider_container_.add_widget(self.red_slider)
+            self.ids.slider_container_.add_widget(self.green_slider)
+            self.ids.slider_container_.add_widget(self.blue_slider)
+            self.is_expanded = True
+
+    def open_num_leds_screen(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.menu.dismiss()
+        app = MDApp.get_running_app()
+        color_picker_screen = app.root_screen.screen_manager.get_screen('num_leds')
+        color_picker_screen.device_controller = self
+        slide_left = SlideTransition(direction='left')
+        app.root_screen.screen_manager.transition = slide_left
+        app.root_screen.screen_manager.current = 'num_leds'
+
     def disconnect_BluetoothSocket(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         if not self.device.bluetooth_socket:
@@ -326,39 +334,188 @@ class DeviceController(BaseListItem):
             d = MDDialog(text='BluetoothSocket closed.')
             d.open()
         elif not self.device.bluetooth_socket.isConnected():
-            d = MDDialog(text='BluetoothSocket is alredy closed.')
+            d = MDDialog(text='BluetoothSocket is already closed.')
             d.open()
 
     def reconnect_BluetoothSocket(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
+        logging.debug(
+            f'`{self.__class__.__name__}.{func_name()}` was called with args: {args}')
+        dcd = DeviceConnectionDialog(
+            type='custom',
+            content_cls=DialogContent(),
+        )
+        dcd.content_cls.label.text = 'Reconnecting to... ' + self.device.name
+        dcd.content_cls.dialog = dcd  # back-reference to parent
+        dcd.open()
+        # Must use separate thread for connecting to Bluetooth device to keep GUI functional.
+        t = Thread(target=self._reconnect_BluetoothSocket, args=[dcd])
+        t.start()
+
+    def _reconnect_BluetoothSocket(self, dcd, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with dcd, args: {dcd, args}')
         if self.device.bluetooth_socket and self.device.bluetooth_socket.isConnected():
             d = MDDialog(text='Device already connected')
             d.open()
             return
         try:
-            logging.debug(f'Creating BluetoothSocket')
+            logging.debug(f'Re-creating BluetoothSocket')
             UUID = autoclass('java.util.UUID')
             esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
             self.device.bluetooth_socket = self.device.createRfcommSocketToServiceRecord(
                 UUID.fromString(esp32_UUID))
-            logging.debug(f'BluetoothSocket.connect()')
             self.device.bluetooth_socket.connect()
             self.device.recv_stream = self.device.bluetooth_socket.getInputStream()
             self.device.send_stream = self.device.bluetooth_socket.getOutputStream()
         except Exception as e:
-            logging.debug(f'Failed to open socket. Exception {e}')
-            d = MDDialog(text='Failed to open BluetoothSocket. Device may be out of range.')
-            d.open()
+            logging.debug(f'Failed to open socket in DeviceController._reconnect_BluetoothSocket.'
+                          f'Exception {e}')
+            dcd.content_cls.update_failure(self.device)
+            self.is_connected = False
         else:
             logging.debug(f'Successfully opened socket')
-            d = MDDialog(text='Successfully reconnected BluetoothSocket.')
-            d.open()
+            dcd.content_cls.update_success(self.device)
+            self.is_connected = True
+            
+    # def dimmer_touch_down(self, dimmer, touch):
+    #     # Reducing the slider to 0 should also turn off the power button, but only after releasing
+    #     # the slider at 0 - in case slider is moved to 0 and back up again.
+    #     #
+    #     # Therefore need the on_touch_up event, but if the touch_up occurs outside of the slider,
+    #     # it isn't possible to know which slider it was for.
+    #     #
+    #     # Grab the touch event for the slider to check the touch_up event later. Don't return True
+    #     # so that KivyMD's slider animations can complete.
+    #     if dimmer.collide_point(touch.x, touch.y) and not dimmer.disabled:
+    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}` '
+    #                       f'called from device: {self.device.getAddress()}')
+    #         logging.debug('Grabbing touch_down INSIDE Dimmer')
+    #         touch.grab(dimmer)
+    #
+    # def dimmer_touch_up(self, dimmer, touch):
+    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #     if touch.grab_current is dimmer:
+    #         logging.debug('Found touch_up...')
+    #         if dimmer.collide_point(touch.x, touch.y):
+    #             logging.debug('               ...INSIDE Dimmer')
+    #         else:
+    #             logging.debug('               ...OUTSIDE Dimmer')
+    #         if dimmer.value == 0:
+    #             dimmer.disabled = True
+    #             self.power_button.active = False
+    #         touch.ungrab(dimmer)
+
+    # def red_slider_touch_down(self, red_slider, touch):
+    #     if red_slider.collide_point(touch.x, touch.y) and not red_slider.disabled:
+    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #         logging.debug('Grabbing touch_down INSIDE red_slider')
+    #         touch.grab(red_slider)
+    #
+    # def red_slider_touch_up(self, red_slider, touch):
+    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #     if touch.grab_current is red_slider:
+    #         logging.debug('Found touch_up...')
+    #         if red_slider.collide_point(touch.x, touch.y):
+    #             logging.debug('               ...INSIDE red_slider')
+    #         else:
+    #             logging.debug('               ...OUTSIDE red_slider')
+    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
+    #                 and self.blue_slider.value == 0:
+    #             red_slider.disabled = True
+    #             self.power_button.active = False
+    #         touch.ungrab(red_slider)
+    #
+    # def green_slider_touch_down(self, green_slider, touch):
+    #     if green_slider.collide_point(touch.x, touch.y) and not green_slider.disabled:
+    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #         logging.debug('Grabbing touch_down INSIDE green_slider')
+    #         touch.grab(green_slider)
+    #
+    # def green_slider_touch_up(self, green_slider, touch):
+    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #     if touch.grab_current is green_slider:
+    #         logging.debug('Found touch_up...')
+    #         if green_slider.collide_point(touch.x, touch.y):
+    #             logging.debug('               ...INSIDE green_slider')
+    #         else:
+    #             logging.debug('               ...OUTSIDE green_slider')
+    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
+    #                 and self.blue_slider.value == 0:
+    #             green_slider.disabled = True
+    #             self.power_button.active = False
+    #         touch.ungrab(green_slider)
+    #
+    # def blue_slider_touch_down(self, blue_slider, touch):
+    #     if blue_slider.collide_point(touch.x, touch.y) and not blue_slider.disabled:
+    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #         logging.debug('Grabbing touch_down INSIDE blue_slider')
+    #         touch.grab(blue_slider)
+    #
+    # def blue_slider_touch_up(self, blue_slider, touch):
+    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #     if touch.grab_current is blue_slider:
+    #         logging.debug('Found touch_up...')
+    #         if blue_slider.collide_point(touch.x, touch.y):
+    #             logging.debug('               ...INSIDE blue_slider')
+    #         else:
+    #             logging.debug('               ...OUTSIDE blue_slider')
+    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
+    #                 and self.blue_slider.value == 0:
+    #             blue_slider.disabled = True
+    #             self.power_button.active = False
+    #         touch.ungrab(blue_slider)
+
+    def power(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        if self.power_button.active:
+            logging.debug('LIGHTS ON!')
+            self.dimmer.value = self.brightness
+            self.red_slider.value = self.r
+            self.green_slider.value = self.g
+            self.blue_slider.value = self.b
+            self.dimmer.disabled = False
+            self.red_slider.disabled = False
+            self.green_slider.disabled = False
+            self.blue_slider.disabled = False
+            self.send(2, self.brightness)
+        else:
+            logging.debug('LIGHTS OFF!')
+            self.brightness = self.dimmer.value
+            self.r = self.red_slider.value
+            self.g = self.green_slider.value
+            self.b = self.blue_slider.value
+            # self.dimmer.value = 0
+            self.dimmer.disabled = True
+            self.red_slider.disabled = True
+            self.green_slider.disabled = True
+            self.blue_slider.disabled = True
+            self.send(2, 0)
+
+    def on_num_leds(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.send(3, self.num_leds)
+
+    def dim(self, dimmer):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`'
+                      f'called with dimmer.value == {dimmer.value}')
+        self.send(2, dimmer.value)
 
     def send(self, mode, val):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        logging.debug(f'\tmode={mode}, val={val}')
-        if platform == 'android' and \
-                (not self.device.bluetooth_socket or not self.device.bluetooth_socket.isConnected()):
+        if platform != 'android':
+            return
+        # TODO: Figure this out.
+        app = MDApp.get_running_app()
+        if not app.bluetooth_adapter.isEnabled():
+            logging.debug(f'\tDeviceController.send called without Bluetooth enabled...')
+            app.enable_bluetooth()
+        try:
+            logging.debug(f'\tBluetoothSocket: {self.device.bluetooth_socket}')
+            logging.debug(f'\tBluetoothSocket.isConnected(): {self.device.bluetooth_socket.isConnected()}')
+            logging.debug(f'\tmode: {mode}, val: {val}')
+        except Exception as e:
+            logging.debug(f'Exception in DeviceController.send: {e}')
+        if not self.device.bluetooth_socket or not self.device.bluetooth_socket.isConnected():
+            logging.debug(f'\tDeviceController.send called without BluetoothSocket connected...')
             self.reconnect_BluetoothSocket()
 
         red, green, blue = [0, 0, 0]
@@ -389,6 +546,18 @@ class DeviceController(BaseListItem):
         # Dimmer Mode - ESP32 will maintain it's current color.
         if mode == 2:
             brightness = int(val)
+
+        # Configure num_leds in strip.
+        if mode == 3:
+            bin_num_leds = bin(val)[2:]  # get rid of '0b'
+            zeros = 16 - len(bin_num_leds)
+            bin_num_leds = '0' * zeros + bin_num_leds  # make sure it's 16 bits long
+            left_bits = int(bin_num_leds[0:8], 2)
+            right_bits = int(bin_num_leds[8:], 2)
+            # FIXME: this is hacky
+            red = left_bits
+            green = right_bits
+            blue, brightness = 0, 0
         try:
             self.device.send_stream.write(struct.pack('<B', mode))
             self.device.send_stream.write(struct.pack('<B', red))
@@ -403,9 +572,11 @@ class DeviceController(BaseListItem):
             #     logging.debug("IOException occurred: Broken pipe")
             #     # Perform any necessary cleanup or recovery actions
             logging.debug(f'During device_controller.send, a Java exception occurred: {e}')
+            self.reconnect_BluetoothSocket()
         except Exception as e:
             # Handle any other Python exceptions
             logging.debug(f'During device_controller.send, a Python exception occurred: {e}')
             # Perform appropriate actions for other exceptions
         else:
             logging.debug('Command sent.')
+

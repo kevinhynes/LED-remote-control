@@ -37,9 +37,11 @@ from device_connection_dialog import *
 class CustomBluetoothDevice:
     # To allow user to rename device and save, I think this class is necessary?
 
-    def __init__(self, bluetooth_device=None, user_assigned_alias=''):
+    def __init__(self, bluetooth_device=None, name='', address='', nickname=''):
         self.bluetooth_device = bluetooth_device
-        self.user_assigned_alias = user_assigned_alias
+        self.name = name
+        self.address = address
+        self.nickname = nickname
         self.bluetooth_socket = None
         self.recv_stream = None
         self.send_stream = None
@@ -48,6 +50,22 @@ class CustomBluetoothDevice:
         if hasattr(self.bluetooth_device, attr):
             return getattr(self.bluetooth_device, attr)
         raise AttributeError(f"'CustomBluetoothDevice' object has no attribute '{attr}'")
+
+    def getName(self, *args):
+        """If app is started with Bluetooth off, BluetoothDevice.getName() returns None, will
+        cause app to crash."""
+        name = self.bluetooth_device.getName()
+        if name is None:
+            return self.name
+        return name
+
+    def getAddress(self, *args):
+        """If app is started with Bluetooth off, BluetoothDevice.getAddress() returns None, will
+        cause app to crash."""
+        address = self.bluetooth_device.getAddress()
+        if address is None:
+            return self.address
+        return address
 
     def get_device_info(self):
         if self.bluetooth_device is None:
@@ -60,7 +78,7 @@ class CustomBluetoothDevice:
         UUIDs = self.getUuids()
         device_info = {'Name': name,
                        'Alias': alias,
-                       'User Assigned Alias': self.user_assigned_alias,
+                       'Nickname': self.nickname,
                        'Address': address,
                        'Type': type,
                        'BondState': bond_state,
@@ -108,7 +126,7 @@ class FakeDevice:
         if device_info == {}:
             self.name = self.generate_name()
             self.alias = 'FakeDevice.alias'
-            self.user_assigned_alias = ''
+            self.nickname = ''
             self.address = self.generate_MAC()
             self.type = random.randrange(1, 10)
             self.bond_state = random.randrange(1, 12)
@@ -142,7 +160,7 @@ class FakeDevice:
         device_info = {'Name': self.name,
                        'Address': self.address,
                        'Alias': self.alias,
-                       'User Assigned Alias': self.user_assigned_alias,
+                       'Nickname': self.nickname,
                        'Type': self.type,
                        'BondState': self.bond_state,
                        'UUIDs': self.uuids,
@@ -153,7 +171,7 @@ class FakeDevice:
         self.name = device_info['Name']
         self.address = device_info['Address']
         self.alias = device_info['Alias']
-        self.user_assigned_alias = device_info['User Assigned Alias']
+        self.nickname = device_info['Nickname']
         self.type = device_info['Type']
         self.bond_state = device_info['BondState']
         # Convert saved UUIDs from string back to hex

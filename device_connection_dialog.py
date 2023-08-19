@@ -30,10 +30,6 @@ from kivy.uix.screenmanager import SlideTransition
 from troubleshooting import *
 
 
-def func_name():
-    return sys._getframe(1).f_code.co_name
-
-
 class DeviceConnectionDialog(MDDialog):
 
     def __init__(self, **kwargs):
@@ -79,12 +75,15 @@ class DialogContent(MDBoxLayout):
     label = ObjectProperty()
     status_container = ObjectProperty()
 
-    def __init__(self, **kwargs):
+    def __init__(self, device_controller=None, **kwargs):
         super().__init__(**kwargs)
         self.spinner = StatusSpinner()
         self.success_icon = SuccessIcon()
         self.fail_icon = FailIcon()
         self.status_container.add_widget(self.spinner)
+        # Using the same DeviceConnectionDialog for initial connection and reconnection.
+        # Need access to DeviceController.reconnect_BluetoothSocket.
+        self.device_controller = device_controller
 
     @mainthread
     def on_size(self, *args):
@@ -96,27 +95,31 @@ class DialogContent(MDBoxLayout):
     def update_success(self, device):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.status_container.remove_widget(self.spinner)
-        self.label.text = 'Successfully connected to ' + device.name
+        self.label.text = 'Successfully connected to ' + device.getName()
         self.label.theme_text_color = 'Custom'
         self.label.text_color = (0, 1, 0, 1)
         self.status_container.add_widget(self.success_icon)
-        # app = MDApp.get_running_app()
-        # app.connected_devices.append(device)
-        # app.root_screen.screen_manager.current = 'connected_devices'
 
     @mainthread
     def update_failure(self, device):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.status_container.remove_widget(self.spinner)
-        self.label.text = 'Failed to connect to ' + device.name
+        self.label.text = 'Failed to connect to ' + device.getName()
         self.label.theme_text_color = 'Custom'
         self.label.text_color = (1, 0, 0, 1)
         self.status_container.add_widget(self.fail_icon)
         app = MDApp.get_running_app()
-        retry_btn = MDRectangleFlatButton(text='Retry?',
-                                          on_release=partial(self.retry, device),
-                                          line_color=app.theme_cls.primary_dark,
-                                          )
+        if self.device_controller:
+            retry_btn = MDRectangleFlatButton(text='Retry?',
+                                              on_release=partial(self.device_controller.reconnect_BluetoothSocket,
+                                                                 self.parent),
+                                              line_color=app.theme_cls.primary_dark,
+                                              )
+        else:
+            retry_btn = MDRectangleFlatButton(text='Retry?',
+                                              on_release=partial(self.retry, device),
+                                              line_color=app.theme_cls.primary_dark,
+                                              )
         self.dialog.buttons.append(retry_btn)
         # Dialog gives root_button_box some height in __init__ if there are buttons.
         # Giving it height here since we're re-using the same Dialog window.
