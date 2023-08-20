@@ -4,6 +4,9 @@
 # Removing all JetBrains stuff
 .idea*
 
+# AndroidStudio created a .iml file..?
+.iml*
+
 # I don't think it's necessary to include .buildozer folder
 .buildozer*
 
