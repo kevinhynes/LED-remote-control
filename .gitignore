@@ -5,7 +5,7 @@
 .idea*
 
 # AndroidStudio created a .iml file..?
-.iml*
+*.iml
 
 # I don't think it's necessary to include .buildozer folder
 .buildozer*
