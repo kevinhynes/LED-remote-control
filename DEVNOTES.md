@@ -10,6 +10,24 @@ ___
     sudo apt install python3-virtualenv
     git clone https://github.com/kevinhynes/LED-remote-control
 ___
+#### Permissions issue: add username to sudoers file
+###### In Home (~) directory:
+
+    $ su
+    > Enter password...
+    $ visudo -f /etc/sudoers
+Then edit the sudoers file:
+
+    # User privilege specification
+    root     ALL=(ALL:ALL) ALL
+    username ALL=(ALL:ALL) ALL
+Save and exit:
+
+    ctrl+o
+    enter
+    ctrl+x
+    exit
+___
 #### Create and activate virtual environment
 ###### In LED-remote-control directory (separate terminal):
 
@@ -58,6 +76,11 @@ ___
     buildozer init
 Then, open and modify buildozer.spec:
 title, package.name, package.domain, requirements, android.logcat filters, android.permissions,
+___
+#### Add syntax highlighting for .kv files
+
+Follow instructions here: 
+    https://github.com/noembryo/KV4Jetbrains
 ___
 #### Build APK
 ###### In LED-remote-control directory:
@@ -141,10 +164,5 @@ requirements section of `buildozer.spec` when building the APK, so uninstalling 
 1.2.0.
 - 7/11/23 - UGH MDColorPicker doesn't work on Android with kivymd==1.1.1 or dev branch, even after 
 adding olefile to buildozer.spec.  Known bug.  Other  stuff:
-  - Need to handle loading DeviceController for saved devices on launch
-  - Reconnecting BluetoothSocket
-  - Ending BluetoothSocket on forget_device, etc
-  - Increase Android API version
   - Create 'rooms' feature to control multiple lights at once?
-  - Remove 3 of the 4 Bluetooth checks
   - https://github.com/kivy/python-for-android/blob/master/pythonforandroid/recipes/android/src/android/permissions.py
