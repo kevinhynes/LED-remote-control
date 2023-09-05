@@ -1,3 +1,5 @@
+#:import Command components.Command
+
 <ColorPresetButton>:
     size_hint: (None, 0.9)
     width: self.height
@@ -185,7 +187,7 @@
                 ColorPresetButton:
                     # White
                     md_bg_color: (1, 1, 1, 1)
-                    on_release: root.send(1, 1)
+                    on_release: root.send_command(Command(mode=1, red=255, green=255, blue=255))
 
                 ColorPresetButton:
                     # Red
@@ -207,10 +209,16 @@
                     md_bg_color: (0, 1, 0, 1)
                     on_release: root.send(1, 5)
 
-                ColorPresetButton:
-                    # Blue
-                    md_bg_color: (0, 0, 1, 1)
-                    on_release: root.send(1, 6)
+#                ColorPresetButton:
+#                    # Blue
+#                    md_bg_color: (0, 0, 1, 1)
+#                    on_release: root.send(1, 6)
+
+                MDIconButton:
+                    icon: "data/comet.png"
+                    size_hint:  (None, None)
+                    font_size: sp(100)
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
 
                 MDRelativeLayout:
                     MDIconButton:

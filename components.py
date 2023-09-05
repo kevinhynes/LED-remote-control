@@ -4,6 +4,7 @@ import sys
 import string
 import struct
 import jnius
+from collections import namedtuple
 from functools import partial
 from kivy.core.window import Window
 from kivy.clock import mainthread
@@ -30,7 +31,6 @@ from kivy.uix.screenmanager import SlideTransition
 from jnius import autoclass, java_method, PythonJavaClass
 
 from troubleshooting import *
-from device_controller import *
 from device_connection_dialog import *
 
 
@@ -45,6 +45,11 @@ class CustomBluetoothDevice:
         self.bluetooth_socket = None
         self.recv_stream = None
         self.send_stream = None
+        self.num_leds = 0
+        self.max_brightness = 0
+        # ESP32 will default to these if not set otherwise:
+        self.color_correction = 'Uncorrected Color'
+        self.color_temperature_correction = 'Uncorrected Temperature'
 
     def __getattr__(self, attr):
         if hasattr(self.bluetooth_device, attr):
@@ -83,6 +88,10 @@ class CustomBluetoothDevice:
                        'Type': type,
                        'BondState': bond_state,
                        'UUIDs': UUIDs,
+                       'Number of LEDs': self.num_leds,
+                       'Maximum Brightness': self.max_brightness,
+                       'Color Correction': self.color_correction,
+                       'Color Temperature Correction': self.color_temperature_correction
                        }
         return device_info
 
@@ -131,6 +140,7 @@ class FakeDevice:
             self.type = random.randrange(1, 10)
             self.bond_state = random.randrange(1, 12)
             self.uuids = [FakeUUID() for _ in range(10)]
+            self.num_leds = 0
         else:
             self.load_device_info(device_info)
 
@@ -164,6 +174,7 @@ class FakeDevice:
                        'Type': self.type,
                        'BondState': self.bond_state,
                        'UUIDs': self.uuids,
+                       'Number of LEDs': self.num_leds,
                        }
         return device_info
 
@@ -185,6 +196,3 @@ class FakeDevice:
 
     def connected_status(self, *args):
         pass
-
-
-
