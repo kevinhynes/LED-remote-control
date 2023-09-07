@@ -1,38 +1,32 @@
+from kivy.app import App
 from kivy.lang import Builder
 
-from kivymd.app import MDApp
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.list import IRightBodyTouch
 
-KV = '''
-OneLineAvatarIconListItem:
-    text: "One-line item with avatar"
-    on_size:
-        self.ids._right_container.width = container.width
-        self.ids._right_container.x = container.width
-
-    IconLeftWidget:
-        icon: "cog"
-
-    YourContainer:
-        id: container
-
-        MDIconButton:
-            icon: "minus"
-
-        MDIconButton:
-            icon: "plus"
-'''
+kv = """
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+#:import Gradient kivy_gradient.Gradient
+RelativeLayout:
+    BoxLayout
+        id: box
+        canvas:
+            Rectangle:
+                size: self.size
+                pos: self.pos
+                texture: 
+                    Gradient.horizontal(
+                    get_color_from_hex("E91E63"), 
+                    get_color_from_hex("FCE4EC"), 
+                    get_color_from_hex("2962FF")
+                    )
+"""
 
 
-class YourContainer(IRightBodyTouch, MDBoxLayout):
-    adaptive_width = True
-
-
-class Example(MDApp):
+class Test(App):
     def build(self):
-        self.theme_cls.theme_style = "Dark"
-        return Builder.load_string(KV)
+        return Builder.load_string(kv)
+
+    def on_stop(self):
+        self.root.ids.box.export_to_png("gradient.png")
 
 
-Example().run()
+Test().run()

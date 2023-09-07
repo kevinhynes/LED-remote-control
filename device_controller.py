@@ -39,7 +39,7 @@ from kivymd.uix.button import MDFlatButton
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import *
-from components import Command
+from bluetooth_helpers import Command
 
 if platform == 'android':
     BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
@@ -52,26 +52,6 @@ class RenameDeviceTextField(MDTextField):
 
 class ColorPresetButton(MDRoundFlatButton):
     pass
-
-
-class Command:
-    '''
-    Template for any possible command that can be sent from app to ESP32.
-    An instance of this class is given to DeviceController.send_command().
-    '''
-
-    def __init__(self, mode, red=None, green=None, blue=None, dimmer_val=None,
-                 num_leds=None, max_brightness=None, color_correction_key=None,
-                 color_temperature_correction_key=None):
-        self.mode = mode
-        self.red = red
-        self.green = green
-        self.blue = blue
-        self.dimmer_val = dimmer_val
-        self.num_leds = num_leds
-        self.max_brightness = max_brightness
-        self.color_correction_key = color_correction_key
-        self.color_temperature_correction_key = color_temperature_correction_key
 
 
 class DeviceController(BaseListItem):
@@ -129,15 +109,20 @@ class DeviceController(BaseListItem):
                         'viewclass': 'OneLineListItem',
                         'height': dp(54)
                         }
+        palettes = {'text': 'Palettes',
+                        'on_release': self.open_palettes_screen,
+                        'viewclass': 'OneLineListItem',
+                        'height': dp(54)
+                        }
         menu_items = [configure_leds, rename, info, forget, reconnect, disconnect, forget,
-                      color, color_screen]
+                      color, color_screen, palettes]
         self.menu = MDDropdownMenu(caller=self.ids._menu_button,
                                    items=menu_items,
                                    hor_growth='left',
                                    width_mult=3)
-        Clock.schedule_once(self._initialize_dimmer, 0.5)
-        Clock.schedule_once(self._initialize_sliders, 0.5)
-        Clock.schedule_once(self._initialize_switch, 0.5)
+        Clock.schedule_once(self._initialize_dimmer)
+        Clock.schedule_once(self._initialize_sliders)
+        Clock.schedule_once(self._initialize_switch)
 
     def _initialize_dimmer(self, *args):
         # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
@@ -278,6 +263,17 @@ class DeviceController(BaseListItem):
             on_release=self.get_selected_color,
         )
         # self.color_picker.ids.gradient_widget.bind(on_touch_move=self.gradient_on_touch_move)
+
+    def open_palettes_screen(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.menu.dismiss()
+        app = MDApp.get_running_app()
+        color_picker_screen = app.root_screen.screen_manager.get_screen('palettes')
+        color_picker_screen.device_controller = self
+        slide_left = SlideTransition(direction='left')
+        app.root_screen.screen_manager.transition = slide_left
+        app.root_screen.screen_manager.current = 'palettes'
+
 
     # def gradient_on_touch_move(self, touch):
     #     """Handles the ``self.ids.gradient_widget`` touch event."""

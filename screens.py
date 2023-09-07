@@ -13,6 +13,7 @@ from kivymd.uix.menu import MDDropdownMenu
 
 from components import *
 from device_controller import DeviceController
+from bluetooth_helpers import Command
 
 ########## Find Devices Screen ##########
 class PairedDevicesHeader(OneLineListItem):
