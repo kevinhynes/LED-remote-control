@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#define FASTLED_INTERNAL
 #include "BluetoothSerial.h"    // Needed for Bluetooth Serial - works ONLY on ESP32
 #include <Preferences.h>        // Needed for keeping NUM_LEDS permanent
 #define DATA_PIN 2
@@ -37,9 +38,12 @@ int dimmedBlue = 255;
 #include "color_temperature.h"
 #include "bluetooth_helpers.h"
 #include "saved_data.h"
+#include "palettes.h"
 
+CRGBPalette16 fire = heatmapPalette;
 
 void setup() {
+
     Serial.begin(115200);
     while (!Serial) { }
     Serial.println("ESP32 Startup");
@@ -56,9 +60,12 @@ void setup() {
     FastLED.show();
     FastLED.setBrightness(maxBrightness);
     FastLED.setTemperature(intColorTemperatureCorrectionMap[colorTemperatureCorrectionKey]);
-    FastLED.setCorrection(intColorCorrectionMap[colorCorrectionKey]);
+    // FastLED.setCorrection(intColorCorrectionMap[colorCorrectionKey]);
+    FastLED.setCorrection(TypicalLEDStrip);
     FastLED.setMaxPowerInVoltsAndMilliamps(5, 30000);
 }
+
+
 
 void loop()
 {
@@ -66,7 +73,7 @@ void loop()
     static unsigned int i = 0;
     int cur_byte;
     static int bluetooth_timeout = 1000;
-
+    static uint8_t palStartIndex = 0;
 
     if (ESP_BT.available())
     {
@@ -99,9 +106,6 @@ void loop()
             // End byte is -1 (actually 255 because idk)
         else
         {
-            Serial.println("Validating message of size:");
-            Serial.println(sizeof(message));
-            Serial.println(sizeof(message[0]));
             if (validate_message(message))
             {
                 Serial.println("Valid message received");
@@ -124,9 +128,11 @@ void loop()
         }
     }
 
-    // EVERY_N_MILLISECONDS(20)
+    // EVERY_N_MILLISECONDS(50)
     // {
-    //   DrawComet();
+    //   palStartIndex += 1;
+    //   fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), purplePalette, 200, LINEARBLEND);
+    //   FastLED.show();
     // }
 
 }

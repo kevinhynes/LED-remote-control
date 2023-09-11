@@ -107,15 +107,17 @@ void configure(int message[])
 }
 
 
-
-
-
+void palette_helper(int message[])
+{
+    Serial.println("palette_helper");
+};
 
 
 bool validate_message(int message[])
 {
     Serial.println("bluetooth_helpers.validate_message");
     Serial.println("  message: ");
+    Serial.print("    ");
     for (int j = 0; j < MESSAGE_LENGTH; j++)
     {
         Serial.print(message[j]);
@@ -158,25 +160,12 @@ bool validate_message(int message[])
         dimmedGreen = int(masterGreen * masterBrightness / 100);
         dimmedBlue = int(masterBlue * masterBrightness / 100);
     }
-    // Input number of LEDs
-    if (mode == 3) {
-        FastLED.clear();
-        FastLED.show();
-        delete[] leds;
-        leds = nullptr;
-
-        // To allow NUM_LEDS to be over 255, need to combine 2 bytes.
-        int leftBits = message[1];
-        int rightBits = message[2];
-        leftBits = leftBits << 8;
-        NUM_LEDS = leftBits + rightBits;
-
-        leds = new CRGB[NUM_LEDS];
-        FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-        preferences.putUInt("NUM_LEDS", NUM_LEDS);
-        Serial.print("NUM_LEDS now ");
-        Serial.println(NUM_LEDS);
+    // Send a palette?
+    if (mode == 3)
+    {
+        palette_helper(message);
     }
+
     return true;
 }
 
