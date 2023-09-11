@@ -71,55 +71,49 @@ class DeviceController(BaseListItem):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.rename_active = False
-        configure_leds = {'text': 'Configure LEDs',
-                          'on_release': self.open_configure_leds_screen,
-                          'viewclass': 'OneLineListItem',
-                          'height': dp(54)
-                          }
-        rename = {'text': 'Rename Device',
-                  'on_release': self.rename_device,
-                  'viewclass': 'OneLineListItem',
-                  'height': dp(54)
-                  }
-        info = {'text': 'Device Info',
-                'on_release': self.show_device_info,
-                'viewclass': 'OneLineListItem',
-                'height': dp(54)
-                }
-        reconnect = {'text': 'Reconnect Device',
-                     'on_release': self.reconnect_BluetoothSocket,
-                     'viewclass': 'OneLineListItem',
-                     'height': dp(54)}
-        disconnect = {'text': 'Disconnect Device',
-                      'on_release': self.disconnect_BluetoothSocket,
-                      'viewclass': 'OneLineListItem',
-                      'height': dp(54)}
-        forget = {'text': 'Forget Device',
-                  'on_release': self.forget_device,
-                  'viewclass': 'OneLineListItem',
-                  'height': dp(54)
-                  }
-        color = {'text': 'Open Color Picker',
-                 'on_release': self.open_color_picker,
-                 'viewclass': 'OneLineListItem',
-                 'height': dp(54)
-                 }
-        color_screen = {'text': 'Open Color Picker Screen',
-                        'on_release': self.open_color_picker_screen,
-                        'viewclass': 'OneLineListItem',
-                        'height': dp(54)
-                        }
-        palettes = {'text': 'Palettes',
-                        'on_release': self.open_palettes_screen,
-                        'viewclass': 'OneLineListItem',
-                        'height': dp(54)
-                        }
+        configure_leds = {
+            'text': 'Configure LEDs',
+            'on_release': self.open_configure_leds_screen,
+        }
+        rename = {
+            'text': 'Rename Device',
+            'on_release': self.rename_device,
+        }
+        info = {
+            'text': 'Device Info',
+            'on_release': self.show_device_info,
+        }
+        reconnect = {
+            'text': 'Reconnect Device',
+            'on_release': self.reconnect_BluetoothSocket,
+        }
+        disconnect = {
+            'text': 'Disconnect Device',
+            'on_release': self.disconnect_BluetoothSocket,
+        }
+        forget = {
+            'text': 'Forget Device',
+            'on_release': self.forget_device,
+        }
+        color = {
+            'text': 'Open Color Picker',
+            'on_release': self.open_color_picker,
+        }
+        color_screen = {
+            'text': 'Open Color Picker Screen',
+            'on_release': self.open_color_picker_screen,
+        }
+        palettes = {
+            'text': 'Palettes',
+            'on_release': self.open_palettes_screen,
+        }
         menu_items = [configure_leds, rename, info, forget, reconnect, disconnect, forget,
                       color, color_screen, palettes]
-        self.menu = MDDropdownMenu(caller=self.ids._menu_button,
-                                   items=menu_items,
-                                   hor_growth='left',
-                                   width_mult=3)
+        self.menu = MDDropdownMenu(
+            caller=self.ids._menu_button,
+            items=menu_items,
+            hor_growth='left',
+            width_mult=3)
         Clock.schedule_once(self._initialize_dimmer)
         Clock.schedule_once(self._initialize_sliders)
         Clock.schedule_once(self._initialize_switch)
@@ -268,12 +262,11 @@ class DeviceController(BaseListItem):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
         app = MDApp.get_running_app()
-        color_picker_screen = app.root_screen.screen_manager.get_screen('palettes')
-        color_picker_screen.device_controller = self
+        palettes_screen = app.root_screen.screen_manager.get_screen('palettes')
+        palettes_screen.device_controller = self
         slide_left = SlideTransition(direction='left')
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'palettes'
-
 
     # def gradient_on_touch_move(self, touch):
     #     """Handles the ``self.ids.gradient_widget`` touch event."""

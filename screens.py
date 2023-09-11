@@ -1,19 +1,36 @@
+import logging
 from functools import partial
-from kivy.utils import platform
-from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import OneLineListItem, OneLineRightIconListItem
 from kivymd.uix.button import MDFlatButton
 from typing import Union
-from kivymd.uix.scrollview import MDScrollView
-from kivy.event import EventDispatcher
 from kivymd.uix.pickers import MDColorPicker
 from kivymd.uix.relativelayout import MDRelativeLayout
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty
+from kivymd.app import MDApp
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.list import TwoLineAvatarIconListItem
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.list import BaseListItem, OneLineIconListItem, TwoLineListItem
 from kivymd.uix.menu import MDDropdownMenu
+from kivy.uix.screenmanager import SlideTransition
 
-from components import *
+from kivymd.uix.widget import Widget
+from kivy.graphics import Color
+import webcolors
+from kivy_gradient import Gradient
+
+from itertools import chain
+from kivy.graphics.texture import Texture
+from kivy.graphics import RoundedRectangle
+from kivy.utils import get_color_from_hex
+
+# from components import *
 from device_controller import DeviceController
 from bluetooth_helpers import Command
+import palettes
+from troubleshooting import func_name
+
 
 ########## Find Devices Screen ##########
 class PairedDevicesHeader(OneLineListItem):
@@ -320,6 +337,65 @@ class ConfigureLEDsScreen(MDScreen):
         self.device_controller.save_device()
         command = Command(mode=0, color_temperature_correction_key=key)
         self.device_controller.send_command(command)
+
+
+########## Palettes Screen ##########
+class GradientWidget(MDBoxLayout):
+
+    def __init__(self, colors, **kwargs):
+        super().__init__(**kwargs)
+        # Right now only works for hex values in string form
+        colors = [str(color) for color in colors]
+        self.gradient = RoundedRectangle()
+        gradient_texture = Gradient.horizontal(*[get_color_from_hex(color) for color in colors])
+        with self.canvas:
+            Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
+            self.gradient = RoundedRectangle(size=self.size, pos=self.pos, texture=gradient_texture)
+            self.bind(pos=self.update_gradient, size=self.update_gradient)
+
+    def update_gradient(self, *args):
+        self.gradient.pos = self.pos
+        self.gradient.size = self.size
+
+
+class PaletteWidget(MDRelativeLayout):
+
+    def __init__(self, device_controller, colors, **kwargs):
+        super().__init__(**kwargs)
+        self.device_controller = device_controller
+        self.colors = colors
+        self.gradient_widget = GradientWidget(colors)
+        self.button = MDFlatButton(pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                                   size_hint=(1, 1))
+        self.button.bind(on_press=self.send_palette)
+        self.add_widget(self.gradient_widget)
+        self.add_widget(self.button)
+
+    def send_palette(self, *args):
+        command = Command(mode=3)
+        self.device_controller.send_command(command)
+
+
+class PalettesScreen(MDScreen):
+    grid = ObjectProperty()
+    device_controller = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        super().__init__(**kwargs)
+        # Reduce palettes to their hex values.
+        self.palettes = []
+        for named_palette in palettes.palettes:
+            for palette_name in named_palette.keys():
+                self.palettes.append(named_palette[palette_name].values())
+
+    def on_pre_enter(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        for palette in self.palettes:
+            self.ids.grid_.add_widget(PaletteWidget(
+                device_controller=self.device_controller,
+                colors=palette)
+            )
 
 
 class RootScreen(MDScreen):

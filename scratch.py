@@ -1,32 +1,35 @@
 from kivy.app import App
-from kivy.lang import Builder
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.graphics import Rectangle, Color
+from kivy.utils import get_color_from_hex
+from kivy_gradient import Gradient
 
 
-kv = """
-#:import get_color_from_hex kivy.utils.get_color_from_hex
-#:import Gradient kivy_gradient.Gradient
-RelativeLayout:
-    BoxLayout
-        id: box
-        canvas:
-            Rectangle:
-                size: self.size
-                pos: self.pos
-                texture: 
-                    Gradient.horizontal(
-                    get_color_from_hex("E91E63"), 
-                    get_color_from_hex("FCE4EC"), 
-                    get_color_from_hex("2962FF")
-                    )
-"""
-
-
-class Test(App):
+class GradientRectangleApp(App):
     def build(self):
-        return Builder.load_string(kv)
+        # Create a RelativeLayout as the root widget
+        root_widget = BoxLayout()
 
-    def on_stop(self):
-        self.root.ids.box.export_to_png("gradient.png")
+        # Create a BoxLayout
+        box = BoxLayout()
 
+        # Create a gradient texture using kivy_gradient
+        gradient_texture = Gradient.horizontal(
+            get_color_from_hex("E91E63"),
+            get_color_from_hex("FCE4EC"),
+            get_color_from_hex("2962FF")
+        )
 
-Test().run()
+        # Create a colored Rectangle with the gradient texture
+        with box.canvas:
+            # Color(1, 1, 1)  # Set color to white
+            Rectangle(size=box.size, pos=box.pos, texture=gradient_texture)
+
+        # Add the BoxLayout to the RelativeLayout
+        root_widget.add_widget(box)
+
+        return root_widget
+
+if __name__ == '__main__':
+    GradientRectangleApp().run()

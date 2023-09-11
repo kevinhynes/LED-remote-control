@@ -4,8 +4,11 @@ import struct
 import jnius
 import logging
 import threading
+import random
 from jnius import autoclass, cast, java_method
 from threading import Thread
+from kivy.utils import platform
+from kivy.clock import Clock, mainthread
 from kivy.config import Config
 from kivy.lang import Builder
 from kivymd.theming import ThemeManager
@@ -13,6 +16,9 @@ from kivy.storage.jsonstore import JsonStore
 from kivymd.uix.button import MDFlatButton
 from screens import *
 import atexit
+
+from bluetooth_helpers import FakeDevice, CustomBluetoothDevice
+from device_connection_dialog import DeviceConnectionDialog, DialogContent
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -152,7 +158,6 @@ class MainApp(MDApp):
                 self.close_socket(device.getAddress())
                 controllers_screen = self.root_screen.screen_manager.get_screen('controllers')
                 controllers_screen.update_controller_connection_status(device.getAddress(), False)
-
             elif action == BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED:
                 device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
                 logging.debug(f'{device.getName(), device.getAddress()} disconnect requested')
@@ -161,7 +166,6 @@ class MainApp(MDApp):
                 logging.debug(f'{device.getName(), device.getAddress()} connected')
                 controllers_screen = self.root_screen.screen_manager.get_screen('controllers')
                 controllers_screen.update_controller_connection_status(device.getAddress(), True)
-
         except Exception as e:
             logging.debug(f'Exception occurred reading a BluetoothDevice broadcast: {e}')
         else:
@@ -363,27 +367,6 @@ class MainApp(MDApp):
         if platform == 'linux':
             self._connect_as_client_linux(device, button)
 
-    # def _check_overwrite(self, device):
-    #     for saved_device in self.loaded_devices:
-    #         if device.getAddress() == saved_device.getAddress():
-    #             # 1. User attempting to re-connect a device's BluetoothSocket connection from the
-    #             # Maybe the device's BluetoothSocket has become disconnected.
-    #             d = MDDialog(title='Overwrite saved device?',
-    #                          text=f'A device with a matching MAC address has already been saved.\n'
-    #                               f'Saved device:\n'
-    #                               f'\tAddress: {saved_device.getAddress()}\n'
-    #                               f'\tName: {saved_device.getName()}\n'
-    #                               f'\tNickname: {saved_device.nickname}\n'
-    #                               f'This device:\n'
-    #                               f'\tAddress: {device.getAddress()}\n'
-    #                               f'\tName: {device.getName()}\n'
-    #                               f'\tNickname: {device.nickname}\n',
-    #                          buttons=[MDFlatButton(text='Cancel',
-    #                                                on_release=lambda x: d.dismiss()),
-    #                                   MDFlatButton(text='Overwrite',
-    #                                                on_release=lambda x: d.dismiss())]
-    #                  )
-
     def _connect_as_client_android(self, device, button=None):
         logging.debug(
             f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
@@ -446,6 +429,7 @@ class MainApp(MDApp):
         dcd = DeviceConnectionDialog(
             type='custom',
             content_cls=DialogContent(),
+
         )
         dcd.content_cls.label.text = 'Connecting to...' + device.name
         dcd.content_cls.dialog = dcd  # back-reference to parent
@@ -456,64 +440,6 @@ class MainApp(MDApp):
             self.save_device(device)
         else:
             dcd.content_cls.update_failure(device)
-
-    # def reconnect_as_client(self, *args):
-    #     logging.debug(
-    #         f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
-    #     if platform == 'android':
-    #         self._reconnect_as_client_android()
-    #     if platform == 'linux':
-    #         self._reconnect_as_client_linux()
-    #
-    # def _reconnect_as_client_android(self):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     for device in self.loaded_devices:
-    #         self._reconnect_BluetoothSocket(device)
-
-    # def _reconnect_BluetoothSocket(self, device):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
-    #     if device.isConnected():
-    #         dialog = MDDialog(text='Device already connected')
-    #         dialog.open()
-    #         Clock.schedule_once(dialog.dismiss, 3)
-    #         # return
-    #     try:
-    #         logging.debug(f'Creating BluetoothSocket')
-    #         UUID = autoclass('java.util.UUID')
-    #         esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
-    #         device.bluetooth_socket = device.createRfcommSocketToServiceRecord(
-    #             UUID.fromString(esp32_UUID))
-    #         logging.debug(f'BluetoothSocket.connect()')
-    #         device.bluetooth_socket.connect()
-    #         device.recv_stream = device.bluetooth_socket.getInputStream()
-    #         device.send_stream = device.bluetooth_socket.getOutputStream()
-    #     except Exception as e:
-    #         logging.debug(f'Failed to open socket. Exception {e}')
-    #         logging.debug(f'Retrying...')
-    #         self._retry_BluetoothSocket(device)
-    #     else:
-    #         logging.debug(f'Successfully opened socket')
-
-    # def _retry_BluetoothSocket(self, device):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
-    #     try:
-    #         logging.debug(f'Retrying to create BluetoothSocket')
-    #         UUID = autoclass('java.util.UUID')
-    #         esp32_UUID = '00001101-0000-1000-8000-00805F9B34FB'
-    #         device.bluetooth_socket = device.createRfcommSocketToServiceRecord(
-    #             UUID.fromString(esp32_UUID))
-    #         logging.debug(f'BluetoothSocket.connect()')
-    #         device.bluetooth_socket.connect()
-    #         device.recv_stream = device.bluetooth_socket.getInputStream()
-    #         device.send_stream = device.bluetooth_socket.getOutputStream()
-    #     except Exception as e:
-    #         logging.debug(f'Failed to open socket. Exception {e}')
-    #         if device.isConnected():
-    #             dialog = MDDialog(text='Device off or out of range.')
-    #             dialog.open()
-    #             Clock.schedule_once(dialog.dismiss, 3)
-    #     else:
-    #         logging.debug(f'Successfully opened socket on retry.')
 
     def _reconnect_as_client_linux(self):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
