@@ -27,7 +27,7 @@ from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
 
-from troubleshooting import *
+from troubleshooting import func_name
 
 
 class DeviceConnectionDialog(MDDialog):
@@ -60,10 +60,6 @@ class DeviceConnectionDialog(MDDialog):
         # Resize spacer_top_box, container, dialog window as DialogContent changes.
         # spacer_top_box.height is bound to MDDialog._spacer_top
         self.ids.spacer_top_box.height = self.content_cls.height
-        # self._spacer_top = self.content_cls.height
-        # self.ids.container.height = self.content_cls.height + \
-        #                             self.ids.spacer_bottom_box.height + \
-        #                             self.ids.root_button_box.height
         self.height = self.ids.container.height
         # Force redraw of shadow or it misbehaves
         self.elevation = 1 if self.elevation == 0 else 0
