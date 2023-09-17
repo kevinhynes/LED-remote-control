@@ -1,15 +1,23 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include <vector>
 
+// #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))    // C++ equivalent of Python :)
+// #define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
 
-//  0 - Configure
-//      0 - set NUM_LEDS
-//      1 - set type of LEDs (future)
-//      2 - set maxBrightness
-//      3 - set default color correction
-//      4 - set default color temperature correction
+//  UNTESTED UPDATES 9/14/23
+//  printPaletteFlat
+//  declaring and defining paletteColors in case deleting it without a specified size was the problem
+//  changed paletteColors type and input types back to int..
+//  paletteColors (eventually) needs to be of type byte in order to put it into the DEFINE_GRADIENT_PALETTE
+//  added len macro and using it here
 
-
+//  Mode 0 - Configure
+//            0 - set NUM_LEDS
+//            1 - set type of LEDs (future)
+//            2 - set maxBrightness
+//            3 - set default color correction
+//            4 - set default color temperature correction
 void setNumLEDs(int message[])
 {
     // To allow NUM_LEDS to be over 255, need to combine 2 bytes.
@@ -36,7 +44,6 @@ void setNumLEDs(int message[])
     preferences.putUInt("NUM_LEDS", NUM_LEDS);
 }
 
-
 void setMaxBrightness(int message[])
 {
     int brightness = message[2];
@@ -50,7 +57,6 @@ void setMaxBrightness(int message[])
     FastLED.show();
 }
 
-
 void setColorCorrection(int message[])
 {
     int key = message[2];
@@ -59,7 +65,6 @@ void setColorCorrection(int message[])
     Serial.print("Color corrected to ");
     Serial.println(intColorCorrectionMap[key]);
 }
-
 
 void setColorTemperatureCorrection(int message[])
 {
@@ -70,14 +75,12 @@ void setColorTemperatureCorrection(int message[])
     Serial.println(intColorTemperatureCorrectionMap[key]);
 }
 
-
 void configure(int message[])
 {
     Serial.println("bluetooth_helpers.configure");
     int option = message[1];
     switch (option)
     {
-
         // Update & save number of LEDs
         case 0:
             setNumLEDs(message);
@@ -107,21 +110,170 @@ void configure(int message[])
 }
 
 
-void palette_helper(int message[])
+
+//  Mode 1 - Update Color
+//             byte0       byte1        byte2       byte3       byet4      byte5
+//  Message:     1          red         green       blue        junk        end
+void updateColor(int message[])
 {
-    Serial.println("palette_helper");
-};
+    Serial.println("updateColor");
+    masterRed = message[1];
+    masterGreen = message[2];
+    masterBlue = message[3];
+    dimmedRed = int(masterRed * masterBrightness / 100);
+    dimmedGreen = int(masterGreen * masterBrightness / 100);
+    dimmedBlue = int(masterBlue * masterBrightness / 100);
+    fill_solid(leds, NUM_LEDS, CRGB(dimmedRed, dimmedGreen, dimmedBlue));
+    FastLED.show();
+}
 
 
-bool validate_message(int message[])
+//  Mode 2 - Update Brightness
+//             byte0       byte1        byte2       byte3       byet4      byte5
+//  Message:     2      brightness      junk        junk        junk        end
+void updateBrightness(int message[])
+{
+    Serial.println("updateBrightness");
+    masterBrightness = message[1];
+    dimmedRed = int(masterRed * masterBrightness / 100);
+    dimmedGreen = int(masterGreen * masterBrightness / 100);
+    dimmedBlue = int(masterBlue * masterBrightness / 100);
+    fill_solid(leds, NUM_LEDS, CRGB(dimmedRed, dimmedGreen, dimmedBlue));
+    FastLED.show();
+}
+
+
+
+//  3 - Palettes
+//  Need to send multiple messages in order to get all the data for colors
+//                   byte0      byte1         byte2       byte3       byet4      byte5
+//  First Message:     3      num_colors      junk        junk        junk        end
+//  Color Messages:    3         red          green       blue        junk        end
+byte *paletteColors;
+
+void showPalette()
+{
+    int palStartIndex = 0;
+    FastLED.clear();
+    fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), curPalette, 200, LINEARBLEND);
+    FastLED.show();
+}
+
+void buildPalette()
+{
+    Serial.println("buildPalette");
+    curPalette.loadDynamicGradientPalette(paletteColors);
+}
+
+// void printPaletteFlat(int numColors)
+// {
+//   Serial.println("printPaletteFlat");
+//   Serial.print("  length: ");
+//   for (int i = 0; i < numColors * 3; i++)
+//   {
+//     if (i == 0)
+//     {
+//       Serial.print("  ");
+//     }
+//     Serial.print(paletteColors[i]);
+//     Serial.print(" | ");
+//   }
+//   Serial.println(" ");
+// }
+
+void printPalette(int numColors)
+{
+    Serial.println("printPalette");
+    Serial.println("  paletteColors:");
+    for (int i = 0; i < numColors * 4; i+= 4)
+    {
+        for (int j = i; j < i + 4; j++)
+        {
+            Serial.print(paletteColors[j]);
+            Serial.print(" | ");
+        }
+        Serial.println(" ");
+    }
+}
+
+void paletteHelper(int message[])
+{
+    Serial.println("paletteHelper");
+    static int msgNumber = -1;
+    static uint numColors;
+    static uint width;
+    Serial.print("    msgNumber: ");
+    Serial.println(msgNumber);
+
+    if (msgNumber == -1)
+    {
+        // Out with the old..
+        delete[] paletteColors;
+        paletteColors = nullptr;
+        // In with the new..
+        numColors = message[1];
+        width = 255 / (numColors - 1);
+        paletteColors = new byte[numColors * 4];
+        Serial.print("  numColors: ");
+        Serial.println(numColors);
+        msgNumber += 1;
+    }
+    else
+    {
+        Serial.print("    ");
+        byte red = static_cast<byte>(message[1]);
+        byte green = static_cast<byte>(message[2]);
+        byte blue = static_cast<byte>(message[3]);
+        int index = msgNumber * 4;
+        for (int i = 0; i < 4; i++)
+        {
+            if (i == 0)
+            {
+                if (msgNumber == numColors - 1)
+                {
+                    paletteColors[index + i] = 255;
+                }
+                else
+                {
+                    byte pos = width * msgNumber;
+                    paletteColors[index + i] = pos;
+                }
+            }
+            else
+            {
+                paletteColors[index + i] = message[i];
+            }
+        }
+        msgNumber += 1;
+    }
+    if (msgNumber == numColors)
+    {
+        msgNumber = -1;
+        printPalette(numColors);
+        buildPalette();
+        showPalette();
+    }
+}
+
+
+void printMessage(int message[])
+{
+    for (int i = 0; i < MESSAGE_LENGTH; i++)
+    {
+        Serial.print(message[i]);
+        Serial.print(" | ");
+    }
+    Serial.println(" ");
+}
+
+
+bool validateMessage(int message[])
 {
     Serial.println("bluetooth_helpers.validate_message");
     Serial.println("  message: ");
-    Serial.print("    ");
+    printMessage(message);
     for (int j = 0; j < MESSAGE_LENGTH; j++)
     {
-        Serial.print(message[j]);
-        Serial.print(" | ");
         if (j == 0)
         {
             if (!(0 <= message[j]) || !(message[j] < 10))
@@ -137,7 +289,6 @@ bool validate_message(int message[])
             }
         }
     }
-    Serial.println(" ");
     mode = message[0];
     if (mode == 0)
     {
@@ -146,32 +297,27 @@ bool validate_message(int message[])
     // "Color Mode" - change color, keep brightness
     if (mode == 1)
     {
-        masterRed = message[1];
-        masterGreen = message[2];
-        masterBlue = message[3];
-        dimmedRed = int(masterRed * masterBrightness / 100);
-        dimmedGreen = int(masterGreen * masterBrightness / 100);
-        dimmedBlue = int(masterBlue * masterBrightness / 100);
+        updateColor(message);
     }
     // "Dimmer Mode" - keep color, change brightness
-    if (mode == 2) {
-        masterBrightness = message[4];
-        dimmedRed = int(masterRed * masterBrightness / 100);
-        dimmedGreen = int(masterGreen * masterBrightness / 100);
-        dimmedBlue = int(masterBlue * masterBrightness / 100);
+    if (mode == 2)
+    {
+        updateBrightness(message);
     }
     // Send a palette?
     if (mode == 3)
     {
-        palette_helper(message);
+        paletteHelper(message);
     }
-
     return true;
 }
 
-void reset_message(int message[]) {
-    for (int j = 0; j < MESSAGE_LENGTH; j++) {
-        message[j] = -1;
-        Serial.println(message[j]);
+
+void resetMessage(int message[])
+{
+    Serial.println("Resetting message...");
+    for (int i = 0; i < MESSAGE_LENGTH; i++) {
+        message[i] = -1;
     }
+    printMessage(message);
 }

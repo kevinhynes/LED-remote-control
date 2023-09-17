@@ -4,12 +4,13 @@
 
 void loadSavedData()
 {
+    preferences.clear();  // !!! Remember this is here!
     // Number of LEDs
     NUM_LEDS = preferences.getUInt("NUM_LEDS", 0);  // Load with default value
     if (NUM_LEDS == 0)
     {
         Serial.println("NUM_LEDS read as 0, resetting to default value");
-        NUM_LEDS = 144;
+        NUM_LEDS = 100;
     }
     else
     {
