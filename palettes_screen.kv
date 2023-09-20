@@ -1,0 +1,20 @@
+<GradientWidget>:
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    size_hint: (0.85, 0.9)
+
+
+<PaletteWidget>:
+    size_hint: (1, None)
+    height: dp(100)
+    md_bg_color: app.theme_cls.primary_color
+    MDSeparator:
+
+
+<PalettesScreen>:
+    grid: grid_
+    MDScrollView:
+        do_scroll_x: False
+        scroll_distance: dp(150)
+        MDList:
+            id: grid_
+            spacing: dp(10)

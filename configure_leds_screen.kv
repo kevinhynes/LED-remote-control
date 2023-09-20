@@ -1,0 +1,52 @@
+#:import ConfigureLEDsScreen configure_leds_screen.ConfigureLEDsScreen
+
+
+<ConfigureLEDsScreen>:
+    MDGridLayout:
+        cols:1
+        padding: dp(20)
+        MDLabel:
+            text: 'Configuration Options'.upper()
+            font_style: 'Button'
+            font_size: sp(16)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            size_hint: (0.9, None)
+            height: dp(25)
+        MDSeparator:
+        MDGridLayout:
+            cols: 1
+            spacing: dp(40)
+            padding: dp(10)
+            MDTextField:
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: (0.9, None)
+                height: dp(50)
+                helper_text: 'Number of LEDs [0 - 65535]'
+                helper_text_mode: 'persistent'
+                mode: 'fill'
+                on_text_validate: root.validate_num_leds(self)
+            MDTextField:
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: (0.9, None)
+                height: dp(50)
+                helper_text: 'Set maximum brightness [0 - 255]'
+                helper_text_mode: 'persistent'
+                mode: 'fill'
+                on_text_validate: root.validate_brightness(self)
+            MDDropDownItem:
+                id: color_corrections_btn_
+                text: 'Color Corrections Options'
+                font_size: sp(14)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: (0.9, None)
+                height: dp(50)
+                on_release: root.open_color_corrections_menu(self)
+                md_bg_color: 'white'
+            MDDropDownItem:
+                id: temperature_corrections_btn_
+                text: 'Color Temperature Corrections Options'
+                font_size: sp(14)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: (0.9, None)
+                height: dp(50)
+                on_release: root.open_temperature_corrections_menu(self)
