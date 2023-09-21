@@ -61,6 +61,17 @@ class ConfigureLEDsScreen(MDScreen):
         self.temperature_corrections_menu = MDDropdownMenu(
             caller=self.ids.temperature_corrections_btn_,
             items=temperature_corrections_options)
+        self.ids.num_leds_text_field_.hint_text = \
+            str(self.device_controller.device.num_leds)
+        self.ids.max_brightness_text_field_.hint_text = \
+            str(self.device_controller.device.max_brightness)
+        self.ids.color_corrections_btn_.text = \
+            self.device_controller.device.color_correction
+        self.ids.temperature_corrections_btn_.text = \
+            self.device_controller.device.color_temperature_correction
+
+    # def on_kv_post(self, *args):
+    #     self.ids.num_leds_text_field_.hint_text = self.device_controller.device.num_leds
 
     def go_back(self, *args):
         app = MDApp.get_running_app()

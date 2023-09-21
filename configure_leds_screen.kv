@@ -18,6 +18,7 @@
             spacing: dp(40)
             padding: dp(10)
             MDTextField:
+                id: num_leds_text_field_
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
                 height: dp(50)
@@ -25,7 +26,9 @@
                 helper_text_mode: 'persistent'
                 mode: 'fill'
                 on_text_validate: root.validate_num_leds(self)
+                on_focus: self.hint_text = ''
             MDTextField:
+                id: max_brightness_text_field_
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
                 height: dp(50)
@@ -33,6 +36,7 @@
                 helper_text_mode: 'persistent'
                 mode: 'fill'
                 on_text_validate: root.validate_brightness(self)
+                on_focus: self.hint_text = ''
             MDDropDownItem:
                 id: color_corrections_btn_
                 text: 'Color Corrections Options'
