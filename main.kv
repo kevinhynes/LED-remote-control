@@ -2,6 +2,8 @@
 #:import SlideTransition kivy.uix.screenmanager.SlideTransition
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 #:import Gradient kivy_gradient.Gradient
+#:import PalettesScreen palettes_screen.PalettesScreen
+
 
 <Overlay@Widget>:
     canvas:
@@ -108,77 +110,77 @@
 
 
 ########## Palettes Screen ##########
-<GradientWidget>:
-    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    size_hint: (0.85, 0.9)
+#<GradientWidget>:
+#    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#    size_hint: (0.85, 0.9)
+#
+#
+#<PaletteWidget>:
+#    size_hint: (1, None)
+#    height: dp(100)
+#    md_bg_color: app.theme_cls.primary_color
+#    MDSeparator:
+#
+#
+#<PalettesScreen>:
+#    grid: grid_
+#    MDScrollView:
+#        do_scroll_x: False
+#        scroll_distance: dp(150)
+#        MDList:
+#            id: grid_
+#            spacing: dp(10)
 
 
-<PaletteWidget>:
-    size_hint: (1, None)
-    height: dp(100)
-    md_bg_color: app.theme_cls.primary_color
-    MDSeparator:
-
-
-<PalettesScreen>:
-    grid: grid_
-    MDScrollView:
-        do_scroll_x: False
-        scroll_distance: dp(300)
-        MDList:
-            id: grid_
-            spacing: dp(10)
-
-
-<ConfigureLEDsScreen>:
-    MDGridLayout:
-        cols:1
-        padding: dp(20)
-        MDLabel:
-            text: 'Configuration Options'.upper()
-            font_style: 'Button'
-            font_size: sp(16)
-            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-            size_hint: (0.9, None)
-            height: dp(25)
-        MDSeparator:
-        MDGridLayout:
-            cols: 1
-            spacing: dp(40)
-            padding: dp(10)
-            MDTextField:
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (0.9, None)
-                height: dp(50)
-                helper_text: 'Number of LEDs [0 - 65535]'
-                helper_text_mode: 'persistent'
-                mode: 'fill'
-                on_text_validate: root.validate_num_leds(self)
-            MDTextField:
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (0.9, None)
-                height: dp(50)
-                helper_text: 'Set maximum brightness [0 - 255]'
-                helper_text_mode: 'persistent'
-                mode: 'fill'
-                on_text_validate: root.validate_brightness(self)
-            MDDropDownItem:
-                id: color_corrections_btn_
-                text: 'Color Corrections Options'
-                font_size: sp(14)
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (0.9, None)
-                height: dp(50)
-                on_release: root.open_color_corrections_menu(self)
-                md_bg_color: 'white'
-            MDDropDownItem:
-                id: temperature_corrections_btn_
-                text: 'Color Temperature Corrections Options'
-                font_size: sp(14)
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (0.9, None)
-                height: dp(50)
-                on_release: root.open_temperature_corrections_menu(self)
+#<ConfigureLEDsScreen>:
+#    MDGridLayout:
+#        cols:1
+#        padding: dp(20)
+#        MDLabel:
+#            text: 'Configuration Options'.upper()
+#            font_style: 'Button'
+#            font_size: sp(16)
+#            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#            size_hint: (0.9, None)
+#            height: dp(25)
+#        MDSeparator:
+#        MDGridLayout:
+#            cols: 1
+#            spacing: dp(40)
+#            padding: dp(10)
+#            MDTextField:
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                size_hint: (0.9, None)
+#                height: dp(50)
+#                helper_text: 'Number of LEDs [0 - 65535]'
+#                helper_text_mode: 'persistent'
+#                mode: 'fill'
+#                on_text_validate: root.validate_num_leds(self)
+#            MDTextField:
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                size_hint: (0.9, None)
+#                height: dp(50)
+#                helper_text: 'Set maximum brightness [0 - 255]'
+#                helper_text_mode: 'persistent'
+#                mode: 'fill'
+#                on_text_validate: root.validate_brightness(self)
+#            MDDropDownItem:
+#                id: color_corrections_btn_
+#                text: 'Color Corrections Options'
+#                font_size: sp(14)
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                size_hint: (0.9, None)
+#                height: dp(50)
+#                on_release: root.open_color_corrections_menu(self)
+#                md_bg_color: 'white'
+#            MDDropDownItem:
+#                id: temperature_corrections_btn_
+#                text: 'Color Temperature Corrections Options'
+#                font_size: sp(14)
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                size_hint: (0.9, None)
+#                height: dp(50)
+#                on_release: root.open_temperature_corrections_menu(self)
 
 
 <RootScreen>:
@@ -192,7 +194,7 @@
         elevation: 4
         shadow_color: app.theme_cls.bg_darkest
         pos_hint: {'top': 1}
-        left_action_items: [['menu', lambda x: _nav_drawer.set_state('open')]]
+        left_action_items: [['menu', lambda x: root.open_nav_drawer()]]
 
     MDNavigationLayout:
 
@@ -237,10 +239,13 @@
                     spacing: '4dp'
                     padding: '12dp', 0, 0, '56dp'
 
-                MDNavigationDrawerLabel:
-                    text: 'Menu'
+#                MDNavigationDrawerLabel:
+#                    text: 'Menu'
+#
+#                MDNavigationDrawerDivider:
 
                 MDNavigationDrawerItem:
+#                    id: find_devices_
                     icon: 'magnify'
                     text: 'Find Devices'
                     theme_text_color: 'Custom'
@@ -249,6 +254,7 @@
                     on_press:
                         _screen_manager.current = 'find_devices'
                         _nav_drawer.set_state('close')
+                    markup: True   # Necessary for it to turn back to white due to bug!
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'

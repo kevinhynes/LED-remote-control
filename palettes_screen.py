@@ -12,6 +12,7 @@ from kivy_gradient import Gradient
 
 from kivy.graphics import RoundedRectangle
 from kivy.utils import get_color_from_hex
+from kivy.metrics import dp
 
 from bluetooth_helpers import Command
 import palettes
@@ -29,7 +30,8 @@ class GradientWidget(MDBoxLayout):
         gradient_texture = Gradient.horizontal(*[get_color_from_hex(color) for color in colors])
         with self.canvas:
             Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
-            self.gradient = RoundedRectangle(size=self.size, pos=self.pos, texture=gradient_texture)
+            self.gradient = RoundedRectangle(size=self.size, pos=self.pos,
+                                             radius=(dp(20), dp(20)), texture=gradient_texture)
             self.bind(pos=self.update_gradient, size=self.update_gradient)
 
     def update_gradient(self, *args):
@@ -72,17 +74,15 @@ class PalettesScreen(MDScreen):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         app = MDApp.get_running_app()
         app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        for palette_widget in self.ids.grid_.children:
+            palette_widget.device_controller = self.device_controller
+
+    def on_kv_post(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         for palette in self.palettes:
             self.ids.grid_.add_widget(PaletteWidget(
                 device_controller=self.device_controller,
                 hex_colors=palette))
-
-    # def on_kv_post(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     for palette in self.palettes:
-    #         self.ids.grid_.add_widget(PaletteWidget(
-    #             device_controller=self.device_controller,
-    #             hex_colors=palette))
 
     def go_back(self, *args):
         app = MDApp.get_running_app()

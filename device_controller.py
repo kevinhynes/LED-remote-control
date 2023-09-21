@@ -5,6 +5,7 @@ import string
 import logging
 import jnius
 import struct
+import webcolors
 from typing import Optional, List
 from threading import Thread
 from jnius import cast, autoclass
@@ -38,7 +39,7 @@ from kivymd.uix.pickers import MDColorPicker
 from kivymd.uix.button import MDFlatButton
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
-from troubleshooting import *
+from troubleshooting import func_name
 from bluetooth_helpers import Command
 
 if platform == 'android':
@@ -65,12 +66,13 @@ class DeviceController(BaseListItem):
     r = NumericProperty(255)
     g = NumericProperty(255)
     b = NumericProperty(255)
-    is_connected = BooleanProperty(False)
+    is_connected = BooleanProperty()
     is_expanded = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.rename_active = False
+        self.reconnection_active = True
         configure_leds = {
             'text': 'Configure LEDs',
             'on_release': self.open_configure_leds_screen,
@@ -150,8 +152,10 @@ class DeviceController(BaseListItem):
     def on_is_connected(self, *args):
         if self.is_connected:
             self.ids._status_icon.icon_color = 'green'
+            self.ids._status_icon.icon = 'bluetooth-audio'
         else:
             self.ids._status_icon.icon_color = 'red'
+            self.ids._status_icon.icon = 'bluetooth-off'
 
     def on_touch_up(self, touch):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {touch}'
@@ -331,8 +335,8 @@ class DeviceController(BaseListItem):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
         app = MDApp.get_running_app()
-        color_picker_screen = app.root_screen.screen_manager.get_screen('configure_leds')
-        color_picker_screen.device_controller = self
+        configure_leds_screen = app.root_screen.screen_manager.get_screen('configure_leds')
+        configure_leds_screen.device_controller = self
         slide_left = SlideTransition(direction='left')
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'configure_leds'
@@ -350,7 +354,10 @@ class DeviceController(BaseListItem):
             d = MDDialog(text='BluetoothSocket is already closed.')
             d.open()
 
+    @mainthread
     def reconnect_BluetoothSocket(self, *args):
+        # Added @mainthread because trying to stop multiple reconnects when sending palette
+        # instructions.
         logging.debug(
             f'`{self.__class__.__name__}.{func_name()}` was called with args: {args}')
         dcd = DeviceConnectionDialog(
@@ -371,6 +378,7 @@ class DeviceController(BaseListItem):
             d = MDDialog(text='Device already connected')
             d.open()
             return
+        self.reconnection_active = True
         try:
             logging.debug(f'Re-creating BluetoothSocket')
             UUID = autoclass('java.util.UUID')
@@ -384,10 +392,12 @@ class DeviceController(BaseListItem):
             logging.debug(f'Failed to open socket in DeviceController._reconnect_BluetoothSocket.'
                           f'Exception {e}')
             dcd.content_cls.update_failure(self.device)
+            self.reconnection_active = False
             self.is_connected = False
         else:
             logging.debug(f'Successfully opened socket')
             dcd.content_cls.update_success(self.device)
+            self.reconnection_active = False
             self.is_connected = True
 
     # def dimmer_touch_down(self, dimmer, touch):
@@ -490,7 +500,6 @@ class DeviceController(BaseListItem):
             self.red_slider.disabled = False
             self.green_slider.disabled = False
             self.blue_slider.disabled = False
-            # self.send(2, self.brightness)
             command = Command(mode=2, dimmer_val=self.brightness)
         else:
             logging.debug('LIGHTS OFF!')
@@ -503,111 +512,22 @@ class DeviceController(BaseListItem):
             self.red_slider.disabled = True
             self.green_slider.disabled = True
             self.blue_slider.disabled = True
-            # self.send(2, 0)
             command = Command(mode=2, dimmer_val=0)
         self.send_command(command)
 
     def dim(self, dimmer):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`'
                       f'called with dimmer.value == {dimmer.value}')
-        # self.send(2, dimmer.value)
         command = Command(mode=2, dimmer_val=dimmer.value)
         self.send_command(command)
 
-    # def on_num_leds(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-    #     self.send(3, self.num_leds)
-
-    def send(self, mode: int, byte1: int, byte2: Optional[int] = 0, byte3: Optional[int] = 0,
-             byte4: Optional[int] = 0, byte5: Optional[int] = 0) -> None:
-        '''
-        Send 6 bytes of data over Bluetooth Serial Protocol to the ESP32 microcontroller.
-
-        :param mode: Specify "category" of message. Configuration, color, dimmer, animation updates.
-        :param byte1: At least 1 byte of information is necessary to make any changes.
-        :return: None
-        '''
+    def send_rgb(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        if platform != 'android':
-            return
-        # TODO: Figure this out.
-        app = MDApp.get_running_app()
-        if not app.bluetooth_adapter.isEnabled():
-            logging.debug(f'\tDeviceController.send called without Bluetooth enabled...')
-            app.enable_bluetooth()
-        try:
-            logging.debug(f'\tBluetoothSocket: {self.device.bluetooth_socket}')
-            logging.debug(
-                f'\tBluetoothSocket.isConnected(): {self.device.bluetooth_socket.isConnected()}')
-            logging.debug(f'\tmode: {mode}, byte1: {byte1}')
-        except Exception as e:
-            logging.debug(f'Exception in DeviceController.send: {e}')
-        if not self.device.bluetooth_socket or not self.device.bluetooth_socket.isConnected():
-            logging.debug(f'\tDeviceController.send called without BluetoothSocket connected...')
-            self.reconnect_BluetoothSocket()
-
-        red, green, blue = [0, 0, 0]
-        brightness = 100
-        # Color Mode - ESP32 will maintain it's current brightness level.
-        if mode == 1:
-            # White
-            if byte1 == 1:
-                red, green, blue = [255, 255, 255]
-            # Red
-            elif byte1 == 2:
-                red, green, blue = [255, 0, 0]
-            # Orange
-            elif byte1 == 3:
-                red, green, blue = [255, 130, 0]
-            # Yellow
-            elif byte1 == 4:
-                red, green, blue = [255, 255, 0]
-            # Green
-            elif byte1 == 5:
-                red, green, blue = [0, 255, 0]
-            # Blue
-            elif byte1 == 6:
-                red, green, blue = [0, 0, 255]
-            elif type(byte1) is list:
-                # red, green, blue = val[0], val[1], val[2]
-                logging.debug(f'From a ColorPicker? This wont work anymore')
-
-        # Dimmer Mode - ESP32 will maintain it's current color.
-        if mode == 2:
-            brightness = int(byte1)
-
-        # Configure num_leds in strip.
-        if mode == 3:
-            bin_num_leds = bin(byte1)[2:]  # get rid of '0b'
-            zeros = 16 - len(bin_num_leds)
-            bin_num_leds = '0' * zeros + bin_num_leds  # make sure it's 16 bits long
-            left_bits = int(bin_num_leds[0:8], 2)
-            right_bits = int(bin_num_leds[8:], 2)
-            # FIXME: this is hacky
-            red = left_bits
-            green = right_bits
-            blue, brightness = 0, 0
-        try:
-            self.device.send_stream.write(struct.pack('<B', mode))
-            self.device.send_stream.write(struct.pack('<B', red))
-            self.device.send_stream.write(struct.pack('<B', green))
-            self.device.send_stream.write(struct.pack('<B', blue))
-            self.device.send_stream.write(struct.pack('<B', brightness))
-            self.device.send_stream.write(struct.pack('<b', -1))
-            self.device.send_stream.flush()
-        except jnius.JavaException as e:
-            # if isinstance(e.__java__object__, jnius.JavaIOException):
-            #     # Handle the IOException (Broken pipe) error
-            #     logging.debug("IOException occurred: Broken pipe")
-            #     # Perform any necessary cleanup or recovery actions
-            logging.debug(f'During device_controller.send, a Java exception occurred: {e}')
-            self.reconnect_BluetoothSocket()
-        except Exception as e:
-            # Handle any other Python exceptions
-            logging.debug(f'During device_controller.send, a Python exception occurred: {e}')
-            # Perform appropriate actions for other exceptions
-        else:
-            logging.debug('Command sent.')
+        command = Command(mode=1,
+                          red=self.red_slider.value,
+                          green=self.green_slider.value,
+                          blue=self.blue_slider.value)
+        self.send_command(command)
 
     def send_command(self, command: Command):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` command: {command}')
@@ -622,12 +542,15 @@ class DeviceController(BaseListItem):
             logging.debug(f'\tBluetoothSocket: {self.device.bluetooth_socket}')
             logging.debug(
                 f'\tBluetoothSocket.isConnected(): {self.device.bluetooth_socket.isConnected()}')
-            logging.debug(f'\tcommand: {command}')
+            logging.debug(f'\tCommand: {command}')
         except Exception as e:
             logging.debug(f'Exception in DeviceController.send: {e}')
         if not self.device.bluetooth_socket or not self.device.bluetooth_socket.isConnected():
             logging.debug(f'\tDeviceController.send called without BluetoothSocket connected...')
-            self.reconnect_BluetoothSocket()
+            logging.warning(f'\t TRYING TO BLOCK OTHER PALETTE SENDS')
+            t = Thread(target=self.reconnect_BluetoothSocket)
+            t.start()
+            # self.reconnect_BluetoothSocket()
         self._send_command(command)
 
     def _send_command(self, command: Command):
@@ -655,6 +578,7 @@ class DeviceController(BaseListItem):
             elif command.color_temperature_correction_key is not None:
                 byte1 = 4
                 byte2 = command.color_temperature_correction_key
+            self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
         # Color Mode
         elif command.mode == 1:
@@ -668,17 +592,23 @@ class DeviceController(BaseListItem):
             elif type(byte1) is list:
                 # red, green, blue = val[0], val[1], val[2]
                 logging.debug(f'From a ColorPicker? This wont work anymore')
+            self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
         # Dimmer Mode
         elif command.mode == 2:
             byte0 = 2
-            byte1 = command.dimmer_val
+            byte1 = int(command.dimmer_val)
+            self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
         # Animations or Patterns?
         elif command.mode == 3:
             byte0 = 3
-
-        self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
+            byte1 = len(command.hex_colors)
+            self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
+            for hex_color in command.hex_colors:
+                rgb = webcolors.hex_to_rgb(hex_color)
+                byte1, byte2, byte3, = rgb
+                self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
     def _send_to_ESP32(self, send_bytes: List[int]) -> None:
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with bytes {send_bytes}')
@@ -697,7 +627,6 @@ class DeviceController(BaseListItem):
             #     # Perform any necessary cleanup or recovery actions
             logging.debug(
                 f'During device_controller._send_to_ESP32, a Java exception occurred: {e}')
-            self.reconnect_BluetoothSocket()
         except Exception as e:
             # Handle any other Python exceptions
             logging.debug(
