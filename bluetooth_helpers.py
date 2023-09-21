@@ -11,7 +11,7 @@ class Command:
 
     def __init__(self, mode, red=None, green=None, blue=None, dimmer_val=None,
                  num_leds=None, max_brightness=None, color_correction_key=None,
-                 color_temperature_correction_key=None):
+                 color_temperature_correction_key=None, hex_colors=None):
         self.mode = mode
         self.red = red
         self.green = green
@@ -21,6 +21,7 @@ class Command:
         self.max_brightness = max_brightness
         self.color_correction_key = color_correction_key
         self.color_temperature_correction_key = color_temperature_correction_key
+        self.hex_colors = hex_colors
 
 
 class CustomBluetoothDevice:
@@ -34,8 +35,8 @@ class CustomBluetoothDevice:
         self.bluetooth_socket = None
         self.recv_stream = None
         self.send_stream = None
-        self.num_leds = 0
-        self.max_brightness = 0
+        self.num_leds = 100
+        self.max_brightness = 100
         # ESP32 will default to these if not set otherwise:
         self.color_correction = 'Uncorrected Color'
         self.color_temperature_correction = 'Uncorrected Temperature'
@@ -132,7 +133,10 @@ class FakeDevice:
             self.type = random.randrange(1, 10)
             self.bond_state = random.randrange(1, 12)
             self.uuids = [FakeUUID() for _ in range(10)]
-            self.num_leds = 0
+            self.num_leds = 100
+            self.max_brightness = 100
+            self.color_correction = 'Uncorrected Color'
+            self.color_temperature_correction = 'Uncorrected Temperature'
         else:
             self.load_device_info(device_info)
 
@@ -167,6 +171,9 @@ class FakeDevice:
                        'BondState': self.bond_state,
                        'UUIDs': self.uuids,
                        'Number of LEDs': self.num_leds,
+                       'Maximum Brightness': self.max_brightness,
+                       'Color Correction': self.color_correction,
+                       'Color Temperature Correction': self.color_temperature_correction
                        }
         return device_info
 
@@ -179,6 +186,10 @@ class FakeDevice:
         self.bond_state = device_info['BondState']
         # Convert saved UUIDs from string back to hex
         self.uuids = [FakeUUID(uuid) for uuid in device_info['UUIDs']]
+        self.num_leds = device_info['Number of LEDs']
+        self.max_brightness = device_info['Maximum Brightness']
+        self.color_correction = device_info['Color Correction']
+        self.color_temperature_correction = device_info['Color Temperature Correction']
 
     def isConnected(self):
         return random.choice([0, 1])
