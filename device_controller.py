@@ -37,6 +37,7 @@ from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.pickers import MDColorPicker
 from kivymd.uix.button import MDFlatButton
+from kivymd.uix.carousel import MDCarousel
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import func_name
@@ -58,7 +59,10 @@ class ColorPresetButton(MDRoundFlatButton):
 class DeviceController(BaseListItem):
     device = ObjectProperty()
     power_button = ObjectProperty()
+    carousel = ObjectProperty()
+    dimmer_container = ObjectProperty()
     dimmer = ObjectProperty()
+    rgb_container = ObjectProperty()
     red_slider = ObjectProperty()
     green_slider = ObjectProperty()
     blue_slider = ObjectProperty()
@@ -68,6 +72,7 @@ class DeviceController(BaseListItem):
     b = NumericProperty(255)
     is_connected = BooleanProperty()
     is_expanded = BooleanProperty(False)
+    off_screen = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -112,7 +117,7 @@ class DeviceController(BaseListItem):
         menu_items = [configure_leds, rename, info, forget, reconnect, disconnect, forget,
                       color, color_screen, palettes]
         self.menu = MDDropdownMenu(
-            caller=self.ids._menu_button,
+            caller=self.ids.menu_button_,
             items=menu_items,
             hor_growth='left',
             width_mult=3)
@@ -121,41 +126,35 @@ class DeviceController(BaseListItem):
         Clock.schedule_once(self._initialize_switch)
 
     def _initialize_dimmer(self, *args):
-        # In order for the thumb icon to show the off ring at value == 0 when MDSlider is just
-        # instantiated, change it and then change it back to 0.
-
-        # This might not be working / necessary anymore
-        # self.dimmer.value = -1
-        # self.dimmer.value = 0
+        # Save - might be necessary for multiple controllers. Untested.
         # self.dimmer.bind(on_touch_down=self.dimmer_touch_down)
         # self.dimmer.bind(on_touch_up=self.dimmer_touch_up)
         self.dimmer.disabled = True
 
     def _initialize_sliders(self, *args):
+        # Save - might be necessary for multiple controllers. Untested.
         # self.dimmer.bind(on_touch_down=self.red_slider_touch_down)
         # self.dimmer.bind(on_touch_up=self.red_slider_touch_up)
         # self.dimmer.bind(on_touch_down=self.green_slider_touch_down)
         # self.dimmer.bind(on_touch_up=self.green_slider_touch_up)
         # self.dimmer.bind(on_touch_down=self.blue_slider_touch_down)
         # self.dimmer.bind(on_touch_up=self.blue_slider_touch_up)
-        self.ids.slider_container_.remove_widget(self.red_slider)
-        self.ids.slider_container_.remove_widget(self.green_slider)
-        self.ids.slider_container_.remove_widget(self.blue_slider)
-        self.ids.off_screen_.add_widget(self.red_slider)
-        self.ids.off_screen_.add_widget(self.green_slider)
-        self.ids.off_screen_.add_widget(self.blue_slider)
+        self.carousel.remove_widget(self.rgb_container)
+        self.off_screen.add_widget(self.rgb_container)
 
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
 
     def on_is_connected(self, *args):
+        logging.debug(
+            f'`{self.__class__.__name__}.{func_name()}`\n\tis_connected: {self.is_connected}')
         if self.is_connected:
-            self.ids._status_icon.icon_color = 'green'
-            self.ids._status_icon.icon = 'bluetooth-audio'
+            self.ids.status_icon_.icon_color = 'green'
+            self.ids.status_icon_.icon = 'bluetooth-audio'
         else:
-            self.ids._status_icon.icon_color = 'red'
-            self.ids._status_icon.icon = 'bluetooth-off'
+            self.ids.status_icon_.icon_color = 'red'
+            self.ids.status_icon_.icon = 'bluetooth-off'
 
     def on_touch_up(self, touch):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with touch: {touch}'
@@ -163,7 +162,7 @@ class DeviceController(BaseListItem):
         if self.rename_active and not self.collide_point(touch.x, touch.y):
             Clock.schedule_once(self.exit_rename)
         # Returning False alone should work, not sure why this is necessary.
-        self.ids._card.dispatch('on_touch_up', touch)
+        self.ids.card_.dispatch('on_touch_up', touch)
 
     def open_options_menu(self, button):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -173,23 +172,23 @@ class DeviceController(BaseListItem):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
         self.rename_active = True
-        _label = self.ids._label
+        label_ = self.ids.label_
         scrollview = self.parent.parent
         # Create a blur / disabled look
-        _label.opacity = 0
-        self.ids._card.opacity = 0.15
-        self.ids._card_overlay.opacity = 0.75
-        for child in self.ids._card.children:
+        label_.opacity = 0
+        self.ids.card_.opacity = 0.15
+        self.ids.card_overlay_.opacity = 0.75
+        for child in self.ids.card_.children:
             child.disabled = True
-        # Get existing _label's coordinates to use for the text_field. Scrollview complicates it.
-        width, height = _label.width, _label.height
-        wx, wy = _label.to_window(_label.x, _label.y)
-        x, y = self.ids._card_overlay.to_widget(wx, wy)
+        # Get existing label_'s coordinates to use for the text_field. Scrollview complicates it.
+        width, height = label_.width, label_.height
+        wx, wy = label_.to_window(label_.x, label_.y)
+        x, y = self.ids.card_overlay_.to_widget(wx, wy)
         sx, sy = scrollview.pos  # Needed?
 
         self.text_field = RenameDeviceTextField(size=(width, height), pos=(x, y - dp(10)))
         self.text_field.bind(on_text_validate=self.rename_device_validate)
-        self.ids._card_overlay.add_widget(self.text_field)
+        self.ids.card_overlay_.add_widget(self.text_field)
         scrollview.update_from_scroll()  # Should reset the view, doesn't always work
 
     def rename_device_validate(self, text_field):
@@ -205,7 +204,7 @@ class DeviceController(BaseListItem):
             return
         # Success
         self.device.nickname = name
-        self.ids._label.text = name
+        self.ids.label_.text = name
         self.exit_rename()
         self.save_device()
 
@@ -215,11 +214,11 @@ class DeviceController(BaseListItem):
 
     def exit_rename(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        self.ids._label.opacity = 1
-        self.ids._card.opacity = 1
-        self.ids._card_overlay.opacity = 0
-        self.ids._card_overlay.remove_widget(self.text_field)
-        for child in self.ids._card.children:
+        self.ids.label_.opacity = 1
+        self.ids.card_.opacity = 1
+        self.ids.card_overlay_.opacity = 0
+        self.ids.card_overlay_.remove_widget(self.text_field)
+        for child in self.ids.card_.children:
             child.disabled = False
         self.rename_active = False
 
@@ -303,15 +302,11 @@ class DeviceController(BaseListItem):
             else:
                 self.height -= 100
                 self.ids.card_bottom_.height -= 100
-            self.ids.expand_btn_.icon = 'chevron-down'
-            self.ids.slider_container_.remove_widget(self.red_slider)
-            self.ids.slider_container_.remove_widget(self.green_slider)
-            self.ids.slider_container_.remove_widget(self.blue_slider)
-            self.ids.off_screen_.add_widget(self.green_slider)
-            self.ids.off_screen_.add_widget(self.red_slider)
-            self.ids.off_screen_.add_widget(self.blue_slider)
-            self.ids.off_screen_.remove_widget(self.dimmer)
-            self.ids.slider_container_.add_widget(self.dimmer)
+
+            self.carousel.remove_widget(self.rgb_container)
+            self.off_screen.remove_widget(self.dimmer_container)
+            self.carousel.add_widget(self.dimmer_container)
+            self.off_screen.add_widget(self.rgb_container)
             self.is_expanded = False
         else:
             if platform == 'android':
@@ -320,15 +315,10 @@ class DeviceController(BaseListItem):
             else:
                 self.height += 100
                 self.ids.card_bottom_.height += 100
-            self.ids.expand_btn_.icon = 'chevron-up'
-            self.ids.slider_container_.remove_widget(self.dimmer)
-            self.ids.off_screen_.add_widget(self.dimmer)
-            self.ids.off_screen_.remove_widget(self.red_slider)
-            self.ids.off_screen_.remove_widget(self.green_slider)
-            self.ids.off_screen_.remove_widget(self.blue_slider)
-            self.ids.slider_container_.add_widget(self.red_slider)
-            self.ids.slider_container_.add_widget(self.green_slider)
-            self.ids.slider_container_.add_widget(self.blue_slider)
+            self.carousel.remove_widget(self.dimmer_container)
+            self.off_screen.remove_widget(self.rgb_container)
+            self.carousel.add_widget(self.rgb_container)
+            self.off_screen.add_widget(self.dimmer_container)
             self.is_expanded = True
 
     def open_configure_leds_screen(self, *args):
@@ -493,9 +483,9 @@ class DeviceController(BaseListItem):
         if self.power_button.active:
             logging.debug('LIGHTS ON!')
             self.dimmer.value = self.brightness
-            self.red_slider.value = self.r
-            self.green_slider.value = self.g
-            self.blue_slider.value = self.b
+            # self.red_slider.value = self.r
+            # self.green_slider.value = self.g
+            # self.blue_slider.value = self.b
             self.dimmer.disabled = False
             self.red_slider.disabled = False
             self.green_slider.disabled = False
@@ -504,9 +494,9 @@ class DeviceController(BaseListItem):
         else:
             logging.debug('LIGHTS OFF!')
             self.brightness = self.dimmer.value
-            self.r = self.red_slider.value
-            self.g = self.green_slider.value
-            self.b = self.blue_slider.value
+            # self.r = self.red_slider.value
+            # self.g = self.green_slider.value
+            # self.b = self.blue_slider.value
             # self.dimmer.value = 0
             self.dimmer.disabled = True
             self.red_slider.disabled = True
@@ -521,7 +511,15 @@ class DeviceController(BaseListItem):
         command = Command(mode=2, dimmer_val=dimmer.value)
         self.send_command(command)
 
+    def update_rgb_sliders(self, md_bg_color, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'`\tmd_bg_color: {md_bg_color}')
+        self.red_slider.value = int(md_bg_color[0] * 255)
+        self.green_slider.value = int(md_bg_color[1] * 255)
+        self.blue_slider.value = int(md_bg_color[2] * 255)
+
     def send_rgb(self, *args):
+        """Triggered by any RGB sliders' on_value call"""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         command = Command(mode=1,
                           red=self.red_slider.value,
@@ -603,6 +601,9 @@ class DeviceController(BaseListItem):
         # Animations or Patterns?
         elif command.mode == 3:
             byte0 = 3
+            command.mirrored = True
+            if command.mirrored:
+                command.hex_colors = list(command.hex_colors) + list(command.hex_colors)[::-1]
             byte1 = len(command.hex_colors)
             self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
             for hex_color in command.hex_colors:
