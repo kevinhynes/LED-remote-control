@@ -2,16 +2,6 @@
 #include <FastLED.h>
 #include <vector>
 
-// #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))    // C++ equivalent of Python :)
-// #define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
-
-//  UNTESTED UPDATES 9/14/23
-//  printPaletteFlat
-//  declaring and defining paletteColors in case deleting it without a specified size was the problem
-//  changed paletteColors type and input types back to int..
-//  paletteColors (eventually) needs to be of type byte in order to put it into the DEFINE_GRADIENT_PALETTE
-//  added len macro and using it here
-
 //  Mode 0 - Configure
 //            0 - set NUM_LEDS
 //            1 - set type of LEDs (future)
@@ -38,10 +28,21 @@ void setNumLEDs(int message[])
     Serial.print(" to ");
     NUM_LEDS = NEW_NUM_LEDS;
     Serial.println(NUM_LEDS);
-
     leds = new CRGB[NUM_LEDS];
     FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
     preferences.putUInt("NUM_LEDS", NUM_LEDS);
+
+    // Reset colorIndex array for animatePalette_RandomBreathe()
+    delete[] colorIndex;
+    colorIndex = nullptr;
+    colorIndex = new uint8_t[NUM_LEDS];
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        colorIndex[i] = random8();
+    }
+
+    FastLED.clear();
+    FastLED.show();
 }
 
 void setMaxBrightness(int message[])
@@ -64,6 +65,7 @@ void setColorCorrection(int message[])
     preferences.putUInt("colorCorrectionKey", key);
     Serial.print("Color corrected to ");
     Serial.println(intColorCorrectionMap[key]);
+    FastLED.show();
 }
 
 void setColorTemperatureCorrection(int message[])
@@ -73,6 +75,7 @@ void setColorTemperatureCorrection(int message[])
     preferences.putUInt("colorTemperatureCorrectionKey", key);
     Serial.print("Color Temperature corrected to ");
     Serial.println(intColorTemperatureCorrectionMap[key]);
+    FastLED.show();
 }
 
 void configure(int message[])
@@ -117,12 +120,13 @@ void configure(int message[])
 void updateColor(int message[])
 {
     Serial.println("updateColor");
+    animatePalette = false;
     masterRed = message[1];
     masterGreen = message[2];
     masterBlue = message[3];
-    dimmedRed = int(masterRed * masterBrightness / 100);
-    dimmedGreen = int(masterGreen * masterBrightness / 100);
-    dimmedBlue = int(masterBlue * masterBrightness / 100);
+    dimmedRed = int(masterRed * masterBrightness / 255);
+    dimmedGreen = int(masterGreen * masterBrightness / 255);
+    dimmedBlue = int(masterBlue * masterBrightness / 255);
     fill_solid(leds, NUM_LEDS, CRGB(dimmedRed, dimmedGreen, dimmedBlue));
     FastLED.show();
 }
@@ -134,12 +138,17 @@ void updateColor(int message[])
 void updateBrightness(int message[])
 {
     Serial.println("updateBrightness");
+    // animatePalette = false;
     masterBrightness = message[1];
-    dimmedRed = int(masterRed * masterBrightness / 100);
-    dimmedGreen = int(masterGreen * masterBrightness / 100);
-    dimmedBlue = int(masterBlue * masterBrightness / 100);
-    fill_solid(leds, NUM_LEDS, CRGB(dimmedRed, dimmedGreen, dimmedBlue));
-    FastLED.show();
+    dimmedRed = int(masterRed * masterBrightness / 255);
+    dimmedGreen = int(masterGreen * masterBrightness / 255);
+    dimmedBlue = int(masterBlue * masterBrightness / 255);
+    // Update animated palette brightness if running, otherwise update solid color brightness.
+    if (!animatePalette)
+    {
+        fill_solid(leds, NUM_LEDS, CRGB(dimmedRed, dimmedGreen, dimmedBlue));
+        FastLED.show();
+    }
 }
 
 
@@ -149,37 +158,135 @@ void updateBrightness(int message[])
 //                   byte0      byte1         byte2       byte3       byet4      byte5
 //  First Message:     3      num_colors      junk        junk        junk        end
 //  Color Messages:    3         red          green       blue        junk        end
-byte *paletteColors;
-
-void showPalette()
+void animatePalette_RandomBreathe()
 {
-    int palStartIndex = 0;
-    FastLED.clear();
-    fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), curPalette, 200, LINEARBLEND);
+    if (isPaletteNew)
+    {
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+            colorIndex[i] = random8();
+        }
+        isPaletteNew = false;
+    }
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        CRGB thisColor = ColorFromPalette(curPalette, colorIndex[i]);
+        for (int j = 0; j < 3; j++)
+        {
+            thisColor[j] = int(thisColor[j] * masterBrightness / 255);
+        }
+        leds[i] = thisColor;
+        colorIndex[i]++;
+    }
     FastLED.show();
 }
 
-void buildPalette()
+void animatePalette_Breathe()
 {
-    Serial.println("buildPalette");
-    curPalette.loadDynamicGradientPalette(paletteColors);
+    static uint8_t palIndex = 0;
+    CRGB fillColor = ColorFromPalette(curPalette, palIndex);
+    for (int i = 0; i < 3; i++)
+    {
+        fillColor[i] = int(fillColor[i] * masterBrightness / 255);
+    }
+    fill_solid(leds, NUM_LEDS, fillColor);
+    palIndex += 1;
+    FastLED.show();
 }
 
-// void printPaletteFlat(int numColors)
+void animatePalette_Scroll()
+{
+    static uint8_t palStartIndex = 0;
+    fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), curPalette, masterBrightness, LINEARBLEND);
+    palStartIndex += 1;
+    FastLED.show();
+}
+
+void animatePalette_Scroll2()
+{
+    FastLED.clear();
+    static uint8_t palStartIndex = 0;
+    static uint8_t palIndex = 0;
+    palIndex = palStartIndex;
+    for (int i = 0; i < NUM_LEDS; i+= 1)
+    {
+        CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
+        for (int j = 0; j < 3; j++)
+        {
+            pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
+        }
+        leds[i] = pixelColor;
+        palIndex += 1;
+    }
+    palStartIndex += 1;
+    FastLED.show();
+}
+
+void animatePalette_SmoothScroll()
+{
+    // DrawPixel is, and should be, additive for each color in leds.
+    // Therefore need to clear it on each iteration or it will turn
+    // fully white after a few iterations.
+    FastLED.clear();
+    // Draw a "pixel" of width 1 from a fractional starting point.
+    // palStartIndex - keep track of what color to start first
+    // pixel at.
+    // palIndex - iterate through the palette and apply to next pixel.
+    // scroll - how much each pixel moves per loop.
+    static uint8_t palStartIndex = 0;
+    static uint8_t palIndex = 0;
+    static float scroll = 0.0f;
+    scroll += 0.1f;
+    if (scroll > 1.0)
+    {
+        scroll = 0.0;
+        // palStartIndex += 1;
+    }
+    palIndex = palStartIndex;
+    for (float i = scroll; i < NUM_LEDS; i+= 1)
+    {
+        CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
+        for (int j = 0; j < 3; j++)
+        {
+            pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
+        }
+        DrawPixels(i, 1, pixelColor);
+        palIndex += 1;
+    }
+    palStartIndex += 1;
+    FastLED.show();
+}
+
+// void doAnimatePalette()
 // {
-//   Serial.println("printPaletteFlat");
-//   Serial.print("  length: ");
-//   for (int i = 0; i < numColors * 3; i++)
+//   FastLED.clear();
+//   static uint8_t palIndex = 0;
+//   static float scroll = 0.0f;
+//   scroll += 0.05f;
+//   if (scroll > 1.0)
+//     scroll = 0;
+
+//   for (float i = scroll; i < NUM_LEDS; i+= 1)
 //   {
-//     if (i == 0)
-//     {
-//       Serial.print("  ");
-//     }
-//     Serial.print(paletteColors[i]);
-//     Serial.print(" | ");
+//     DrawPixels(i, 1, ColorFromPalette(curPalette, palIndex));
 //   }
-//   Serial.println(" ");
+//   palIndex += 1;
+//   FastLED.show();
 // }
+
+void showPalette()
+{
+    Serial.println("showPalette");
+    animatePalette = true;
+    FastLED.show();
+}
+
+void buildPalette(int numColors)
+{
+    Serial.println("buildPalette");
+    isPaletteNew = true;
+    curPalette.loadDynamicGradientPalette(paletteColors);
+}
 
 void printPalette(int numColors)
 {
@@ -209,11 +316,16 @@ void paletteHelper(int message[])
     {
         // Out with the old..
         delete[] paletteColors;
+        delete[] mirroredPaletteColors;
+
         paletteColors = nullptr;
+        mirroredPaletteColors = nullptr;
+
         // In with the new..
         numColors = message[1];
         width = 255 / (numColors - 1);
         paletteColors = new byte[numColors * 4];
+        mirroredPaletteColors = new byte[numColors * 4 * 2];
         Serial.print("  numColors: ");
         Serial.println(numColors);
         msgNumber += 1;
@@ -250,7 +362,7 @@ void paletteHelper(int message[])
     {
         msgNumber = -1;
         printPalette(numColors);
-        buildPalette();
+        buildPalette(numColors);
         showPalette();
     }
 }
