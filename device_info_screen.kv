@@ -1,0 +1,12 @@
+#:import DeviceInfoScreen device_info_screen.DeviceInfoScreen
+
+
+<DeviceInfoScreen>:
+    info_list: info_list_
+    MDScrollView:
+        do_scroll_x: False
+        scroll_distance: dp(300)
+        MDList:
+            id: info_list_
+            MDSeparator:
+                height: dp(3)

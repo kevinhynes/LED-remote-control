@@ -1,0 +1,50 @@
+#:import FindDevicesScreen find_devices_screen.FindDevicesScreen
+
+
+
+<BTDeviceListItem>:
+    IconLeftWidgetWithoutTouch:
+        icon: 'bluetooth'
+
+
+<PairedDevicesHeader>:
+    info_button: _info_button
+    text: 'Paired Devices'.upper()
+    font_style: 'Button'
+    _no_ripple_effect: True
+    MDBoxLayout:
+        pos_hint: {'right': 1, 'center_y': 0.5}
+        size_hint: (None, 1)
+        adaptive_width: True
+        MDIconButton:
+            id: _info_button
+            icon: 'information-outline'
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            on_release: root.give_info()
+        MDIconButton:
+            icon: 'refresh'
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            on_release: app.get_paired_devices()
+
+
+<FindDevicesScreen>:
+    loaded_devices: app.loaded_devices
+    loaded_devices_list: loaded_devices_list_
+    paired_devices: app.paired_devices
+    paired_devices_list: paired_devices_list_
+
+    MDScrollView:
+#        on_overscroll: app.get_paired_devices()
+
+        MDList:
+            PairedDevicesHeader:
+            MDSeparator:
+            MDList:
+                id: paired_devices_list_
+            OneLineListItem:
+                text: 'Saved Devices'.upper()
+                font_style: 'Button'
+                _no_ripple_effect: True
+            MDSeparator:
+            MDList:
+                id: loaded_devices_list_
