@@ -1,15 +1,3 @@
-<GradientWidget>:
-    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    size_hint: (0.75, 0.75)
-
-
-<PaletteWidget>:
-    size_hint: (1, None)
-    height: dp(50)
-    md_bg_color: app.theme_cls.primary_color
-    MDSeparator:
-
-
 <PalettesScreen>:
     grid: grid_
     MDScrollView:
@@ -17,4 +5,48 @@
         scroll_distance: dp(150)
         MDList:
             id: grid_
-            spacing: dp(10)
+            spacing: dp(5)
+
+
+<PaletteWidget>:
+    orientation: 'horizontal'
+    size_hint: (1, None)
+    height: dp(50)
+    padding: dp(10), dp(0), dp(0), dp(0)
+    md_bg_color: app.theme_cls.primary_color
+
+
+<GradientWidget>:
+    pos_hint: {'x': 0.1, 'center_y': 0.5}
+    size_hint: (0.5, 0.75)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        RoundedRectangle:
+            pos: self.x + dp(4), self.y - dp(3)  # Adjust shadow position
+            size: self.width, self.height
+            radius: dp(15), dp(15)
+        Color:
+            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x, self.y   # Adjust shadow position
+            size: self.width, self.height
+
+
+<PaletteWidgetControls>:
+    orientation: 'rl-tb'
+    rows: 1
+    size_hint: (0.5, 1)
+    md_bg_color: (1, 0, 0, 0.3)
+    MDIconButton:
+        icon: 'data/square.png'
+
+    MDIconButton:
+        icon: 'data/flip.png'
+
+    MDIconButton:
+        icon: 'data/fliprev.png'
+#    MDCheckbox:
+#        on_active: print("OK")
+
+
