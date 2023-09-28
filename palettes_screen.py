@@ -1,86 +1,142 @@
 import logging
+from kivymd.app import MDApp
+from kivy.clock import Clock
+from kivy.graphics import Color, RoundedRectangle
+from kivy.metrics import dp
+from kivy.utils import get_color_from_hex
 from kivymd.uix.screen import MDScreen
+from kivy.properties import NumericProperty, ListProperty, ObjectProperty, BooleanProperty
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.relativelayout import MDRelativeLayout
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty, BooleanProperty
-from kivymd.app import MDApp
+from kivymd.uix.widget import MDWidget
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.card import MDCard
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivy.uix.screenmanager import SlideTransition
 
-from kivy.graphics import Color
-from kivy_gradient import Gradient
 
-from kivy.graphics import RoundedRectangle
-from kivy.utils import get_color_from_hex
-from kivy.metrics import dp
+from kivy_gradient import Gradient
 
 from bluetooth_helpers import Command
 import palettes
 from troubleshooting import func_name
 
 
-########## Palettes Screen ##########
-class PaletteWidgetControls(MDGridLayout):
-    pass
+class PaletteControls(MDGridLayout):
+    palette_widget = ObjectProperty()
+    mirror_btn = ObjectProperty()
+    blend_btn = ObjectProperty()
+    select_btn = ObjectProperty()
 
-class GradientWidget(MDFlatButton):
-    mirrored = BooleanProperty(True)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.mirror_btns = ('crop-square', 'data/flip.png', 'data/fliprev.png')
+        self.mirror_idx = 1
+        self.blend_btns = ('checkbox-blank-outline', 'checkbox-marked-outline')
+        self.blend_idx = 0
+        self.select_btns = ('checkbox-blank-outline', 'checkbox-marked-outline')
+        self.select_idx = 0
+
+    def update_mirroring(self, *args):
+        self.palette_widget.update_mirror_idx(self.mirror_idx)
+        self.mirror_idx = (self.mirror_idx + 1) % 3
+        self.mirror_btn.icon = self.mirror_btns[self.mirror_idx]
+
+    def update_blended(self, *args):
+        self.blend_idx = (self.blend_idx + 1) % 2
+        self.palette_widget.update_is_blended(self.blend_idx)
+        self.blend_btn.icon = self.blend_btns[self.blend_idx]
+
+    def update_selected(self, *args):
+        self.palette_widget.update_is_selected(self.select_idx)
+        self.select_idx = (self.select_idx + 1) % 2
+        self.select_btn.icon = self.select_btns[self.select_idx]
+
+
+class PaletteWidget(MDBoxLayout):
 
     def __init__(self, colors, **kwargs):
-        super().__init__(**kwargs)
         # Right now only works for hex values in string form
+        self.mirror_idx = 0
+        self.is_blended = 0
+        self.is_selected = 0
         self.colors = [str(color) for color in colors]
-        self.mirrored_colors = self.colors + self.colors[::-1]
+        self.display_colors = [str(color) for color in colors]
+        self.shadow = RoundedRectangle()
         self.gradient = RoundedRectangle()
-        gradient_texture = Gradient.horizontal(*[get_color_from_hex(color) for color in colors])
+        self.bind(pos=self.update_shadow, size=self.update_shadow)
+        self.bind(pos=self.update_gradient, size=self.update_gradient)
+        super().__init__(**kwargs)
+        # Clock.schedule_once(self.update_palette, 2)
+
+    def update_mirror_idx(self, mirror_idx, *args):
+        self.mirror_idx = mirror_idx
+        self.update_palette()
+
+    def update_is_blended(self, is_blended, *args):
+        self.is_blended = is_blended
+        self.update_palette()
+
+    def update_is_selected(self, is_selected, *args):
+        self.is_selected = is_selected
+
+    def update_palette(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        self.canvas.before.clear()
+        self.canvas.clear()
+        self.children[:] = []
+        colors = []
+        if self.mirror_idx == 0:
+            colors[:] = self.colors
+        elif self.mirror_idx == 1:
+            colors[:] = self.colors + self.colors[::-1]
+        else:
+            colors[:] = self.colors[::-1] + self.colors
+        self.display_colors[:] = colors
+        if self.is_blended:
+            self.update_gradient()
+        else:
+            for i, clr in enumerate(self.display_colors):
+                self.add_widget(MDWidget(md_bg_color=clr))
+        self.update_shadow()
+
+    def update_gradient(self, *args):
+        self.canvas.clear()
+        gradient_texture = Gradient.horizontal(
+            *[get_color_from_hex(color) for color in self.display_colors])
         with self.canvas:
             Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
             self.gradient = RoundedRectangle(size=self.size, pos=self.pos,
                                              radius=(dp(15), dp(15)), texture=gradient_texture)
-            self.bind(pos=self.update_gradient, size=self.update_gradient)
+            # self.bind(pos=self.update_gradient, size=self.update_gradient)
+        # self.gradient.pos = self.pos
+        # self.gradient.size = self.size
 
-    def update_gradient(self, *args):
-        self.gradient.pos = self.pos
-        self.gradient.size = self.size
-
-    def on_mirrored(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        self.canvas.clear()
-        if self.mirrored:
-            gradient_texture = Gradient.horizontal(
-                *[get_color_from_hex(color) for color in self.mirrored_colors])
-            with self.canvas:
-                Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
-                self.gradient = RoundedRectangle(size=self.size, pos=self.pos,
-                                                 radius=(dp(15), dp(15)), texture=gradient_texture)
-                self.bind(pos=self.update_gradient, size=self.update_gradient)
+    def update_shadow(self, *args):
+        self.canvas.before.clear()
+        if self.is_blended:
+            with self.canvas.before:
+                Color(0, 0, 0, 0.2)
+                self.shadow = RoundedRectangle(size=self.size, pos=(self.x + dp(4), self.y - dp(3)),
+                                               radius=(dp(15), dp(15)))
         else:
-            gradient_texture = Gradient.horizontal(
-                *[get_color_from_hex(color) for color in self.colors])
-            with self.canvas:
-                Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
-                self.gradient = RoundedRectangle(size=self.size, pos=self.pos,
-                                                 radius=(dp(15), dp(15)), texture=gradient_texture)
-                self.bind(pos=self.update_gradient, size=self.update_gradient)
-
-    def change_mirror(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`called with {args}')
-        self.mirrored = not self.mirrored
+            with self.canvas.before:
+                Color(0, 0, 0, 0.2)
+                self.shadow = RoundedRectangle(size=self.size, pos=(self.x + dp(4), self.y - dp(3)),
+                                               radius=(dp(1), dp(1)))
 
 
-class PaletteWidget(MDCard):
+class PaletteController(MDCard):
 
     def __init__(self, device_controller, hex_colors, **kwargs):
         super().__init__(**kwargs)
         self.device_controller = device_controller
         self.hex_colors = hex_colors
-        self.gradient_widget = GradientWidget(hex_colors)
-        self.gradient_widget.bind(on_press=self.send_palette)
-        self.controls = PaletteWidgetControls()
-        self.add_widget(self.gradient_widget)
+        self.palette_widget = PaletteWidget(hex_colors)
+        self.palette_widget.bind(on_touch_up=self.send_palette)
+        self.controls = PaletteControls(palette_widget=self.palette_widget)
+        self.add_widget(self.palette_widget)
         self.add_widget(self.controls)
 
     def send_palette(self, *args):
@@ -112,7 +168,7 @@ class PalettesScreen(MDScreen):
     def on_kv_post(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         for palette in self.palettes:
-            self.ids.grid_.add_widget(PaletteWidget(
+            self.ids.grid_.add_widget(PaletteController(
                 device_controller=self.device_controller,
                 hex_colors=palette))
 

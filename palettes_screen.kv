@@ -8,45 +8,49 @@
             spacing: dp(5)
 
 
-<PaletteWidget>:
+<PaletteController>:
     orientation: 'horizontal'
     size_hint: (1, None)
     height: dp(50)
-    padding: dp(10), dp(0), dp(0), dp(0)
+    padding: dp(20), dp(0), dp(0), dp(0)
     md_bg_color: app.theme_cls.primary_color
 
 
-<GradientWidget>:
+<PaletteWidget>:
     pos_hint: {'x': 0.1, 'center_y': 0.5}
     size_hint: (0.5, 0.75)
-    canvas.before:
+    md_bg_color: (1, 0, 0, 0.2)
+    canvas:
         Color:
-            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+            rgba: (0, 0, 0, 0.2)
         RoundedRectangle:
-            pos: self.x + dp(4), self.y - dp(3)  # Adjust shadow position
-            size: self.width, self.height
-            radius: dp(15), dp(15)
-        Color:
-            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x, self.y   # Adjust shadow position
-            size: self.width, self.height
+            pos: (self.x + dp(4), self.y - dp(3))
+            size: self.size
 
 
-<PaletteWidgetControls>:
+<PaletteControls>:
+    mirror_btn: mirror_btn_
+    blend_btn: blend_btn_
+    select_btn: select_btn_
     orientation: 'rl-tb'
     rows: 1
     size_hint: (0.5, 1)
-    md_bg_color: (1, 0, 0, 0.3)
     MDIconButton:
-        icon: 'data/square.png'
-
+        id: select_btn_
+        icon: 'checkbox-blank-outline'
+        theme_icon_color: 'Custom'
+        icon_color: 'black'
+        on_press: root.update_selected()
     MDIconButton:
+        id: mirror_btn_
         icon: 'data/flip.png'
-
+        theme_icon_color: 'Custom'
+        icon_color: 'black'
+        on_press: root.update_mirroring()
     MDIconButton:
-        icon: 'data/fliprev.png'
-#    MDCheckbox:
-#        on_active: print("OK")
-
+        id: blend_btn_
+        icon: 'checkbox-blank-outline'
+        theme_icon_color: 'Custom'
+        icon_color: 'black'
+        on_press: root.update_blended()
 
