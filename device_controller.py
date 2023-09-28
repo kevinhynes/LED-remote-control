@@ -6,19 +6,24 @@ import logging
 import jnius
 import struct
 import webcolors
+import colorsys
+from collections import namedtuple
 from typing import Optional, List
 from threading import Thread
 from jnius import cast, autoclass
 from functools import partial
 from typing import Union
+from kivymd.app import MDApp
 from kivy.core.window import Window
 from kivy.clock import mainthread
 from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty, \
     BooleanProperty
 from kivy.metrics import dp, sp
-from kivymd.app import MDApp
+from kivy.graphics import Color
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.gridlayout import MDGridLayout
+from kivymd.uix.relativelayout import MDRelativeLayout
 from kivymd.uix.label import MDLabel
 from kivymd.uix.button import MDIconButton, MDRoundFlatButton, MDRectangleFlatButton
 from kivymd.uix.list import TwoLineAvatarIconListItem
@@ -36,8 +41,6 @@ from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.pickers import MDColorPicker
-from kivymd.uix.button import MDFlatButton
-from kivymd.uix.carousel import MDCarousel
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import func_name
@@ -47,12 +50,207 @@ if platform == 'android':
     BluetoothAdapter = autoclass('android.bluetooth.BluetoothAdapter')
     BluetoothDevice = autoclass('android.bluetooth.BluetoothDevice')
 
+AnimationPresetButtonAttr = namedtuple('AnimationPresetButtonAttr',
+                                       ('icon_filepath', 'animation', 'speed', 'palette_name',))
 
-class RenameDeviceTextField(MDTextField):
+
+class AnimationPresetButton(MDIconButton, MDRoundFlatButton):
     pass
 
 
+class AnimationPresetsSlide(MDBoxLayout):
+    device_controller = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_kv_post(self, *args):
+        presets_grid = MDGridLayout(cols=4,
+                                    # md_bg_color=(1, 0, 0, 0.25),
+                                    adaptive_size=True,
+                                    pos_hint={'bottom': 0},
+                                    padding=(dp(0), dp(10), dp(0), dp(10)),
+                                    # spacing=(dp(5))
+                                    )
+        ap_btn_attrs = [
+            AnimationPresetButtonAttr(
+                icon_filepath="data/comet.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/bounce.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/star.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/firework.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/rocket.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/bonfire.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/comet.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/bounce.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/star.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/firework.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/rocket.png", animation=1, speed=1, palette_name='forest'),
+            AnimationPresetButtonAttr(
+                icon_filepath="data/bonfire.png", animation=1, speed=1, palette_name='forest'),
+        ]
+
+        for i in range(len(ap_btn_attrs)):
+            ap_btn_attr = ap_btn_attrs[i]
+            ap_btn = AnimationPresetButton(icon=ap_btn_attr.icon_filepath,)
+            presets_grid.add_widget(ap_btn)
+
+        control_grid = MDGridLayout(cols=2,
+                                    # md_bg_color=(1, 0, 0, 0.25),
+                                    adaptive_size=True,
+                                    pos_hint={'bottom': 0},
+                                    padding=(dp(0), dp(10), dp(0), dp(10)),
+                                    spacing=(dp(5))
+                                    )
+        control_button_attrs = [
+            ControlButtonAttr(color='red', icon='arrow-up-bold', rgb_inc=[5, 0, 0]),
+            ControlButtonAttr(color='red', icon='arrow-down-bold', rgb_inc=[-5, 0, 0]),
+            ControlButtonAttr(color='green', icon='arrow-up-bold', rgb_inc=[0, 5, 0]),
+            ControlButtonAttr(color='green', icon='arrow-down-bold', rgb_inc=[0, -5, 0]),
+            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 5]),
+            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, -5]),
+            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 0]),
+            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, 0]),
+        ]
+        for i in range(8):
+            control_btn_attr = control_button_attrs[i]
+            control_btn = ColorPresetsSlideControlButton(
+                icon=control_btn_attr.icon,
+                theme_icon_color='Custom',
+                icon_color=control_btn_attr.color,
+                # md_bg_color=(1, 1, 1),
+                size_hint=(None, None),
+            )
+            control_btn.bind(on_release=partial(self.device_controller.increment_rgb,
+                                                control_btn_attr.rgb_inc))
+            control_grid.add_widget(control_btn)
+        self.control_grid = control_grid
+        self.presets_grid = presets_grid
+        self.add_widget(presets_grid)
+        self.add_widget(control_grid)
+
+    def on_size(self, *args):
+        self.update_buttons()
+
+    def on_pos(self, *args):
+        self.update_buttons()
+
+    def update_buttons(self):
+        btn_width = (self.width - dp(30)) / 6
+        for btn in self.control_grid.children:
+            btn.size = (btn_width, btn_width)
+
+        for btn in self.presets_grid.children:
+            btn.size = (btn_width, btn_width)
+            # btn.pos = btn.x - dp(2), btn.y - dp(2)
+
+
 class ColorPresetButton(MDRoundFlatButton):
+    pass
+
+
+class ColorPresetsSlideButton(MDRoundFlatButton):
+    pass
+
+
+class ColorPresetsSlideControlButton(MDIconButton):
+    pass
+
+
+ControlButtonAttr = namedtuple('ControlButton', ['color', 'icon', 'rgb_inc'])
+
+
+class ColorPresetsSlide(MDBoxLayout):
+    device_controller = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_kv_post(self, *args):
+        color_grid = MDGridLayout(cols=4,
+                                  # md_bg_color=(1, 0, 0, 0.25),
+                                  adaptive_size=True,
+                                  pos_hint={'bottom': 0},
+                                  padding=(dp(0), dp(10), dp(0), dp(10)),
+                                  spacing=(dp(5))
+                                  )
+        control_grid = MDGridLayout(cols=2,
+                                    # md_bg_color=(1, 0, 0, 0.25),
+                                    adaptive_size=True,
+                                    pos_hint={'bottom': 0},
+                                    padding=(dp(0), dp(10), dp(0), dp(10)),
+                                    spacing=(dp(5))
+                                    )
+        num_buttons = 16
+        hue_step = 255 / num_buttons
+        for i in range(0, num_buttons):
+            hue = i * hue_step
+            hsv = [hue / 255, 1, 1]
+            rgb = colorsys.hsv_to_rgb(*hsv)
+            color_preset_btn = ColorPresetsSlideButton(
+                md_bg_color=rgb,
+                size_hint=(None, None),
+            )
+            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
+                                                     color_preset_btn.md_bg_color))
+            color_grid.add_widget(color_preset_btn)
+        control_button_attrs = [
+            ControlButtonAttr(color='red', icon='arrow-up-bold', rgb_inc=[5, 0, 0]),
+            ControlButtonAttr(color='red', icon='arrow-down-bold', rgb_inc=[-5, 0, 0]),
+            ControlButtonAttr(color='green', icon='arrow-up-bold', rgb_inc=[0, 5, 0]),
+            ControlButtonAttr(color='green', icon='arrow-down-bold', rgb_inc=[0, -5, 0]),
+            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 5]),
+            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, -5]),
+            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 0]),
+            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, 0]),
+        ]
+        for i in range(8):
+            control_btn_attr = control_button_attrs[i]
+            control_btn = ColorPresetsSlideControlButton(
+                icon=control_btn_attr.icon,
+                theme_icon_color='Custom',
+                icon_color=control_btn_attr.color,
+                # md_bg_color=(1, 1, 1),
+                size_hint=(None, None),
+            )
+            control_btn.bind(on_release=partial(self.device_controller.increment_rgb,
+                                                control_btn_attr.rgb_inc))
+            control_grid.add_widget(control_btn)
+        self.color_grid = color_grid
+        self.control_grid = control_grid
+        self.add_widget(color_grid)
+        self.add_widget(control_grid)
+
+    def on_size(self, *args):
+        self.update_buttons()
+
+    def on_pos(self, *args):
+        self.update_buttons()
+
+    def update_buttons(self):
+        btn_width = (self.width - dp(30)) / 6
+        for btn in self.control_grid.children:
+            btn.size = (btn_width, btn_width)
+
+        for btn in self.color_grid.children:
+            btn.size = (btn_width, btn_width)
+
+    def update_rgb_sliders(self, md_bg_color, *args):
+        logging.debug(
+            f'`{self.__class__.__name__}.{func_name()}` called with args: {md_bg_color}')
+        self.device_controller.update_rgb_sliders(md_bg_color)
+
+
+class RenameDeviceTextField(MDTextField):
     pass
 
 
@@ -73,11 +271,14 @@ class DeviceController(BaseListItem):
     is_connected = BooleanProperty()
     is_expanded = BooleanProperty(False)
     off_screen = ObjectProperty()
+    color_presets_slide = ObjectProperty()
+    animation_presets_slide = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.rename_active = False
         self.reconnection_active = True
+        self.slide_num = 0
         configure_leds = {
             'text': 'Configure LEDs',
             'on_release': self.open_configure_leds_screen,
@@ -114,8 +315,12 @@ class DeviceController(BaseListItem):
             'text': 'Palettes',
             'on_release': self.open_palettes_screen,
         }
+        animations = {
+            'text': 'Animations',
+            'on_release': self.open_animations_screen,
+        }
         menu_items = [configure_leds, rename, info, forget, reconnect, disconnect, forget,
-                      color, color_screen, palettes]
+                      color, color_screen, palettes, animations]
         self.menu = MDDropdownMenu(
             caller=self.ids.menu_button_,
             items=menu_items,
@@ -141,6 +346,10 @@ class DeviceController(BaseListItem):
         # self.dimmer.bind(on_touch_up=self.blue_slider_touch_up)
         self.carousel.remove_widget(self.rgb_container)
         self.off_screen.add_widget(self.rgb_container)
+        self.carousel.remove_widget(self.color_presets_slide)
+        self.off_screen.add_widget(self.color_presets_slide)
+        self.carousel.remove_widget(self.animation_presets_slide)
+        self.off_screen.add_widget(self.animation_presets_slide)
 
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
@@ -271,6 +480,16 @@ class DeviceController(BaseListItem):
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'palettes'
 
+    def open_animations_screen(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.menu.dismiss()
+        app = MDApp.get_running_app()
+        animations_screen = app.root_screen.screen_manager.get_screen('animations')
+        animations_screen.device_controller = self
+        slide_left = SlideTransition(direction='left')
+        app.root_screen.screen_manager.transition = slide_left
+        app.root_screen.screen_manager.current = 'animations'
+
     # def gradient_on_touch_move(self, touch):
     #     """Handles the ``self.ids.gradient_widget`` touch event."""
     #     gradient_widget = self.color_picker.ids.gradient_widget
@@ -320,6 +539,50 @@ class DeviceController(BaseListItem):
             self.carousel.add_widget(self.rgb_container)
             self.off_screen.add_widget(self.dimmer_container)
             self.is_expanded = True
+
+    def carousel_change_slides(self, increment):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with : {increment}')
+        # Dimmer slide...
+        if self.slide_num == 0:
+            self.carousel.remove_widget(self.dimmer_container)
+            self.off_screen.add_widget(self.dimmer_container)
+        # RGB sliders...
+        if self.slide_num == 1:
+            self.carousel.remove_widget(self.rgb_container)
+            self.off_screen.add_widget(self.rgb_container)
+        # Color presets slide...
+        if self.slide_num == 2:
+            self.carousel.remove_widget(self.color_presets_slide)
+            self.off_screen.add_widget(self.color_presets_slide)
+        # Animation presets slide...
+        if self.slide_num == 3:
+            self.carousel.remove_widget(self.animation_presets_slide)
+            self.off_screen.add_widget(self.animation_presets_slide)
+        self.slide_num = (self.slide_num + increment) % 4
+        # Dimmer slide...
+        if self.slide_num == 0:
+            self.height = dp(165)
+            self.ids.card_bottom_.height = dp(100)
+            self.off_screen.remove_widget(self.dimmer_container)
+            self.carousel.add_widget(self.dimmer_container)
+        # RGB sliders...
+        if self.slide_num == 1:
+            self.height = dp(165) + dp(100)
+            self.ids.card_bottom_.height = dp(100) + dp(100)
+            self.off_screen.remove_widget(self.rgb_container)
+            self.carousel.add_widget(self.rgb_container)
+        # Color presets slide...
+        if self.slide_num == 2:
+            self.height = dp(165) + dp(150)
+            self.ids.card_bottom_.height = dp(100) + dp(150)
+            self.off_screen.remove_widget(self.color_presets_slide)
+            self.carousel.add_widget(self.color_presets_slide)
+        # Animation presets slide...
+        if self.slide_num == 3:
+            self.height = dp(165) + dp(150)
+            self.ids.card_bottom_.height = dp(100) + dp(150)
+            self.off_screen.remove_widget(self.animation_presets_slide)
+            self.carousel.add_widget(self.animation_presets_slide)
 
     def open_configure_leds_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -510,6 +773,13 @@ class DeviceController(BaseListItem):
                       f'called with dimmer.value == {dimmer.value}')
         command = Command(mode=2, dimmer_val=dimmer.value)
         self.send_command(command)
+
+    def increment_rgb(self, rgb_inc, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        red = min(max(0, self.red_slider.value + rgb_inc[0]), 255)
+        green = min(max(0, self.green_slider.value + rgb_inc[1]), 255)
+        blue = min(max(0, self.blue_slider.value + rgb_inc[2]), 255)
+        self.update_rgb_sliders((red / 255, green / 255, blue / 255))
 
     def update_rgb_sliders(self, md_bg_color, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')

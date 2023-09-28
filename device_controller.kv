@@ -1,11 +1,98 @@
 #:import Command bluetooth_helpers.Command
 
+
+<AnimationPresetButton>:
+    # Testing comet animation
+#    icon_size: sp(50)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    size_hint: (None, None)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.5
+        Line:
+            circle: self.center_x, self.center_y, self.width / 2 , 0, 360, 100
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+        Color:
+            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x, self.y   # Adjust shadow position
+            size: self.width, self.height
+
+<ColorPresetsSlideControlButton>:
+    size_hint_y: None
+    width: self.height
+    rounded_button: True
+#    line_color: app.theme_cls.bg_light
+#    line_width: dp(0.1)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2) # Adjust shadow position
+            size: self.width, self.height
+#    canvas:
+        Color:
+            rgba: (1, 1, 1, 1)
+        Ellipse:
+            pos: self.x, self.y
+            size: self.width, self.height
+#    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Ellipse:
+            pos: self.x, self.y
+            size: self.width, self.height
+        Color:
+            rgba: (1, 1, 1, 1)
+        Ellipse:
+            pos: self.x, self.y + dp(3)
+            size: self.width- dp(3), self.height - dp(3)
+
+
+<ColorPresetsSlideButton>:
+    size_hint_y: None
+    width: self.height
+    rounded_button: True
+#    line_color: app.theme_cls.bg_light
+#    line_width: dp(0.1)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Ellipse:
+            pos: self.x, self.y
+            size: self.width, self.height
+        Color:
+            rgba: self.md_bg_color
+        Ellipse:
+            pos: self.x, self.y + dp(3)
+            size: self.width- dp(3), self.height - dp(3)
+
 <ColorPresetButton>:
     size_hint: (None, 0.9)
     width: self.height
     rounded_button: True
     line_color: app.theme_cls.bg_light
-    line_width: dp(1.1)
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
 
 
 <RenameDeviceTextField>:
@@ -30,9 +117,11 @@
     dimmer_container: dimmer_container_
     rgb_container: rgb_container_
     off_screen: off_screen_
+    color_presets_slide: color_presets_slide_
+    animation_presets_slide: animation_presets_slide_
     _no_ripple_effect: True
     divider: None
-    radius: dp(15), dp(15), dp(15), dp(15)
+#    radius: dp(15), dp(15), dp(15), dp(15)
     height: dp(165)
 
     MDCard:
@@ -40,10 +129,10 @@
         orientation: 'vertical'
         size_hint: (0.9, 1)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        style: 'elevated'
-        elevation: dp(4)
+#        style: 'elevated'
+#        elevation: dp(4)
         padding: dp(10), dp(10), dp(10), dp(10)
-        radius: dp(15), dp(15), dp(15), dp(15)
+#        radius: dp(15), dp(15), dp(15), dp(15)
         md_bg_color: app.theme_cls.primary_color
 
         MDRelativeLayout:
@@ -56,21 +145,21 @@
                 pos_hint: {'top': 1}
                 size_hint: (1, None)
                 height: dp(100)
-                padding: dp(20), dp(0)
-                spacing: dp(10)
-                style: 'elevated'
-                elevation: dp(2)
-                radius: dp(15), dp(15), dp(15), dp(15)
+                padding: dp(0), dp(0)
+                spacing: dp(5)
+#                style: 'elevated'
+#                elevation: dp(2)
+#                radius: dp(15), dp(15), dp(15), dp(15)
                 md_bg_color: app.theme_cls.primary_light
                 MDIconButton:
                     id: left_btn_
                     pos_hint: {'left': 0, 'center_y': (card_bottom_.height - card_top_.height) / (2 * card_bottom_.height)}
-                    size_hint: (0.05, 0.5)
+                    size_hint: (0.1, 0.5)
                     icon: 'chevron-left'
                     theme_icon_color: 'Custom'
                     icon_color: 'white'
                     _no_ripple_effect: True
-                    on_release: root.expand_rgb_sliders()
+                    on_release: root.carousel_change_slides(-1)
                 MDBoxLayout:
                     id: carousel_
                     adaptive_height: True
@@ -80,7 +169,6 @@
                     MDBoxLayout:
                         id: dimmer_container_
                         orientation: 'vertical'
-#                        md_bg_color: (1, 0, 0, 0.5)
                         MDSlider:
                             id: dimmer_
                             pos_hint: {'bottom': 0}
@@ -144,18 +232,30 @@
                             value: 255
                             disabled: True
                             on_value: root.send_rgb()
-                        MDBoxLayout:
-                            id: color_presets_container_
+                    ColorPresetsSlide:
+                        id: color_presets_slide_
+                        device_controller: root
+                        orientation: 'horizontal'
+#                        md_bg_color: (0, 1, 0, 0.5)
+                        padding: dp(0)
+                        spacing: dp(10)
+                    AnimationPresetsSlide:
+                        id: animation_presets_slide_
+                        device_controller: root
+                        orientation: 'horizontal'
+#                        md_bg_color: (0, 1, 0, 0.5)
+                        padding: dp(0)
+                        spacing: dp(10)
 
                 MDIconButton:
                     id: right_btn_
                     pos_hint: {'right': 1, 'center_y': (card_bottom_.height - card_top_.height) / (2 * card_bottom_.height)}
-                    size_hint: (0.05, 0.5)
+                    size_hint: (0.1, 0.5)
                     icon: 'chevron-right'
                     theme_icon_color: 'Custom'
                     icon_color: 'white'
                     _no_ripple_effect: True
-                    on_release: root.expand_rgb_sliders()
+                    on_release: root.carousel_change_slides(1)
 
             MDCard:
                 id: card_top_
@@ -163,9 +263,9 @@
                 pos_hint: {'top': 1}
                 size_hint: (1, None)
                 height: dp(50)
-                style: 'elevated'
-                elevation: dp(2)
-                radius: dp(15), dp(15), dp(15), dp(15)
+#                style: 'elevated'
+#                elevation: dp(2)
+#                radius: dp(15), dp(15), dp(15), dp(15)
                 md_bg_color: app.theme_cls.primary_dark
 
                 MDRelativeLayout:
@@ -179,7 +279,7 @@
                         icon_color: 'red'
 
                 MDRelativeLayout:
-                    id: label__container
+                    id: label_container_
                     size_hint: (0.65, 1)
 
                     MDLabel:
@@ -259,8 +359,18 @@
                     width: self.height
                     rounded_button: True
                     line_color: app.theme_cls.bg_light
-                    line_width: dp(1.1)
-
+                    line_width: dp(0.5)
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+                        Ellipse:
+                            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+                            size: self.width, self.height
+                        Color:
+                            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+                        Ellipse:
+                            pos: self.x, self.y   # Adjust shadow position
+                            size: self.width, self.height
                 MDRelativeLayout:
                     MDIconButton:
                         id: menu_button_
@@ -275,7 +385,7 @@
         id: card_overlay_
         size_hint: (0.9, 1)
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        radius: dp(15), dp(15), dp(15), dp(15)
+#        radius: dp(15), dp(15), dp(15), dp(15)
 #        md_bg_color: app.theme_cls.primary_color
         md_bg_color: 'gray'
         opacity: 0

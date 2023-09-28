@@ -1,3 +1,6 @@
 <a href="https://www.flaticon.com/free-icons/comet" title="comet icons">Comet icons created by Freepik - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/bounce" title="bounce icons">Bounce icons created by Freepik - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/sparkle" title="sparkle icons">Sparkle icons created by Freepik - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/fireworks" title="fireworks icons">Fireworks icons created by Freepik - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/fireworks" title="fireworks icons">Fireworks icons created by Smashicons - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/camping" title="camping icons">Camping icons created by Freepik - Flaticon</a>

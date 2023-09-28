@@ -82,6 +82,7 @@ class MainApp(MDApp):
         Builder.load_file('configure_leds_screen.kv')
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
+        Builder.load_file('animations_screen.kv')
 
         Clock.schedule_once(self.request_bluetooth_permissions)
         Clock.schedule_once(self.load_saved_data)

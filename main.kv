@@ -3,6 +3,7 @@
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 #:import Gradient kivy_gradient.Gradient
 #:import PalettesScreen palettes_screen.PalettesScreen
+#:import AnimationsScreen animations_screen.AnimationsScreen
 
 
 <Overlay@Widget>:
@@ -25,53 +26,6 @@
 # [padding]
 
 
-#<BTDeviceListItem>:
-#    IconLeftWidgetWithoutTouch:
-#        icon: 'bluetooth'
-#
-#
-#<PairedDevicesHeader>:
-#    info_button: _info_button
-#    text: 'Paired Devices'.upper()
-#    font_style: 'Button'
-#    _no_ripple_effect: True
-#    MDBoxLayout:
-#        pos_hint: {'right': 1, 'center_y': 0.5}
-#        size_hint: (None, 1)
-#        adaptive_width: True
-#        MDIconButton:
-#            id: _info_button
-#            icon: 'information-outline'
-#            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#            on_release: root.give_info()
-#        MDIconButton:
-#            icon: 'refresh'
-#            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#            on_release: app.get_paired_devices()
-#
-#
-#<FindDevicesScreen>:
-#    loaded_devices: app.loaded_devices
-#    loaded_devices_list: loaded_devices_list_
-#    paired_devices: app.paired_devices
-#    paired_devices_list: paired_devices_list_
-#
-#    MDScrollView:
-##        on_overscroll: app.get_paired_devices()
-#
-#        MDList:
-#            PairedDevicesHeader:
-#            MDSeparator:
-#            MDList:
-#                id: paired_devices_list_
-#            OneLineListItem:
-#                text: 'Saved Devices'.upper()
-#                font_style: 'Button'
-#                _no_ripple_effect: True
-#            MDSeparator:
-#            MDList:
-#                id: loaded_devices_list_
-
 <ControllersScreen>:
     loaded_devices: app.loaded_devices
     controllers_list: controllers_list_
@@ -84,103 +38,9 @@
         MDList:
             id: controllers_list_
             spacing: dp(20)
-#            DeviceController:
-#            BaseListItem:
-#                _no_ripple_effect: True
-#                MDFloatingActionButton:
-#                    id: _add_device_button
-#                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                    icon: 'plus'
-#                    on_release:
-#                        app.root_screen.screen_manager.current = 'find_devices'
-
-
-#<DeviceInfoScreen>:
-#    info_list: info_list_
-#    MDScrollView:
-#        do_scroll_x: False
-#        scroll_distance: dp(300)
-#        MDList:
-#            id: info_list_
-#            MDSeparator:
-#                height: dp(3)
 
 
 <ColorPickerScreen>:
-
-
-########## Palettes Screen ##########
-#<GradientWidget>:
-#    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#    size_hint: (0.85, 0.9)
-#
-#
-#<PaletteWidget>:
-#    size_hint: (1, None)
-#    height: dp(100)
-#    md_bg_color: app.theme_cls.primary_color
-#    MDSeparator:
-#
-#
-#<PalettesScreen>:
-#    grid: grid_
-#    MDScrollView:
-#        do_scroll_x: False
-#        scroll_distance: dp(150)
-#        MDList:
-#            id: grid_
-#            spacing: dp(10)
-
-
-#<ConfigureLEDsScreen>:
-#    MDGridLayout:
-#        cols:1
-#        padding: dp(20)
-#        MDLabel:
-#            text: 'Configuration Options'.upper()
-#            font_style: 'Button'
-#            font_size: sp(16)
-#            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#            size_hint: (0.9, None)
-#            height: dp(25)
-#        MDSeparator:
-#        MDGridLayout:
-#            cols: 1
-#            spacing: dp(40)
-#            padding: dp(10)
-#            MDTextField:
-#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                size_hint: (0.9, None)
-#                height: dp(50)
-#                helper_text: 'Number of LEDs [0 - 65535]'
-#                helper_text_mode: 'persistent'
-#                mode: 'fill'
-#                on_text_validate: root.validate_num_leds(self)
-#            MDTextField:
-#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                size_hint: (0.9, None)
-#                height: dp(50)
-#                helper_text: 'Set maximum brightness [0 - 255]'
-#                helper_text_mode: 'persistent'
-#                mode: 'fill'
-#                on_text_validate: root.validate_brightness(self)
-#            MDDropDownItem:
-#                id: color_corrections_btn_
-#                text: 'Color Corrections Options'
-#                font_size: sp(14)
-#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                size_hint: (0.9, None)
-#                height: dp(50)
-#                on_release: root.open_color_corrections_menu(self)
-#                md_bg_color: 'white'
-#            MDDropDownItem:
-#                id: temperature_corrections_btn_
-#                text: 'Color Temperature Corrections Options'
-#                font_size: sp(14)
-#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#                size_hint: (0.9, None)
-#                height: dp(50)
-#                on_release: root.open_temperature_corrections_menu(self)
 
 
 <RootScreen>:
@@ -227,6 +87,10 @@
                 name: 'palettes'
                 size_hint_y: 1 - _top_app_bar.height / root.height
 
+            AnimationsScreen:
+                name: 'animations'
+                size_hint_y: 1 - _top_app_bar.height / root.height
+
         MDNavigationDrawer:
             id: _nav_drawer
             enable_swiping: False
@@ -239,10 +103,10 @@
                     spacing: '4dp'
                     padding: '12dp', 0, 0, '56dp'
 
-#                MDNavigationDrawerLabel:
-#                    text: 'Menu'
-#
-#                MDNavigationDrawerDivider:
+                MDNavigationDrawerLabel:
+                    text: 'Menu'.upper()
+
+                MDNavigationDrawerDivider:
 
                 MDNavigationDrawerItem:
 #                    id: find_devices_
@@ -254,7 +118,7 @@
                     on_press:
                         _screen_manager.current = 'find_devices'
                         _nav_drawer.set_state('close')
-                    markup: True   # Necessary for it to turn back to white due to bug!
+                    markup: True   # Necessary for it to turn back to white due to bug!?
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'

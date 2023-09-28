@@ -60,7 +60,7 @@ class CustomBluetoothDevice:
 
     def getAddress(self, *args):
         """This method is handled by the __getattr__ defined above, but if app is started with
-        Bluetooth off, BluetoothDevice.getName() returns None and will cause app to crash."""
+        Bluetooth off, BluetoothDevice.getAddress() returns None and will cause app to crash."""
         address = self.bluetooth_device.getAddress()
         if address is None:
             return self.address
