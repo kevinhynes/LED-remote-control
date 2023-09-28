@@ -1,0 +1,138 @@
+<AnimationsScreen>:
+    grid: grid_
+    MDScrollView:
+        do_scroll_x: False
+        scroll_distance: dp(150)
+        MDList:
+            id: grid_
+            spacing: dp(5)
+
+<AnimationExpansionPanel>:
+    id: panel_
+    top_panel: tp_
+    bottom_panel: bp_
+    orientation: 'vertical'
+    size_hint:  (0.9, None)
+    height: dp(50)
+    md_bg_color: app.theme_cls.primary_light
+    MDRelativeLayout:
+#        md_bg_color: (0, 1, 0, 0.25)
+        MDBoxLayout:
+            id: bp_base_
+#            md_bg_color: (0, 0, 1, 0.25)
+            BottomPanel:
+                id: bp_
+                size_hint: (1, None)
+                height: max(dp(50), bp_base_.height - tp_.height)
+#                top: tp_.y
+#                md_bg_color: (1, 0, 0, 0.5)
+        TopPanel:
+            id: tp_
+            panel: panel_
+
+
+<TopPanel>:
+    anim_icon: anim_icon_
+    name_lbl: name_lbl_
+    orientation: 'horizontal'
+    pos_hint: {'top': 1}
+    size_hint: (1, None)
+    height: dp(50)
+    md_bg_color: app.theme_cls.primary_dark
+    MDRelativeLayout:
+        id: tp_left_
+        MDBoxLayout:
+            size_hint: (1, 1)
+            padding: dp(3)
+            pos_hint: {'center_y': 0.5}
+            AnimationExpansionPanelIconButton:
+                id: anim_icon_
+                icon: 'data/comet.png'
+        Label:
+            id: name_lbl_
+            text: 'Comet'
+            font_style: 'Button'
+    MDRelativeLayout:
+        id: tp_right_
+        MDIconButton:
+            icon: 'chevron-down'
+            pos_hint: {'right': 1}
+            on_release:
+                root.panel.expand_contract()
+                self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
+        Label:
+            text: 'Comet'
+            font_style: 'Button'
+
+
+<AnimationExpansionPanelIconButton@MDIconButton>:
+    # Testing comet animation
+    icon: "data/comet.png"
+    size_hint: (None, 1)
+    width: self.height
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+        Color:
+            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x, self.y   # Adjust shadow position
+            size: self.width, self.height
+
+
+<BottomPanel>:
+    orientation: 'vertical'
+    padding: dp(10)
+    md_bg_color: app.theme_cls.primary_light
+
+
+<CometContent>:
+    orientation: 'vertical'
+    md_bg_color: (0, 1, 0, 0.25)
+    MDLabel:
+        size_hint: (0.9, None)
+        pos_hint: {'center_x': 0.5}
+        height: dp(15)
+        text: "Animation Speed".upper()
+        font_size: sp(10)
+        font_style: 'Overline'
+        halign: 'left'
+        valign: 'bottom'
+#        md_bg_color: (1, 0, 0, 0.5)
+    MDSlider:
+#        size_hint: (1, None)
+#        height: dp(50)
+        hint: False
+        canvas:
+            Color:
+                rgba: 0, 0, 0, 0.2
+            Line:
+                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDSeparator:
+        height: dp(3)
+    MDLabel:
+        size_hint: (0.9, None)
+        pos_hint: {'center_x': 0.5}
+        height: dp(15)
+        text: "Trail Length".upper()
+        font_size: sp(10)
+        font_style: 'Overline'
+        halign: 'left'
+        valign: 'bottom'
+    MDSlider:
+        canvas:
+            Color:
+                rgba: 0, 0, 0, 0.2
+            Line:
+                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDSeparator:
+        height: dp(3)
+
+
+
+
