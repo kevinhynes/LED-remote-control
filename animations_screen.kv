@@ -1,31 +1,33 @@
 <AnimationsScreen>:
-    grid: grid_
     MDScrollView:
         do_scroll_x: False
         scroll_distance: dp(150)
-        MDList:
-            id: grid_
-            spacing: dp(5)
+        AnimationsList:
+
+
+<AnimationsList>:
+    spacing: dp(5)
+
 
 <AnimationExpansionPanel>:
     id: panel_
     top_panel: tp_
-    bottom_panel: bp_
+    control_panel_tray: control_panel_tray_
     orientation: 'vertical'
     size_hint:  (0.9, None)
     height: dp(50)
     md_bg_color: app.theme_cls.primary_light
     MDRelativeLayout:
-#        md_bg_color: (0, 1, 0, 0.25)
-        MDBoxLayout:
-            id: bp_base_
-#            md_bg_color: (0, 0, 1, 0.25)
-            BottomPanel:
-                id: bp_
-                size_hint: (1, None)
-                height: max(dp(50), bp_base_.height - tp_.height)
-#                top: tp_.y
-#                md_bg_color: (1, 0, 0, 0.5)
+        # Need this so ControlPanel is under TopPanel
+        ControlPanelTray:
+            id: control_panel_tray_
+            orientation: 'vertical'
+            size_hint: (1, None)
+            height: max(dp(50), panel_.height - tp_.height)
+#            y: panel_.y
+            padding: dp(10)
+            md_bg_color: (1, 0, 0, 0.75)
+
         TopPanel:
             id: tp_
             panel: panel_
@@ -58,7 +60,7 @@
             icon: 'chevron-down'
             pos_hint: {'right': 1}
             on_release:
-                root.panel.expand_contract()
+                root.panel.toggle_expansion()
                 self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
         Label:
             text: 'Comet'
@@ -85,15 +87,9 @@
             size: self.width, self.height
 
 
-<BottomPanel>:
+<CometControls>:
     orientation: 'vertical'
-    padding: dp(10)
-    md_bg_color: app.theme_cls.primary_light
-
-
-<CometContent>:
-    orientation: 'vertical'
-    md_bg_color: (0, 1, 0, 0.25)
+#    md_bg_color: (0, 0, 1, 0.25)
     MDLabel:
         size_hint: (0.9, None)
         pos_hint: {'center_x': 0.5}
@@ -132,7 +128,37 @@
                 rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
     MDSeparator:
         height: dp(3)
-
-
-
-
+    MDLabel:
+        size_hint: (0.9, None)
+        pos_hint: {'center_x': 0.5}
+        height: dp(15)
+        text: "Trail Length".upper()
+        font_size: sp(10)
+        font_style: 'Overline'
+        halign: 'left'
+        valign: 'bottom'
+    MDSlider:
+        canvas:
+            Color:
+                rgba: 0, 0, 0, 0.2
+            Line:
+                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDSeparator:
+        height: dp(3)
+    MDLabel:
+        size_hint: (0.9, None)
+        pos_hint: {'center_x': 0.5}
+        height: dp(15)
+        text: "Trail Length".upper()
+        font_size: sp(10)
+        font_style: 'Overline'
+        halign: 'left'
+        valign: 'bottom'
+    MDSlider:
+        canvas:
+            Color:
+                rgba: 0, 0, 0, 0.2
+            Line:
+                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDSeparator:
+        height: dp(3)

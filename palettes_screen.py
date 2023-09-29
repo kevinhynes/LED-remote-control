@@ -4,6 +4,7 @@ from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 from kivy.utils import get_color_from_hex
+from kivy.uix.behaviors import ButtonBehavior
 from kivymd.uix.screen import MDScreen
 from kivy.properties import NumericProperty, ListProperty, ObjectProperty, BooleanProperty
 from kivymd.uix.button import MDFlatButton
@@ -33,7 +34,7 @@ class PaletteControls(MDGridLayout):
         super().__init__(**kwargs)
         self.mirror_btns = ('crop-square', 'data/flip.png', 'data/fliprev.png')
         self.mirror_idx = 1
-        self.blend_btns = ('checkbox-blank-outline', 'checkbox-marked-outline')
+        self.blend_btns = ( 'blur-linear', 'dots-grid',)
         self.blend_idx = 0
         self.select_btns = ('checkbox-blank-outline', 'checkbox-marked-outline')
         self.select_idx = 0
@@ -65,20 +66,28 @@ class PaletteWidget(MDBoxLayout):
         self.display_colors = [str(color) for color in colors]
         self.shadow = RoundedRectangle()
         self.gradient = RoundedRectangle()
-        self.bind(pos=self.update_shadow, size=self.update_shadow)
-        self.bind(pos=self.update_gradient, size=self.update_gradient)
         super().__init__(**kwargs)
+        self.bind(pos=self.update_palette, size=self.update_palette)
+        # self.bind(pos=self.update_gradient, size=self.update_gradient)
         # Clock.schedule_once(self.update_palette, 2)
 
+    def on_touch_up(self, touch):
+        if self.collide_point(touch.x, touch.y):
+            logging.debug(f'\tPaletteWidget')
+            self.parent.send_palette()
+
     def update_mirror_idx(self, mirror_idx, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.mirror_idx = mirror_idx
         self.update_palette()
 
     def update_is_blended(self, is_blended, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.is_blended = is_blended
         self.update_palette()
 
     def update_is_selected(self, is_selected, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.is_selected = is_selected
 
     def update_palette(self, *args):
@@ -102,6 +111,7 @@ class PaletteWidget(MDBoxLayout):
         self.update_shadow()
 
     def update_gradient(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.canvas.clear()
         gradient_texture = Gradient.horizontal(
             *[get_color_from_hex(color) for color in self.display_colors])
@@ -109,11 +119,11 @@ class PaletteWidget(MDBoxLayout):
             Color(1, 1, 1)  # Set color to white, not sure why this is necessary.
             self.gradient = RoundedRectangle(size=self.size, pos=self.pos,
                                              radius=(dp(15), dp(15)), texture=gradient_texture)
-            # self.bind(pos=self.update_gradient, size=self.update_gradient)
-        # self.gradient.pos = self.pos
-        # self.gradient.size = self.size
+        self.gradient.pos = self.pos
+        self.gradient.size = self.size
 
     def update_shadow(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.canvas.before.clear()
         if self.is_blended:
             with self.canvas.before:
@@ -134,9 +144,10 @@ class PaletteController(MDCard):
         self.device_controller = device_controller
         self.hex_colors = hex_colors
         self.palette_widget = PaletteWidget(hex_colors)
-        self.palette_widget.bind(on_touch_up=self.send_palette)
         self.controls = PaletteControls(palette_widget=self.palette_widget)
+        # self.palette_widget.bind(on_touch_up=self.send_palette)
         self.add_widget(self.palette_widget)
+
         self.add_widget(self.controls)
 
     def send_palette(self, *args):
@@ -161,7 +172,7 @@ class PalettesScreen(MDScreen):
     def on_pre_enter(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         app = MDApp.get_running_app()
-        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        app.root_screen.ids.top_app_bar_.left_action_items = [['arrow-left-bold', self.go_back]]
         for palette_widget in self.ids.grid_.children:
             palette_widget.device_controller = self.device_controller
 
@@ -177,5 +188,5 @@ class PalettesScreen(MDScreen):
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
         app.root_screen.screen_manager.current = 'controllers'
-        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
-        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+        open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
+        app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
