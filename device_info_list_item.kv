@@ -1,21 +1,21 @@
 <DeviceInfoListItem>:
-    heading_label: _heading_label
-    content_label: _content_label
+    heading_label: heading_label_
+    content_label: content_label_
     size_hint_y: None
-    height: _heading_label.height + _content_label.height
+    height: heading_label_.height + content_label_.height
     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
     _no_ripple_effect: True
 
     MDRelativeLayout:
 #        orientation: 'vertical'
         size_hint_y: None
-        height: _heading_label.height + _content_label.height
+        height: heading_label_.height + content_label_.height
         pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         radius: dp(10), dp(10), dp(10), dp(10)
         md_bg_color: app.theme_cls.bg_normal
 
         MDLabel:
-            id: _heading_label
+            id: heading_label_
             size_hint_y: None
             height: self.texture_size[1]
             text_size: (self.width, None)
@@ -31,10 +31,10 @@
             orientation: 'horizontal'
             size_hint_x: 0.9
             pos_hint: {'center_x': 0.5}
-            center_y: _heading_label.y
+            center_y: heading_label_.y
 
         MDLabel:
-            id: _content_label
+            id: content_label_
             size_hint_y: None
             text_size: (self.width, None)
             height: self.texture_size[1]

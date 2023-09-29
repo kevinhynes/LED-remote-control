@@ -102,7 +102,7 @@ class ColorPickerScreen(MDScreen):
 
     def on_pre_enter(self, *args):
         app = MDApp.get_running_app()
-        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        app.root_screen.ids.top_app_bar_.left_action_items = [['arrow-left-bold', self.go_back]]
 
     def on_enter(self, *args):
         self.open_color_picker()
@@ -112,8 +112,8 @@ class ColorPickerScreen(MDScreen):
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
         app.root_screen.screen_manager.current = 'controllers'
-        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
-        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+        open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
+        app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
 
     def open_color_picker(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -142,5 +142,5 @@ class ColorPickerScreen(MDScreen):
 class RootScreen(MDScreen):
     screen_manager = ObjectProperty()
 
-    def open_nav_drawer(self, *args):
-        self.ids._nav_drawer.set_state('open')
+    def opennav_drawer_(self, *args):
+        self.ids.nav_drawer_.set_state('open')

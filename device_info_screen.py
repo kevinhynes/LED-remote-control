@@ -9,13 +9,13 @@ from troubleshooting import func_name
 
 
 class DeviceInfoListItem(BaseListItem):
-    headinglabel_ = ObjectProperty()
-    contentlabel_ = ObjectProperty()
+    heading_label = ObjectProperty()
+    content_label = ObjectProperty()
 
     def __init__(self, heading='', content='', **kwargs):
         super().__init__(**kwargs)
-        self.headinglabel_.text = heading
-        self.contentlabel_.text = content
+        self.heading_label.text = heading
+        self.content_label.text = content
 
 
 class DeviceInfoScreen(MDScreen):
@@ -24,7 +24,7 @@ class DeviceInfoScreen(MDScreen):
 
     def on_pre_enter(self, *args):
         app = MDApp.get_running_app()
-        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        app.root_screen.ids.top_app_bar_.left_action_items = [['arrow-left-bold', self.go_back]]
         if self.device:
             self.on_device()
 
@@ -53,5 +53,5 @@ class DeviceInfoScreen(MDScreen):
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
         app.root_screen.screen_manager.current = 'controllers'
-        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
-        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+        open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
+        app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]

@@ -48,13 +48,13 @@
     screen_manager: _screen_manager
 
     MDTopAppBar:
-        id: _top_app_bar
+        id: top_app_bar_
         title: 'LED Remote Control'
         anchor_title: 'left'
         elevation: 4
         shadow_color: app.theme_cls.bg_darkest
         pos_hint: {'top': 1}
-        left_action_items: [['menu', lambda x: root.open_nav_drawer()]]
+        left_action_items: [['menu', lambda x: root.opennav_drawer_()]]
 
     MDNavigationLayout:
 
@@ -64,35 +64,35 @@
 
             ControllersScreen:
                 name: 'controllers'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
                 pos_hint_y: {'y': 0}
 
             FindDevicesScreen:
                 name: 'find_devices'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
             DeviceInfoScreen
                 name: 'device_info'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
             ColorPickerScreen:
                 name: 'color_picker'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
             ConfigureLEDsScreen:
                 name: 'configure_leds'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
             PalettesScreen:
                 name: 'palettes'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
             AnimationsScreen:
                 name: 'animations'
-                size_hint_y: 1 - _top_app_bar.height / root.height
+                size_hint_y: 1 - top_app_bar_.height / root.height
 
         MDNavigationDrawer:
-            id: _nav_drawer
+            id: nav_drawer_
             enable_swiping: False
             radius: (0, 16, 16, 0)
 
@@ -117,7 +117,7 @@
                     _no_ripple_effect: True
                     on_press:
                         _screen_manager.current = 'find_devices'
-                        _nav_drawer.set_state('close')
+                        nav_drawer_.set_state('close')
                     markup: True   # Necessary for it to turn back to white due to bug!?
 
                 MDNavigationDrawerItem:
@@ -128,7 +128,7 @@
                     _no_ripple_effect: True
                     on_press:
                         _screen_manager.current = 'controllers'
-                        _nav_drawer.set_state('close')
+                        nav_drawer_.set_state('close')
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'
@@ -138,7 +138,7 @@
                     _no_ripple_effect: True
                     on_press:
                         app.clear_saved_data()
-                        _nav_drawer.set_state('close')
+                        nav_drawer_.set_state('close')
 
                 MDNavigationDrawerItem:
                     icon: 'bluetooth'
@@ -148,5 +148,5 @@
                     _no_ripple_effect: True
                     on_press:
                         app.show_saved_data()
-                        _nav_drawer.set_state('close')
+                        nav_drawer_.set_state('close')
 

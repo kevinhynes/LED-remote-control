@@ -46,7 +46,7 @@ class ConfigureLEDsScreen(MDScreen):
 
     def on_pre_enter(self, *args):
         app = MDApp.get_running_app()
-        app.root_screen.ids._top_app_bar.left_action_items = [['arrow-left-bold', self.go_back]]
+        app.root_screen.ids.top_app_bar_.left_action_items = [['arrow-left-bold', self.go_back]]
 
     def on_enter(self, *args):
         color_corrections_options = [
@@ -78,8 +78,8 @@ class ConfigureLEDsScreen(MDScreen):
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
         app.root_screen.screen_manager.current = 'controllers'
-        open_nav_menu = lambda x: app.root_screen.ids._nav_drawer.set_state('open')
-        app.root_screen.ids._top_app_bar.left_action_items = [['menu', open_nav_menu]]
+        open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
+        app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
 
     def validate_num_leds(self, text_field):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {text_field}')
