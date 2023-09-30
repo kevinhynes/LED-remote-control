@@ -24,8 +24,6 @@
             orientation: 'vertical'
             size_hint: (1, None)
             height: max(dp(50), panel_.height - tp_.height)
-            padding: dp(50)
-            md_bg_color: (1, 0, 0, 0.7)
         TopPanel:
             id: tp_
             panel: panel_
@@ -88,37 +86,29 @@
 <ControlPanel>:
     orientation: 'vertical'
     adaptive_height: True
-
+    spacing: dp(5)
 
 <CometControls>:
     ControlLabel:
         text: "Animation Speed".upper()
     ControlSlider:
-    MDSeparator:
+    ControlSeparator:
         height: dp(3)
     ControlLabel:
         text: "Trail Length".upper()
     ControlSlider:
-    MDSeparator:
-        height: dp(3)
+    ControlSeparator:
     ControlLabel:
-        text: "Trail Length".upper()
-    ControlSlider:
-    MDSeparator:
-        height: dp(3)
-    ControlLabel:
-        text: "Trail Length".upper()
-    ControlSlider:
-    MDSeparator:
-        height: dp(3)
+        text: "Mirror?".upper()
+        MDCheckbox:
+    ControlSeparator:
 
 
 <SplatterControls>:
     ControlLabel:
         text: "Animation Speed".upper()
     ControlSlider:
-    MDSeparator:
-        height: dp(3)
+    ControlSeparator:
     ControlLabel:
         text: "Palette Selection".upper()
     MDFlatButton:
@@ -130,13 +120,11 @@
     ControlLabel:
         text: "Animation Speed".upper()
     ControlSlider:
-    MDSeparator:
-        height: dp(3)
+    ControlSeparator:
     ControlLabel:
         text: "Trail Length".upper()
     ControlSlider:
-    MDSeparator:
-        height: dp(3)
+    ControlSeparator:
     MDFlatButton:
         text: "Test"
 
@@ -160,3 +148,15 @@
     font_style: 'Overline'
     halign: 'left'
     valign: 'bottom'
+
+
+<ControlSeparator@MDSeparator>:
+    size_hint_x: 0.95
+    pos_hint: {'center_x': 0.5}
+    height: dp(4)
+    canvas:
+        Color:
+            rgba: (0, 0, 0, 0.5)
+        Rectangle:
+            pos: (self.x, self.y + dp(2))
+            size: self.width, self.height - dp(2)

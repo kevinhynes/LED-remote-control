@@ -14,7 +14,6 @@ from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelThreeLine
 from kivy.graphics import Color
 from kivy_gradient import Gradient
-import kivy.garden.knob
 
 from kivy.graphics import RoundedRectangle
 from kivy.utils import get_color_from_hex
@@ -71,10 +70,16 @@ class ControlPanelTray(MDRelativeLayout):
         self.empty_tray()
 
     def empty_tray(self):
-        self.control_panel.x = self.x + Window.width
+        self.control_panel.x = Window.width
 
     def fill_tray(self):
         self.control_panel.x = self.x
+
+
+class AnimationController:
+
+    def __init(self, **kwargs):
+        self.speed = 0
 
 
 class AnimationExpansionPanel(MDCard):
@@ -91,6 +96,11 @@ class AnimationExpansionPanel(MDCard):
         super().__init__(**kwargs)
         logging.debug(
             f'\t control panel name: {name}  control panel height: {control_panel.height}')
+
+    def on_size(self, *args):
+        # Because of ControlPanel's adaptive_height: True, seems control_panel.height is not figured
+        # out until later so expanded_height is wrong upon instantiation.
+        self.expanded_height = dp(50) + self.control_panel.height
 
     def on_kv_post(self, *args):
         self.top_panel.anim_icon.icon = self.icon_filepath
@@ -110,8 +120,7 @@ class AnimationExpansionPanel(MDCard):
             logging.debug(
                 f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
 
-    def on_size(self, *args):
-        self.expanded_height = dp(50) + self.control_panel.height
+
 
 
 class AnimationsList(MDList):
