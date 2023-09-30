@@ -63,6 +63,8 @@ class AnimationPresetsSlide(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.presets_grid = MDGridLayout()
+        self.control_grid = MDGridLayout()
 
     def on_kv_post(self, *args):
         presets_grid = MDGridLayout(cols=4,
@@ -145,6 +147,7 @@ class AnimationPresetsSlide(MDBoxLayout):
         self.update_buttons()
 
     def update_buttons(self):
+        # Because of control_grid and color_grid adaptive_size: True
         btn_width = (self.width - dp(30)) / 6
         for btn in self.control_grid.children:
             btn.size = (btn_width, btn_width)
@@ -174,6 +177,8 @@ class ColorPresetsSlide(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.color_grid = MDGridLayout()
+        self.control_grid = MDGridLayout()
 
     def on_kv_post(self, *args):
         color_grid = MDGridLayout(cols=4,
@@ -237,6 +242,7 @@ class ColorPresetsSlide(MDBoxLayout):
         self.update_buttons()
 
     def update_buttons(self):
+        # Because of control_grid and color_grid adaptive_size: True
         btn_width = (self.width - dp(30)) / 6
         for btn in self.control_grid.children:
             btn.size = (btn_width, btn_width)
@@ -344,12 +350,16 @@ class DeviceController(BaseListItem):
         # self.dimmer.bind(on_touch_up=self.green_slider_touch_up)
         # self.dimmer.bind(on_touch_down=self.blue_slider_touch_down)
         # self.dimmer.bind(on_touch_up=self.blue_slider_touch_up)
-        self.carousel.remove_widget(self.rgb_container)
-        self.off_screen.add_widget(self.rgb_container)
-        self.carousel.remove_widget(self.color_presets_slide)
-        self.off_screen.add_widget(self.color_presets_slide)
-        self.carousel.remove_widget(self.animation_presets_slide)
-        self.off_screen.add_widget(self.animation_presets_slide)
+        # self.carousel.remove_widget(self.rgb_container)
+        # self.off_screen.add_widget(self.rgb_container)
+        # self.carousel.remove_widget(self.color_presets_slide)
+        # self.off_screen.add_widget(self.color_presets_slide)
+        # self.carousel.remove_widget(self.animation_presets_slide)
+        # self.off_screen.add_widget(self.animation_presets_slide)
+        # self.rgb_container.x = Window.width
+        # self.color_presets_slide.x = Window.width
+        # self.animation_presets_slide.x = Window.width
+        pass
 
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
@@ -512,77 +522,57 @@ class DeviceController(BaseListItem):
         '''Return selected color.'''
         logging.debug(f'Selected color is {selected_color}')
 
-    def expand_rgb_sliders(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        if self.is_expanded:
-            if platform == 'android':
-                self.height -= 275
-                self.ids.card_bottom_.height -= 275
-            else:
-                self.height -= 100
-                self.ids.card_bottom_.height -= 100
-
-            self.carousel.remove_widget(self.rgb_container)
-            self.off_screen.remove_widget(self.dimmer_container)
-            self.carousel.add_widget(self.dimmer_container)
-            self.off_screen.add_widget(self.rgb_container)
-            self.is_expanded = False
-        else:
-            if platform == 'android':
-                self.height += 275
-                self.ids.card_bottom_.height += 275
-            else:
-                self.height += 100
-                self.ids.card_bottom_.height += 100
-            self.carousel.remove_widget(self.dimmer_container)
-            self.off_screen.remove_widget(self.rgb_container)
-            self.carousel.add_widget(self.rgb_container)
-            self.off_screen.add_widget(self.dimmer_container)
-            self.is_expanded = True
-
     def carousel_change_slides(self, increment):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with : {increment}')
         # Dimmer slide...
         if self.slide_num == 0:
-            self.carousel.remove_widget(self.dimmer_container)
-            self.off_screen.add_widget(self.dimmer_container)
+            self.dimmer_container.x = Window.width
+            # self.carousel.remove_widget(self.dimmer_container)
+            # self.off_screen.add_widget(self.dimmer_container)
         # RGB sliders...
         if self.slide_num == 1:
-            self.carousel.remove_widget(self.rgb_container)
-            self.off_screen.add_widget(self.rgb_container)
+            self.rgb_container.x = Window.width
+            # self.carousel.remove_widget(self.rgb_container)
+            # self.off_screen.add_widget(self.rgb_container)
         # Color presets slide...
         if self.slide_num == 2:
-            self.carousel.remove_widget(self.color_presets_slide)
-            self.off_screen.add_widget(self.color_presets_slide)
+            self.color_presets_slide.x = Window.width
+            # self.carousel.remove_widget(self.color_presets_slide)
+            # self.off_screen.add_widget(self.color_presets_slide)
         # Animation presets slide...
         if self.slide_num == 3:
-            self.carousel.remove_widget(self.animation_presets_slide)
-            self.off_screen.add_widget(self.animation_presets_slide)
+            self.animation_presets_slide.x = Window.width
+            # self.carousel.remove_widget(self.animation_presets_slide)
+            # self.off_screen.add_widget(self.animation_presets_slide)
         self.slide_num = (self.slide_num + increment) % 4
         # Dimmer slide...
         if self.slide_num == 0:
             self.height = dp(165)
             self.ids.card_bottom_.height = dp(100)
-            self.off_screen.remove_widget(self.dimmer_container)
-            self.carousel.add_widget(self.dimmer_container)
+            self.dimmer_container.x = self.x
+            # self.off_screen.remove_widget(self.dimmer_container)
+            # self.carousel.add_widget(self.dimmer_container)
         # RGB sliders...
         if self.slide_num == 1:
             self.height = dp(165) + dp(100)
             self.ids.card_bottom_.height = dp(100) + dp(100)
-            self.off_screen.remove_widget(self.rgb_container)
-            self.carousel.add_widget(self.rgb_container)
+            self.rgb_container.x = self.x
+            # self.off_screen.remove_widget(self.rgb_container)
+            # self.carousel.add_widget(self.rgb_container)
         # Color presets slide...
         if self.slide_num == 2:
             self.height = dp(165) + dp(150)
             self.ids.card_bottom_.height = dp(100) + dp(150)
-            self.off_screen.remove_widget(self.color_presets_slide)
-            self.carousel.add_widget(self.color_presets_slide)
+            self.color_presets_slide.x = self.x
+            # self.off_screen.remove_widget(self.color_presets_slide)
+            # self.carousel.add_widget(self.color_presets_slide)
         # Animation presets slide...
         if self.slide_num == 3:
             self.height = dp(165) + dp(150)
             self.ids.card_bottom_.height = dp(100) + dp(150)
-            self.off_screen.remove_widget(self.animation_presets_slide)
-            self.carousel.add_widget(self.animation_presets_slide)
+            self.animation_presets_slide.x = self.x
+            # self.off_screen.remove_widget(self.animation_presets_slide)
+            # self.carousel.add_widget(self.animation_presets_slide)
 
     def open_configure_leds_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')

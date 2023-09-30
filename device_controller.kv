@@ -1,5 +1,5 @@
 #:import Command bluetooth_helpers.Command
-
+#:import Window kivy.core.window
 
 <AnimationPresetButton>:
     # Testing comet animation
@@ -160,7 +160,7 @@
                     icon_color: 'white'
                     _no_ripple_effect: True
                     on_release: root.carousel_change_slides(-1)
-                MDBoxLayout:
+                MDRelativeLayout:
                     id: carousel_
                     adaptive_height: True
                     orientation: 'vertical'
@@ -184,6 +184,8 @@
                         id: rgb_container_
                         orientation: 'vertical'
 #                        md_bg_color: (0.2, 1, 0, 0.5)
+                        x: Window.width
+
                         MDSlider:
                             id: red_slider_
                             color: (0.8, 0, 0, 0.75)
@@ -239,6 +241,8 @@
 #                        md_bg_color: (0, 1, 0, 0.5)
                         padding: dp(0)
                         spacing: dp(10)
+                        x: Window.width
+
                     AnimationPresetsSlide:
                         id: animation_presets_slide_
                         device_controller: root
@@ -246,6 +250,7 @@
 #                        md_bg_color: (0, 1, 0, 0.5)
                         padding: dp(0)
                         spacing: dp(10)
+                        x: Window.width
 
                 MDIconButton:
                     id: right_btn_
