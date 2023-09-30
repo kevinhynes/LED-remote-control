@@ -3,6 +3,7 @@
         do_scroll_x: False
         scroll_distance: dp(150)
         AnimationsList:
+            id: anm_list_
 
 
 <AnimationsList>:
@@ -82,38 +83,114 @@
             pos: self.x, self.y   # Adjust shadow position
             size: self.width, self.height
 
-
+#  To make a new control panel, inherit from ControlPanel and explicitly size
+#  all child widgets.
 <ControlPanel>:
     orientation: 'vertical'
     adaptive_height: True
     spacing: dp(5)
 
-<CometControls>:
+
+<BreatheControls>:
     ControlLabel:
         text: "Animation Speed".upper()
     ControlSlider:
-    ControlSeparator:
-        height: dp(3)
-    ControlLabel:
-        text: "Trail Length".upper()
-    ControlSlider:
+        id: animation_speed_slider_
     ControlSeparator:
     ControlLabel:
-        text: "Mirror?".upper()
+        text: "Palette Selection".upper()
+    ControlSeparator:
+    MDRaisedButton:
+        size_hint: (1, None)
+        height: dp(40)
+    ControlSeparator:
+    MDBoxLayout:
+        orientation: 'horizontal'
+        size_hint: (1, None)
+        height: dp(50)
+        ControlLabel:
+            text: "Mirror?".upper()
         MDCheckbox:
+            active: False
     ControlSeparator:
+    MDBoxLayout:
+        size_hint: (1, None)
+        height: dp(100)
+        md_bg_color: (1, 0, 0, 0.5)
 
+
+<ScrollControls>:
+    ControlLabel:
+        text: "Animation Speed".upper()
+    ControlSlider:
+        id: animation_speed_slider_
+    ControlSeparator:
+    ControlLabel:
+        text: "Palette Selection".upper()
+    MDBoxLayout:
+        size_hint: (0.5, None)
+        MDRaisedButton:
+            size_hint: (0.5, None)
+            height: dp(40)
+    ControlSeparator:
+    ControlSeparator:
+    MDBoxLayout:
+        orientation: 'horizontal'
+        size_hint: (1, None)
+        height: dp(50)
+        ControlLabel:
+            text: "Mirror?".upper()
+        MDCheckbox:
+            active: False
+    ControlSeparator:
+    MDBoxLayout:
+        size_hint: (1, None)
+        height: dp(100)
+        md_bg_color: (1, 0, 0, 0.5)
 
 <SplatterControls>:
     ControlLabel:
         text: "Animation Speed".upper()
     ControlSlider:
+        id: animation_speed_slider_
     ControlSeparator:
     ControlLabel:
         text: "Palette Selection".upper()
     MDFlatButton:
         text: "TEST"
         halign: 'center'
+
+<CometControls>:
+    ControlLabel:
+        text: "Animation Speed".upper()
+    ControlSlider:
+        id: animation_speed_slider_
+    ControlSeparator:
+    ControlLabel:
+        text: "Trail Length".upper()
+    ControlSeparator:
+    ControlSlider:
+        id: trail_length_
+    ControlLabel:
+        text: "Number of Comets".upper()
+    ControlSlider:
+        id: num_comets_
+    ControlSeparator:
+    MDBoxLayout:
+        orientation: 'horizontal'
+        size_hint: (1, None)
+        height: dp(50)
+        ControlLabel:
+            text: "Mirror?".upper()
+        MDCheckbox:
+            active: False
+    ControlSeparator:
+    MDBoxLayout:
+        size_hint: (1, None)
+        height: dp(100)
+        md_bg_color: (1, 0, 0, 0.5)
+
+
 
 
 <TwinkleControls>:

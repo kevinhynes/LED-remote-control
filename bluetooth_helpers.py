@@ -11,7 +11,8 @@ class Command:
 
     def __init__(self, mode, red=None, green=None, blue=None, dimmer_val=None,
                  num_leds=None, max_brightness=None, color_correction_key=None,
-                 color_temperature_correction_key=None, hex_colors=None, mirrored=False):
+                 color_temperature_correction_key=None, hex_colors=None, mirrored=False,
+                 animation_id=None, animation_speed=None, trail_length= None, num_comets=None):
         self.mode = mode
         self.red = red
         self.green = green
@@ -23,6 +24,10 @@ class Command:
         self.color_temperature_correction_key = color_temperature_correction_key
         self.hex_colors = hex_colors
         self.mirrored = mirrored
+        self.animation_id = animation_id
+        self.animation_speed = animation_speed
+        self.trail_length = trail_length
+        self.num_comets = num_comets
 
 
 class CustomBluetoothDevice:

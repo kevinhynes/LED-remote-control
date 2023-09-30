@@ -2,6 +2,7 @@
 #include <FastLED.h>
 #include <vector>
 
+
 //  Mode 0 - Configure
 //            0 - set NUM_LEDS
 //            1 - set type of LEDs (future)
@@ -158,121 +159,121 @@ void updateBrightness(int message[])
 //                   byte0      byte1         byte2       byte3       byet4      byte5
 //  First Message:     3      num_colors      junk        junk        junk        end
 //  Color Messages:    3         red          green       blue        junk        end
-void animatePalette_RandomBreathe()
-{
-    if (isPaletteNew)
-    {
-        for (int i = 0; i < NUM_LEDS; i++)
-        {
-            colorIndex[i] = random8();
-        }
-        isPaletteNew = false;
-    }
-    for (int i = 0; i < NUM_LEDS; i++)
-    {
-        CRGB thisColor = ColorFromPalette(curPalette, colorIndex[i]);
-        for (int j = 0; j < 3; j++)
-        {
-            thisColor[j] = int(thisColor[j] * masterBrightness / 255);
-        }
-        leds[i] = thisColor;
-        colorIndex[i]++;
-    }
-    FastLED.show();
-}
-
-void animatePalette_Breathe()
-{
-    static uint8_t palIndex = 0;
-    CRGB fillColor = ColorFromPalette(curPalette, palIndex);
-    for (int i = 0; i < 3; i++)
-    {
-        fillColor[i] = int(fillColor[i] * masterBrightness / 255);
-    }
-    fill_solid(leds, NUM_LEDS, fillColor);
-    palIndex += 1;
-    FastLED.show();
-}
-
-void animatePalette_Scroll()
-{
-    static uint8_t palStartIndex = 0;
-    fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), curPalette, masterBrightness, LINEARBLEND);
-    palStartIndex += 1;
-    FastLED.show();
-}
-
-void animatePalette_Scroll2()
-{
-    FastLED.clear();
-    static uint8_t palStartIndex = 0;
-    static uint8_t palIndex = 0;
-    palIndex = palStartIndex;
-    for (int i = 0; i < NUM_LEDS; i+= 1)
-    {
-        CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
-        for (int j = 0; j < 3; j++)
-        {
-            pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
-        }
-        leds[i] = pixelColor;
-        palIndex += 1;
-    }
-    palStartIndex += 1;
-    FastLED.show();
-}
-
-void animatePalette_SmoothScroll()
-{
-    // DrawPixel is, and should be, additive for each color in leds.
-    // Therefore need to clear it on each iteration or it will turn
-    // fully white after a few iterations.
-    FastLED.clear();
-    // Draw a "pixel" of width 1 from a fractional starting point.
-    // palStartIndex - keep track of what color to start first
-    // pixel at.
-    // palIndex - iterate through the palette and apply to next pixel.
-    // scroll - how much each pixel moves per loop.
-    static uint8_t palStartIndex = 0;
-    static uint8_t palIndex = 0;
-    static float scroll = 0.0f;
-    scroll += 0.1f;
-    if (scroll > 1.0)
-    {
-        scroll = 0.0;
-        // palStartIndex += 1;
-    }
-    palIndex = palStartIndex;
-    for (float i = scroll; i < NUM_LEDS; i+= 1)
-    {
-        CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
-        for (int j = 0; j < 3; j++)
-        {
-            pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
-        }
-        DrawPixels(i, 1, pixelColor);
-        palIndex += 1;
-    }
-    palStartIndex += 1;
-    FastLED.show();
-}
-
-// void doAnimatePalette()
+// void animatePalette_RandomBreathe()
 // {
-//   FastLED.clear();
-//   static uint8_t palIndex = 0;
-//   static float scroll = 0.0f;
-//   scroll += 0.05f;
-//   if (scroll > 1.0)
-//     scroll = 0;
-
-//   for (float i = scroll; i < NUM_LEDS; i+= 1)
+//   if (isPaletteNew)
 //   {
-//     DrawPixels(i, 1, ColorFromPalette(curPalette, palIndex));
+//     for (int i = 0; i < NUM_LEDS; i++)
+//     {
+//       colorIndex[i] = random8();
+//     }
+//     isPaletteNew = false;
 //   }
+//   for (int i = 0; i < NUM_LEDS; i++)
+//   {
+//     CRGB thisColor = ColorFromPalette(curPalette, colorIndex[i]);
+//     for (int j = 0; j < 3; j++)
+//     {
+//       thisColor[j] = int(thisColor[j] * masterBrightness / 255);
+//     }
+//     leds[i] = thisColor;
+//     colorIndex[i]++;
+//   }
+//   FastLED.show();
+// }
+
+// void animatePalette_Breathe()
+// {
+//   static uint8_t palIndex = 0;
+//   CRGB fillColor = ColorFromPalette(curPalette, palIndex);
+//   for (int i = 0; i < 3; i++)
+//   {
+//     fillColor[i] = int(fillColor[i] * masterBrightness / 255);
+//   }
+//   fill_solid(leds, NUM_LEDS, fillColor);
 //   palIndex += 1;
 //   FastLED.show();
 // }
+
+// void animatePalette_Scroll()
+// {
+//   static uint8_t palStartIndex = 0;
+//   fill_palette(leds, NUM_LEDS, palStartIndex, max((uint)1, 255 / NUM_LEDS), curPalette, masterBrightness, LINEARBLEND);
+//   palStartIndex += 1;
+//   FastLED.show();
+// }
+
+// void animatePalette_Scroll2()
+// {
+//   FastLED.clear();
+//   static uint8_t palStartIndex = 0;
+//   static uint8_t palIndex = 0;
+//   palIndex = palStartIndex;
+//   for (int i = 0; i < NUM_LEDS; i+= 1)
+//   {
+//     CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
+//     for (int j = 0; j < 3; j++)
+//     {
+//       pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
+//     }
+//     leds[i] = pixelColor;
+//     palIndex += 1;
+//   }
+//   palStartIndex += 1;
+//   FastLED.show();
+// }
+
+// void animatePalette_SmoothScroll()
+// {
+//   // DrawPixel is, and should be, additive for each color in leds.
+//   // Therefore need to clear it on each iteration or it will turn
+//   // fully white after a few iterations.
+//   FastLED.clear();
+//   // Draw a "pixel" of width 1 from a fractional starting point.
+//   // palStartIndex - keep track of what color to start first
+//   // pixel at.
+//   // palIndex - iterate through the palette and apply to next pixel.
+//   // scroll - how much each pixel moves per loop.
+//   static uint8_t palStartIndex = 0;
+//   static uint8_t palIndex = 0;
+//   static float scroll = 0.0f;
+//   scroll += 0.1f;
+//   if (scroll > 1.0)
+//   {
+//     scroll = 0.0;
+//     // palStartIndex += 1;
+//   }
+//   palIndex = palStartIndex;
+//   for (float i = scroll; i < NUM_LEDS; i+= 1)
+//   {
+//     CRGB pixelColor = ColorFromPalette(curPalette, palIndex);
+//     for (int j = 0; j < 3; j++)
+//     {
+//       pixelColor[j] = int(pixelColor[j] * masterBrightness / 255);
+//     }
+//     DrawPixels(i, 1, pixelColor);
+//     palIndex += 1;
+//   }
+//   palStartIndex += 1;
+//   FastLED.show();
+// }
+
+// // void doAnimatePalette()
+// // {
+// //   FastLED.clear();
+// //   static uint8_t palIndex = 0;
+// //   static float scroll = 0.0f;
+// //   scroll += 0.05f;
+// //   if (scroll > 1.0)
+// //     scroll = 0;
+
+// //   for (float i = scroll; i < NUM_LEDS; i+= 1)
+// //   {
+// //     DrawPixels(i, 1, ColorFromPalette(curPalette, palIndex));
+// //   }
+// //   palIndex += 1;
+// //   FastLED.show();
+// // }
 
 void showPalette()
 {
@@ -416,10 +417,14 @@ bool validateMessage(int message[])
     {
         updateBrightness(message);
     }
-    // Send a palette?
+    // Palette
     if (mode == 3)
     {
         paletteHelper(message);
+    }
+    if (mode == 4)
+    {
+        animationHelper(message);
     }
     return true;
 }
@@ -432,4 +437,63 @@ void resetMessage(int message[])
         message[i] = -1;
     }
     printMessage(message);
+}
+
+
+
+//  Get Serial Data
+void readBluetooth()
+{
+    static int message[] = {-1, -1, -1, -1, -1, -1};
+    static uint i = 0;
+    int cur_byte;
+    static int bluetooth_timeout = 1000;
+    if (ESP_BT.available())
+    {
+        cur_byte = static_cast<int>(ESP_BT.read());
+        message[i] = cur_byte;
+
+        // Mode
+        if (i == 0)
+        {
+            Serial.println("##### BEGIN MESSAGE #####");
+            Serial.println(cur_byte);
+            i = i + 1;
+        }
+
+        else if ((1 <= i) && (i < MESSAGE_LENGTH - 2))
+        {
+            Serial.println(cur_byte);
+            i = i + 1;
+        }
+
+        else if (i == MESSAGE_LENGTH - 2)
+        {
+            Serial.println(cur_byte);
+            Serial.println("##### END MESSAGE #####");
+            i = i + 1;
+        }
+
+            // End byte is -1 (actually 255 because idk)
+        else
+        {
+            if (validateMessage(message))
+            {
+                Serial.println("Valid message received");
+                bluetooth_timeout = 1000;
+            }
+            else
+            {
+                // Erase all incoming Bluetooth data to start over.
+                Serial.println("Invalid message recieved, clearing Bluetooth buffer...");
+                while (ESP_BT.available())
+                {
+                    int junk_byte = static_cast<int>(ESP_BT.read());
+                }
+            }
+            // Reset variables
+            resetMessage(message);
+            i = 0;
+        }
+    }
 }

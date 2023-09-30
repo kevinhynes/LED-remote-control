@@ -103,7 +103,7 @@ class AnimationPresetsSlide(MDBoxLayout):
 
         for i in range(len(ap_btn_attrs)):
             ap_btn_attr = ap_btn_attrs[i]
-            ap_btn = AnimationPresetButton(icon=ap_btn_attr.icon_filepath,)
+            ap_btn = AnimationPresetButton(icon=ap_btn_attr.icon_filepath, )
             presets_grid.add_widget(ap_btn)
 
         control_grid = MDGridLayout(cols=2,
@@ -350,15 +350,6 @@ class DeviceController(BaseListItem):
         # self.dimmer.bind(on_touch_up=self.green_slider_touch_up)
         # self.dimmer.bind(on_touch_down=self.blue_slider_touch_down)
         # self.dimmer.bind(on_touch_up=self.blue_slider_touch_up)
-        # self.carousel.remove_widget(self.rgb_container)
-        # self.off_screen.add_widget(self.rgb_container)
-        # self.carousel.remove_widget(self.color_presets_slide)
-        # self.off_screen.add_widget(self.color_presets_slide)
-        # self.carousel.remove_widget(self.animation_presets_slide)
-        # self.off_screen.add_widget(self.animation_presets_slide)
-        # self.rgb_container.x = Window.width
-        # self.color_presets_slide.x = Window.width
-        # self.animation_presets_slide.x = Window.width
         pass
 
     def _initialize_switch(self, *args):
@@ -527,52 +518,36 @@ class DeviceController(BaseListItem):
         # Dimmer slide...
         if self.slide_num == 0:
             self.dimmer_container.x = Window.width
-            # self.carousel.remove_widget(self.dimmer_container)
-            # self.off_screen.add_widget(self.dimmer_container)
         # RGB sliders...
         if self.slide_num == 1:
             self.rgb_container.x = Window.width
-            # self.carousel.remove_widget(self.rgb_container)
-            # self.off_screen.add_widget(self.rgb_container)
         # Color presets slide...
         if self.slide_num == 2:
             self.color_presets_slide.x = Window.width
-            # self.carousel.remove_widget(self.color_presets_slide)
-            # self.off_screen.add_widget(self.color_presets_slide)
         # Animation presets slide...
         if self.slide_num == 3:
             self.animation_presets_slide.x = Window.width
-            # self.carousel.remove_widget(self.animation_presets_slide)
-            # self.off_screen.add_widget(self.animation_presets_slide)
         self.slide_num = (self.slide_num + increment) % 4
         # Dimmer slide...
         if self.slide_num == 0:
             self.height = dp(165)
             self.ids.card_bottom_.height = dp(100)
             self.dimmer_container.x = self.x
-            # self.off_screen.remove_widget(self.dimmer_container)
-            # self.carousel.add_widget(self.dimmer_container)
         # RGB sliders...
         if self.slide_num == 1:
             self.height = dp(165) + dp(100)
             self.ids.card_bottom_.height = dp(100) + dp(100)
             self.rgb_container.x = self.x
-            # self.off_screen.remove_widget(self.rgb_container)
-            # self.carousel.add_widget(self.rgb_container)
         # Color presets slide...
         if self.slide_num == 2:
             self.height = dp(165) + dp(150)
             self.ids.card_bottom_.height = dp(100) + dp(150)
             self.color_presets_slide.x = self.x
-            # self.off_screen.remove_widget(self.color_presets_slide)
-            # self.carousel.add_widget(self.color_presets_slide)
         # Animation presets slide...
         if self.slide_num == 3:
             self.height = dp(165) + dp(150)
             self.ids.card_bottom_.height = dp(100) + dp(150)
             self.animation_presets_slide.x = self.x
-            # self.off_screen.remove_widget(self.animation_presets_slide)
-            # self.carousel.add_widget(self.animation_presets_slide)
 
     def open_configure_leds_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -774,9 +749,16 @@ class DeviceController(BaseListItem):
     def update_rgb_sliders(self, md_bg_color, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         logging.debug(f'`\tmd_bg_color: {md_bg_color}')
+        r = self.red_slider.value
+        g = self.green_slider.value
+        b = self.blue_slider.value
         self.red_slider.value = int(md_bg_color[0] * 255)
         self.green_slider.value = int(md_bg_color[1] * 255)
         self.blue_slider.value = int(md_bg_color[2] * 255)
+        # Send message even if values haven't technically changed (fixes first send issue)
+        if all(c1 == c2 for c1, c2 in zip((r, g, b), (
+                self.red_slider.value, self.green_slider.value, self.blue_slider.value))):
+            self.send_rgb()
 
     def send_rgb(self, *args):
         """Triggered by any RGB sliders' on_value call"""
@@ -858,7 +840,7 @@ class DeviceController(BaseListItem):
             byte1 = int(command.dimmer_val)
             self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
-        # Animations or Patterns?
+        # Palettes...
         elif command.mode == 3:
             byte0 = 3
             command.mirrored = True
@@ -870,6 +852,12 @@ class DeviceController(BaseListItem):
                 rgb = webcolors.hex_to_rgb(hex_color)
                 byte1, byte2, byte3, = rgb
                 self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
+
+        # Animations...
+        elif command.mode == 4:
+            byte0 = 4
+            byte1 = command.animation_id
+            self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
     def _send_to_ESP32(self, send_bytes: List[int]) -> None:
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with bytes {send_bytes}')

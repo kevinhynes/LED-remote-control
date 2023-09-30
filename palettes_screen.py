@@ -147,7 +147,6 @@ class PaletteController(MDCard):
         self.controls = PaletteControls(palette_widget=self.palette_widget)
         # self.palette_widget.bind(on_touch_up=self.send_palette)
         self.add_widget(self.palette_widget)
-
         self.add_widget(self.controls)
 
     def send_palette(self, *args):

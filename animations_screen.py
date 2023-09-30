@@ -39,15 +39,75 @@ class ControlPanel(MDBoxLayout):
     pass
 
 
-class CometControls(ControlPanel):
-    pass
+class BreatheControls(ControlPanel):
+    device_controller = ObjectProperty()
+
+    def on_kv_post(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        self.ids.animation_speed_slider_.bind(value=self.send_animation)
+
+    def send_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        speed = self.ids.animation_speed_slider_.value
+        command = Command(mode=4, animation_id=1, animation_speed=speed)
+        self.device_controller.send_command(command)
+        logging.debug(f'\tBreathe animation sent...')
+        logging.debug(f'\t\t speed: {speed}')
 
 
-class TwinkleControls(ControlPanel):
-    pass
+class ScrollControls(ControlPanel):
+    device_controller = ObjectProperty()
+
+    def on_kv_post(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        self.ids.animation_speed_slider_.bind(value=self.send_animation)
+
+    def send_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        speed = self.ids.animation_speed_slider_.value
+        command = Command(mode=4, animation_id=2, animation_speed=speed)
+        self.device_controller.send_command(command)
+        logging.debug(f'\tBreathe animation sent...')
+        logging.debug(f'\t\t speed: {speed}')
 
 
 class SplatterControls(ControlPanel):
+
+    def on_kv_post(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        self.ids.animation_speed_slider_.bind(value=self.send_animation)
+
+    def send_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        speed = self.ids.animation_speed_slider_.value
+        command = Command(mode=4, animation_id=3, animation_speed=speed)
+        self.device_controller.send_command(command)
+        logging.debug(f'\tSplatter animation sent...')
+        logging.debug(f'\t\t speed: {speed}')
+
+
+class CometControls(ControlPanel):
+    device_controller = ObjectProperty()
+
+    def on_kv_post(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        self.ids.animation_speed_slider_.bind(value=self.send_animation)
+        self.ids.trail_length_.bind(value=self.send_animation)
+        self.ids.num_comets_.bind(value=self.send_animation)
+
+    def send_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        speed = self.ids.animation_speed_slider_.value
+        trail_length = self.ids.trail_length_.value
+        num_comets = self.ids.num_comets_.value
+        command = Command(mode=4, animation_id=9, animation_speed=speed, trail_length=trail_length,
+                          num_comets=num_comets)
+        self.device_controller.send_command(command)
+        logging.debug(f'\tComet animation sent...')
+        logging.debug(f'\t\t speed: {speed} trail length: {trail_length} num_comets: {num_comets}')
+
+
+class TwinkleControls(ControlPanel):
     pass
 
 
@@ -67,19 +127,13 @@ class ControlPanelTray(MDRelativeLayout):
         self.expanded_height = control_panel.height
         self.control_panel = control_panel
         self.add_widget(self.control_panel)
-        self.empty_tray()
+        self.unmount_control_panel()
 
-    def empty_tray(self):
+    def unmount_control_panel(self):
         self.control_panel.x = Window.width
 
-    def fill_tray(self):
+    def mount_control_panel(self):
         self.control_panel.x = self.x
-
-
-class AnimationController:
-
-    def __init(self, **kwargs):
-        self.speed = 0
 
 
 class AnimationExpansionPanel(MDCard):
@@ -111,16 +165,14 @@ class AnimationExpansionPanel(MDCard):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         if self.is_expanded:
             self.height = dp(50)
-            self.control_panel_tray.empty_tray()
+            self.control_panel_tray.unmount_control_panel()
             self.is_expanded = False
         else:
             self.height = self.expanded_height
-            self.control_panel_tray.fill_tray()
+            self.control_panel_tray.mount_control_panel()
             self.is_expanded = True
             logging.debug(
                 f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
-
-
 
 
 class AnimationsList(MDList):
@@ -130,10 +182,12 @@ class AnimationsList(MDList):
         super().__init__(**kwargs)
         self.is_expanded = False
         animation_attrs = [
-            ('Comet', 'data/comet.png', 0, [], CometControls()),
-            ('Walk', 'data/marcher.png', 1, [], TwinkleControls()),
-            ('Splatter', 'data/paint.png', 2, [], SplatterControls()),
+            ('Breathe', 'data/wind3.png', 1, [], BreatheControls()),
+            ('Scroll', 'data/right-arrow.png', 1, [], ScrollControls()),
+            ('Splatter', 'data/paint.png', 3, [], SplatterControls()),
             ('Twinkle', 'data/star.png', 3, [], TwinkleControls()),
+            ('Comet', 'data/comet.png', 9, [], CometControls()),
+
         ]
         animations = []
         for attrs in animation_attrs:
@@ -145,12 +199,17 @@ class AnimationsList(MDList):
         self.animations = animations
 
     def on_kv_post(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
         for i, anim in enumerate(self.animations):
             logging.debug(f'\tAdding panels... `')
             panel = AnimationExpansionPanel(name=anim.name, icon_filepath=anim.icon_filepath,
                                             control_panel=anim.control_panel)
             self.add_widget(panel)
+
+    def activate_control_panels(self, device_controller, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
+        for control_panel in [animation.control_panel for animation in self.animations]:
+            control_panel.device_controller = device_controller
 
 
 class AnimationsScreen(MDScreen):
@@ -168,3 +227,8 @@ class AnimationsScreen(MDScreen):
         app.root_screen.screen_manager.current = 'controllers'
         open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
         app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
+
+    def on_device_controller(self, *args):
+        # device_controller given to screen when the open_animation_screen button is clicked,
+        # control_panel needs access
+        self.ids.anm_list_.activate_control_panels(self.device_controller)
