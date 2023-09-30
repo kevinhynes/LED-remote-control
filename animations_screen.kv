@@ -24,10 +24,8 @@
             orientation: 'vertical'
             size_hint: (1, None)
             height: max(dp(50), panel_.height - tp_.height)
-#            y: panel_.y
-            padding: dp(10)
-            md_bg_color: (1, 0, 0, 0.75)
-
+            padding: dp(50)
+            md_bg_color: (1, 0, 0, 0.7)
         TopPanel:
             id: tp_
             panel: panel_
@@ -87,78 +85,78 @@
             size: self.width, self.height
 
 
-<CometControls>:
+<ControlPanel>:
     orientation: 'vertical'
-#    md_bg_color: (0, 0, 1, 0.25)
-    MDLabel:
-        size_hint: (0.9, None)
-        pos_hint: {'center_x': 0.5}
-        height: dp(15)
+    adaptive_height: True
+
+
+<CometControls>:
+    ControlLabel:
         text: "Animation Speed".upper()
-        font_size: sp(10)
-        font_style: 'Overline'
-        halign: 'left'
-        valign: 'bottom'
-#        md_bg_color: (1, 0, 0, 0.5)
-    MDSlider:
-#        size_hint: (1, None)
-#        height: dp(50)
-        hint: False
-        canvas:
-            Color:
-                rgba: 0, 0, 0, 0.2
-            Line:
-                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    ControlSlider:
     MDSeparator:
         height: dp(3)
-    MDLabel:
-        size_hint: (0.9, None)
-        pos_hint: {'center_x': 0.5}
-        height: dp(15)
+    ControlLabel:
         text: "Trail Length".upper()
-        font_size: sp(10)
-        font_style: 'Overline'
-        halign: 'left'
-        valign: 'bottom'
-    MDSlider:
-        canvas:
-            Color:
-                rgba: 0, 0, 0, 0.2
-            Line:
-                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    ControlSlider:
     MDSeparator:
         height: dp(3)
-    MDLabel:
-        size_hint: (0.9, None)
-        pos_hint: {'center_x': 0.5}
-        height: dp(15)
+    ControlLabel:
         text: "Trail Length".upper()
-        font_size: sp(10)
-        font_style: 'Overline'
-        halign: 'left'
-        valign: 'bottom'
-    MDSlider:
-        canvas:
-            Color:
-                rgba: 0, 0, 0, 0.2
-            Line:
-                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    ControlSlider:
     MDSeparator:
         height: dp(3)
-    MDLabel:
-        size_hint: (0.9, None)
-        pos_hint: {'center_x': 0.5}
-        height: dp(15)
+    ControlLabel:
         text: "Trail Length".upper()
-        font_size: sp(10)
-        font_style: 'Overline'
-        halign: 'left'
-        valign: 'bottom'
-    MDSlider:
-        canvas:
-            Color:
-                rgba: 0, 0, 0, 0.2
-            Line:
-                rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    ControlSlider:
     MDSeparator:
         height: dp(3)
+
+
+<SplatterControls>:
+    ControlLabel:
+        text: "Animation Speed".upper()
+    ControlSlider:
+    MDSeparator:
+        height: dp(3)
+    ControlLabel:
+        text: "Palette Selection".upper()
+    MDFlatButton:
+        text: "TEST"
+        halign: 'center'
+
+
+<TwinkleControls>:
+    ControlLabel:
+        text: "Animation Speed".upper()
+    ControlSlider:
+    MDSeparator:
+        height: dp(3)
+    ControlLabel:
+        text: "Trail Length".upper()
+    ControlSlider:
+    MDSeparator:
+        height: dp(3)
+    MDFlatButton:
+        text: "Test"
+
+
+<ControlSlider@MDSlider>:
+    size_hint: (0.9, None)
+    height: dp(50)
+    pos_hint: {'center_x': 0.5}
+    hint: False
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+
+<ControlLabel@MDLabel>:
+    size_hint: (0.8, None)
+    pos_hint: {'center_x': 0.5}
+    height: dp(15)
+    font_size: sp(10)
+    font_style: 'Overline'
+    halign: 'left'
+    valign: 'bottom'

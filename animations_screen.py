@@ -1,4 +1,5 @@
 import logging
+from kivy.core.window import Window
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.button import MDFlatButton
@@ -13,6 +14,7 @@ from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelThreeLine
 from kivy.graphics import Color
 from kivy_gradient import Gradient
+import kivy.garden.knob
 
 from kivy.graphics import RoundedRectangle
 from kivy.utils import get_color_from_hex
@@ -34,7 +36,19 @@ class Animation:
         self.control_panel = control_panel
 
 
-class CometControls(MDBoxLayout):
+class ControlPanel(MDBoxLayout):
+    pass
+
+
+class CometControls(ControlPanel):
+    pass
+
+
+class TwinkleControls(ControlPanel):
+    pass
+
+
+class SplatterControls(ControlPanel):
     pass
 
 
@@ -46,16 +60,18 @@ class ControlPanelTray(MDRelativeLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.expanded_height = -1
+        self.expanded_height = 0
+        self.control_panel = None
 
     def add_control_panel(self, control_panel):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.expanded_height = control_panel.height
         self.control_panel = control_panel
         self.add_widget(self.control_panel)
+        self.empty_tray()
 
     def empty_tray(self):
-        self.control_panel.x = self.x + self.width
+        self.control_panel.x = self.x + Window.width
 
     def fill_tray(self):
         self.control_panel.x = self.x
@@ -68,10 +84,13 @@ class AnimationExpansionPanel(MDCard):
     def __init__(self, name, icon_filepath, control_panel, **kwargs):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.is_expanded = False
+        self.expanded_height = dp(50) + control_panel.height
         self.name = name
         self.icon_filepath = icon_filepath
         self.control_panel = control_panel
         super().__init__(**kwargs)
+        logging.debug(
+            f'\t control panel name: {name}  control panel height: {control_panel.height}')
 
     def on_kv_post(self, *args):
         self.top_panel.anim_icon.icon = self.icon_filepath
@@ -85,10 +104,14 @@ class AnimationExpansionPanel(MDCard):
             self.control_panel_tray.empty_tray()
             self.is_expanded = False
         else:
-            self.height = dp(250)
+            self.height = self.expanded_height
             self.control_panel_tray.fill_tray()
             self.is_expanded = True
+            logging.debug(
+                f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
 
+    def on_size(self, *args):
+        self.expanded_height = dp(50) + self.control_panel.height
 
 
 class AnimationsList(MDList):
@@ -99,9 +122,9 @@ class AnimationsList(MDList):
         self.is_expanded = False
         animation_attrs = [
             ('Comet', 'data/comet.png', 0, [], CometControls()),
-            ('Walk', 'data/marcher.png', 1, [], CometControls()),
-            ('Splatter', 'data/paint.png', 2, [], CometControls()),
-            ('Twinkle', 'data/star.png', 3, [], CometControls()),
+            ('Walk', 'data/marcher.png', 1, [], TwinkleControls()),
+            ('Splatter', 'data/paint.png', 2, [], SplatterControls()),
+            ('Twinkle', 'data/star.png', 3, [], TwinkleControls()),
         ]
         animations = []
         for attrs in animation_attrs:
@@ -118,7 +141,6 @@ class AnimationsList(MDList):
             logging.debug(f'\tAdding panels... `')
             panel = AnimationExpansionPanel(name=anim.name, icon_filepath=anim.icon_filepath,
                                             control_panel=anim.control_panel)
-            # panel.control_panel_tray.control_panel = CometControls()
             self.add_widget(panel)
 
 
