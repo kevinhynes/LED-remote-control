@@ -54,7 +54,7 @@
         elevation: 4
         shadow_color: app.theme_cls.bg_darkest
         pos_hint: {'top': 1}
-        left_action_items: [['menu', lambda x: root.opennav_drawer_()]]
+        left_action_items: [['menu', lambda x: root.open_nav_drawer_()]]
 
     MDNavigationLayout:
 
@@ -108,45 +108,48 @@
 
                 MDNavigationDrawerDivider:
 
-                MDNavigationDrawerItem:
-#                    id: find_devices_
+                NavDrawerItem:
                     icon: 'magnify'
                     text: 'Find Devices'
-                    theme_text_color: 'Custom'
-                    text_color: 'white'
-                    _no_ripple_effect: True
                     on_press:
                         _screen_manager.current = 'find_devices'
                         nav_drawer_.set_state('close')
-                    markup: True   # Necessary for it to turn back to white due to bug!?
 
-                MDNavigationDrawerItem:
+                NavDrawerItem:
                     icon: 'bluetooth'
                     text: 'Controllers'
-                    theme_text_color: 'Custom'
-                    text_color: 'white'
-                    _no_ripple_effect: True
                     on_press:
                         _screen_manager.current = 'controllers'
                         nav_drawer_.set_state('close')
 
-                MDNavigationDrawerItem:
+                NavDrawerItem:
                     icon: 'bluetooth'
                     text: 'Clear Saved Data'
-                    theme_text_color: 'Custom'
-                    text_color: 'white'
-                    _no_ripple_effect: True
                     on_press:
                         app.clear_saved_data()
                         nav_drawer_.set_state('close')
 
-                MDNavigationDrawerItem:
+                NavDrawerItem:
                     icon: 'bluetooth'
                     text: 'Show Saved Data'
-                    theme_text_color: 'Custom'
-                    text_color: 'white'
-                    _no_ripple_effect: True
                     on_press:
                         app.show_saved_data()
                         nav_drawer_.set_state('close')
 
+                NavDrawerItem:
+                    icon: 'brightness-5'
+                    text: 'Light Mode'
+                    on_press:
+                        app.theme_cls.theme_style = 'Light' if app.theme_cls.theme_style == 'Dark' else 'Dark'
+                        self.icon = 'brightness-3' if self.icon == 'brightness-5' else 'brightness-5'
+                        self.text = 'Dark Mode' if self.text == 'Light Mode' else 'Light Mode'
+#                        nav_drawer_.set_state('close')
+
+
+<NavDrawerItem@MDNavigationDrawerItem>
+#    text_color: "#4a4939"
+#    icon_color: "#4a4939"
+#    selected_color: "#4a4939"
+    text_color: app.theme_cls.secondary_text_color
+    focus_behavior: False
+    _no_ripple_effect: True
