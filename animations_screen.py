@@ -48,7 +48,7 @@ class BreatheControls(ControlPanel):
 
     def send_animation(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-        speed = self.ids.animation_speed_slider_.value
+        speed = 100 - self.ids.animation_speed_slider_.value
         command = Command(mode=4, animation_id=1, animation_speed=speed)
         self.device_controller.send_command(command)
         logging.debug(f'\tBreathe animation sent...')
@@ -64,7 +64,7 @@ class ScrollControls(ControlPanel):
 
     def send_animation(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-        speed = self.ids.animation_speed_slider_.value
+        speed = 100 - self.ids.animation_speed_slider_.value
         command = Command(mode=4, animation_id=2, animation_speed=speed)
         self.device_controller.send_command(command)
         logging.debug(f'\tBreathe animation sent...')
@@ -79,7 +79,7 @@ class SplatterControls(ControlPanel):
 
     def send_animation(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-        speed = self.ids.animation_speed_slider_.value
+        speed = 100 - self.ids.animation_speed_slider_.value
         command = Command(mode=4, animation_id=3, animation_speed=speed)
         self.device_controller.send_command(command)
         logging.debug(f'\tSplatter animation sent...')
@@ -187,7 +187,6 @@ class AnimationsList(MDList):
             ('Splatter', 'data/paint.png', 3, [], SplatterControls()),
             ('Twinkle', 'data/star.png', 3, [], TwinkleControls()),
             ('Comet', 'data/comet.png', 9, [], CometControls()),
-
         ]
         animations = []
         for attrs in animation_attrs:
@@ -229,6 +228,7 @@ class AnimationsScreen(MDScreen):
         app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
 
     def on_device_controller(self, *args):
-        # device_controller given to screen when the open_animation_screen button is clicked,
-        # control_panel needs access
+        # DeviceController given to screen when the open_animation_screen button is clicked,
+        # ControlPanel needs access. Because this is many widget-tree levels deep, it makes sense
+        # to do it this way (I think).
         self.ids.anm_list_.activate_control_panels(self.device_controller)

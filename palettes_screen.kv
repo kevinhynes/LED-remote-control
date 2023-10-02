@@ -1,11 +1,14 @@
 <PalettesScreen>:
-    grid: grid_
     MDScrollView:
         do_scroll_x: False
         scroll_distance: dp(150)
-        MDList:
-            id: grid_
+        PalettesList:
+            id: palettes_list_
             spacing: dp(5)
+
+
+<PalettesList>:
+    spacing: dp(5)
 
 
 <PaletteController>:
@@ -19,13 +22,7 @@
 <PaletteWidget>:
     pos_hint: {'x': 0.1, 'center_y': 0.5}
     size_hint: (0.5, 0.75)
-    md_bg_color: (1, 0, 0, 0.2)
-#    canvas:
-#        Color:
-#            rgba: (0, 0, 0, 0.2)
-#        RoundedRectangle:
-#            pos: (self.x + dp(4), self.y - dp(3))
-#            size: self.size
+
 
 
 <PaletteControls>:

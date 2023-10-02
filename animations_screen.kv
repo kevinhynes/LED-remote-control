@@ -99,24 +99,19 @@
     ControlSeparator:
     ControlLabel:
         text: "Palette Selection".upper()
-    ControlSeparator:
-    MDRaisedButton:
-        size_hint: (1, None)
-        height: dp(40)
-    ControlSeparator:
     MDBoxLayout:
-        orientation: 'horizontal'
-        size_hint: (1, None)
+        size_hint: (0.5, None)
+        pos_hint: {'center_x': 0.5}
         height: dp(50)
-        ControlLabel:
-            text: "Mirror?".upper()
-        MDCheckbox:
-            active: False
+        md_bg_color: (1, 0, 0, 0.4)
+        MDRaisedButton:
+            size_hint: (None, None)
+            height: dp(30)
+            width: dp(150)
+            pos_hint: {'center_x': 0.5}
+            md_bg_color: (0, 1, 0, 0.4)
     ControlSeparator:
-    MDBoxLayout:
-        size_hint: (1, None)
-        height: dp(100)
-        md_bg_color: (1, 0, 0, 0.5)
+
 
 
 <ScrollControls>:
@@ -127,26 +122,7 @@
     ControlSeparator:
     ControlLabel:
         text: "Palette Selection".upper()
-    MDBoxLayout:
-        size_hint: (0.5, None)
-        MDRaisedButton:
-            size_hint: (0.5, None)
-            height: dp(40)
-    ControlSeparator:
-    ControlSeparator:
-    MDBoxLayout:
-        orientation: 'horizontal'
-        size_hint: (1, None)
-        height: dp(50)
-        ControlLabel:
-            text: "Mirror?".upper()
-        MDCheckbox:
-            active: False
-    ControlSeparator:
-    MDBoxLayout:
-        size_hint: (1, None)
-        height: dp(100)
-        md_bg_color: (1, 0, 0, 0.5)
+
 
 <SplatterControls>:
     ControlLabel:
@@ -185,12 +161,6 @@
         MDCheckbox:
             active: False
     ControlSeparator:
-    MDBoxLayout:
-        size_hint: (1, None)
-        height: dp(100)
-        md_bg_color: (1, 0, 0, 0.5)
-
-
 
 
 <TwinkleControls>:

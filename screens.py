@@ -142,5 +142,6 @@ class ColorPickerScreen(MDScreen):
 class RootScreen(MDScreen):
     screen_manager = ObjectProperty()
 
-    def opennav_drawer_(self, *args):
+    def open_nav_drawer_(self, *args):
+        # TODO: Is something wrong here due to find > replace?
         self.ids.nav_drawer_.set_state('open')
