@@ -75,11 +75,12 @@ class MainApp(MDApp):
         # self.theme_cls.material_style = 'M3'
         # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
 
-        # Loading the Kivy language files will load the corresponding Python files / classes.
+
+        # Loading the Kivy language files will load the corresponding Python files / classes...?
         Builder.load_file('device_controller.kv')
         Builder.load_file('device_connection_dialog.kv')
         Builder.load_file('device_info_list_item.kv')
-        Builder.load_file('palettes_screen_redux.kv')
+        Builder.load_file('palettes_screen.kv')  # Re-tooling widget
         Builder.load_file('configure_leds_screen.kv')
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
