@@ -12,42 +12,56 @@
 
 
 <PaletteController>:
-    orientation: 'horizontal'
-    size_hint: (1, None)
-    height: dp(50)
-    padding: dp(20), dp(0), dp(0), dp(0)
+    orientation: 'vertical'
+    height: dp(95)
+    padding: dp(10), dp(10)
+    spacing: dp(10)
     md_bg_color: app.theme_cls.primary_color
 
 
 <PaletteWidget>:
-    pos_hint: {'x': 0.1, 'center_y': 0.5}
-    size_hint: (0.5, 0.75)
-
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    size_hint: (0.85, 1)
 
 
 <PaletteControls>:
-    mirror_btn: mirror_btn_
-    blend_btn: blend_btn_
-    select_btn: select_btn_
-    orientation: 'rl-tb'
+    id: control_bar_
+    adaptive_size: True
+    orientation: 'lr-tb'
     rows: 1
-    size_hint: (0.5, 1)
-    MDIconButton:
-        id: select_btn_
-        icon: 'checkbox-blank-outline'
-        theme_icon_color: 'Custom'
-        icon_color: 'black'
-        on_press: root.update_selected()
-    MDIconButton:
-        id: mirror_btn_
-        icon: 'data/flip.png'
-        theme_icon_color: 'Custom'
-        icon_color: 'black'
-        on_press: root.update_mirroring()
-    MDIconButton:
-        id: blend_btn_
+    size_hint_y: 0.75
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    spacing: dp(15)
+#    md_bg_color: (1, 0, 0, 0.4)
+    PaletteControlButton:
         icon: 'blur-linear'
-        theme_icon_color: 'Custom'
-        icon_color: 'black'
-        on_press: root.update_blended()
+        size: (control_bar_.height, control_bar_.height)
+        on_press:
+            root.toggle_blend()
+            self.icon = 'dots-grid' if self.icon == 'blur-linear' else 'blur-linear'
+    PaletteControlButton:
+        icon: 'swap-horizontal'
+        size: (control_bar_.height, control_bar_.height)
+        on_press: root.toggle_swap()
+    PaletteControlButton:
+        icon: 'reflect-horizontal'
+        size: (control_bar_.height, control_bar_.height)
+        on_press: root.toggle_mirror()
+    PaletteControlButton:
+        icon: 'checkbox-blank-outline'
+        size: (control_bar_.height, control_bar_.height)
+        on_press:
+            root.toggle_select()
+            self.icon = 'checkbox-marked-outline' if self.icon == 'checkbox-blank-outline' else 'checkbox-blank-outline'
 
+
+
+<PaletteControlButton@MDIconButton>:
+    size_hint: (None, None)
+    theme_icon_color: 'Custom'
+    icon_color: 'black'
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x - dp(2), self.y - dp(2), self.width + dp(4), self.height + dp(4), dp(10), dp(10)

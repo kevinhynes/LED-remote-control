@@ -161,18 +161,32 @@ class AnimationExpansionPanel(MDCard):
         self.top_panel.name_lbl.text = self.name
         self.control_panel_tray.add_control_panel(self.control_panel)
 
-    def toggle_expansion(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        if self.is_expanded:
-            self.height = dp(50)
-            self.control_panel_tray.unmount_control_panel()
-            self.is_expanded = False
-        else:
-            self.height = self.expanded_height
-            self.control_panel_tray.mount_control_panel()
-            self.is_expanded = True
-            logging.debug(
-                f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
+    # def toggle_expansion(self, *args):
+    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+    #     self.parent.reduce_all()
+    #     if self.is_expanded:
+    #         self.height = dp(50)
+    #         self.control_panel_tray.unmount_control_panel()
+    #         self.is_expanded = False
+    #     else:
+    #         self.height = self.expanded_height
+    #         self.control_panel_tray.mount_control_panel()
+    #         self.is_expanded = True
+    #         logging.debug(
+    #             f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
+
+    def expand(self, *args):
+        self.parent.contract_all()
+        self.height = self.expanded_height
+        self.control_panel_tray.mount_control_panel()
+        self.top_panel.ids.toggle_expansion_btn_.icon = 'chevron-up'
+        self.is_expanded = True
+
+    def contract(self, *args):
+        self.height = dp(50)
+        self.control_panel_tray.unmount_control_panel()
+        self.top_panel.ids.toggle_expansion_btn_.icon = 'chevron-down'
+        self.is_expanded = False
 
 
 class AnimationsList(MDList):
@@ -209,6 +223,11 @@ class AnimationsList(MDList):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
         for control_panel in [animation.control_panel for animation in self.animations]:
             control_panel.device_controller = device_controller
+
+    def contract_all(self, *args):
+        for panel in self.children:
+            if panel.is_expanded:
+                panel.contract()
 
 
 class AnimationsScreen(MDScreen):

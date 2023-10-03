@@ -54,11 +54,11 @@
     MDRelativeLayout:
         id: tp_right_
         MDIconButton:
+            id: toggle_expansion_btn_
             icon: 'chevron-down'
             pos_hint: {'right': 1}
             on_release:
-                root.panel.toggle_expansion()
-                self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
+                root.panel.contract() if root.panel.is_expanded else root.panel.expand()
         Label:
             text: 'Comet'
             font_style: 'Button'
@@ -136,6 +136,20 @@
         text: "TEST"
         halign: 'center'
 
+
+<TwinkleControls>:
+    ControlLabel:
+        text: "Animation Speed".upper()
+    ControlSlider:
+    ControlSeparator:
+    ControlLabel:
+        text: "Trail Length".upper()
+    ControlSlider:
+    ControlSeparator:
+    MDFlatButton:
+        text: "Test"
+
+
 <CometControls>:
     ControlLabel:
         text: "Animation Speed".upper()
@@ -144,9 +158,9 @@
     ControlSeparator:
     ControlLabel:
         text: "Trail Length".upper()
-    ControlSeparator:
     ControlSlider:
         id: trail_length_
+    ControlSeparator:
     ControlLabel:
         text: "Number of Comets".upper()
     ControlSlider:
@@ -161,19 +175,6 @@
         MDCheckbox:
             active: False
     ControlSeparator:
-
-
-<TwinkleControls>:
-    ControlLabel:
-        text: "Animation Speed".upper()
-    ControlSlider:
-    ControlSeparator:
-    ControlLabel:
-        text: "Trail Length".upper()
-    ControlSlider:
-    ControlSeparator:
-    MDFlatButton:
-        text: "Test"
 
 
 <ControlSlider@MDSlider>:

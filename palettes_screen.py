@@ -28,55 +28,45 @@ from troubleshooting import func_name
 
 class PaletteControls(MDGridLayout):
     palette_widget = ObjectProperty()
-    mirror_btn = ObjectProperty()
-    blend_btn = ObjectProperty()
-    select_btn = ObjectProperty()
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.mirror_btns = ('crop-square', 'data/flip.png', 'data/fliprev.png')
-        self.mirror_idx = 1
-        self.blend_btns = ('blur-linear', 'dots-grid',)
-        self.blend_idx = 0
-        self.select_btns = ('checkbox-blank-outline', 'checkbox-marked-outline')
-        self.select_idx = 0
+    def toggle_blend(self, *args):
+        self.palette_widget.is_blended = not self.palette_widget.is_blended
 
-    def update_mirroring(self, *args):
-        self.palette_widget.update_mirror_idx(self.mirror_idx)
-        self.mirror_idx = (self.mirror_idx + 1) % 3
-        self.mirror_btn.icon = self.mirror_btns[self.mirror_idx]
+    def toggle_swap(self, *args):
+        self.palette_widget.is_swapped = not self.palette_widget.is_swapped
 
-    def update_blended(self, *args):
-        self.blend_idx = (self.blend_idx + 1) % 2
-        self.palette_widget.update_is_blended(self.blend_idx)
-        self.blend_btn.icon = self.blend_btns[self.blend_idx]
+    def toggle_mirror(self, *args):
+        self.palette_widget.is_mirrored = not self.palette_widget.is_mirrored
 
-    def update_selected(self, *args):
-        self.palette_widget.update_is_selected(self.select_idx)
-        self.select_idx = (self.select_idx + 1) % 2
-        self.select_btn.icon = self.select_btns[self.select_idx]
+    def toggle_select(self, *args):
+        self.palette_widget.is_selected = not self.palette_widget.is_selected
 
 
 class PaletteWidget(MDBoxLayout):
+    is_mirrored = BooleanProperty(False)
+    is_swapped = BooleanProperty(False)
+    is_blended = BooleanProperty(False)
+    is_selected = BooleanProperty(False)
 
     def __init__(self, colors, **kwargs):
-        # Right now only works for hex values in string form
-        # self.ripple_canvas_after = True
+        # PaletteWidget's BooleanProperties will be updated by buttons in PaletteControls
         super().__init__(**kwargs)
-        self.mirror_idx = 0
-        self.is_blended = 0
-        self.is_selected = 0
+        # Right now only works for hex values in string form
         self.colors = [str(color) for color in colors]
         self.display_colors = [str(color) for color in colors]
         self.shadow = RoundedRectangle()
         self.gradient = RoundedRectangle()
-        self.bind(pos=self.update_palette, size=self.update_palette)
+        self.bind(pos=self.update_palette,
+                  size=self.update_palette,
+                  is_mirrored=self.update_palette,
+                  is_swapped=self.update_palette,
+                  is_blended=self.update_palette)
         self.ripple_graphics = None
 
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
-            logging.debug(f'\tCalling do_ripple()...')
             # Adding my own ripple because Kivy is dumb!!!
+            logging.debug(f'\tCalling do_ripple()...')
             self.do_ripple(touch)
 
     def on_touch_up(self, touch):
@@ -88,8 +78,7 @@ class PaletteWidget(MDBoxLayout):
             logging.debug(f'\t\tStarting Ripple...')
             with self.canvas.after:
                 Color(1, 1, 1, 0.25)
-                self.ripple_graphics = RoundedRectangle(pos=(touch.x, touch.y),
-                                                        size=(1, 1))
+                self.ripple_graphics = RoundedRectangle(pos=(touch.x, touch.y), size=(1, 1))
             Clock.schedule_once(self.do_ripple)
         elif self.ripple_graphics.size[0] < self.width:
             logging.debug(f'\t\tDoing Ripple...')
@@ -111,42 +100,28 @@ class PaletteWidget(MDBoxLayout):
             logging.debug(f'\t\t\tEnding Ripple...')
             self.ripple_graphics = None
 
-    def update_mirror_idx(self, mirror_idx, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        self.mirror_idx = mirror_idx
-        self.update_palette()
-
-    def update_is_blended(self, is_blended, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        self.is_blended = is_blended
-        self.update_palette()
-
-    def update_is_selected(self, is_selected, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        self.is_selected = is_selected
-
     def update_palette(self, *args):
         # logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.update_shadow()
-        self.canvas.clear()
         self.children[:] = []
         colors = []
-        if self.mirror_idx == 0:
-            colors[:] = self.colors
-        elif self.mirror_idx == 1:
-            colors[:] = self.colors + self.colors[::-1]
+        if self.is_swapped:
+            colors[:] = self.colors[::-1]
         else:
-            colors[:] = self.colors[::-1] + self.colors
+            colors[:] = self.colors[:]
+        if self.is_mirrored:
+            colors[:] = colors[:] + colors[::-1]
         self.display_colors[:] = colors
         if self.is_blended:
             self.update_gradient()
         else:
+            self.canvas.clear()
             for i, clr in enumerate(self.display_colors):
                 self.add_widget(MDWidget(md_bg_color=clr))
 
     def update_gradient(self, *args):
         # logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        # self.canvas.clear()
+        self.canvas.clear()
         gradient_texture = Gradient.horizontal(
             *[get_color_from_hex(color) for color in self.display_colors])
         with self.canvas.before:
@@ -176,7 +151,6 @@ class PaletteController(MDCard):
         self.hex_colors = hex_colors
         self.palette_widget = PaletteWidget(hex_colors)
         self.controls = PaletteControls(palette_widget=self.palette_widget)
-        # self.palette_widget.bind(on_touch_up=self.send_palette)
         self.add_widget(self.palette_widget)
         self.add_widget(self.controls)
 

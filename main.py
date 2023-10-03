@@ -70,7 +70,7 @@ class MainApp(MDApp):
 
     def build(self):
         self.theme_cls.theme_style = 'Dark'
-        self.theme_cls.primary_palette = 'Purple'
+        self.theme_cls.primary_palette = 'BlueGray'
         self.theme_cls.primary_hue = '400'
         # self.theme_cls.material_style = 'M3'
         # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
