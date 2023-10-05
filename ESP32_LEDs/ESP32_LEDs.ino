@@ -8,8 +8,6 @@
 
 
 Preferences preferences;
-BluetoothSerial ESP_BT;
-const unsigned int MESSAGE_LENGTH = 6; // in bytes (0-indexed)
 uint NUM_LEDS;
 CRGB *leds;
 uint colorCorrectionKey;
@@ -57,45 +55,51 @@ bool isPaletteNew = true;  // to randomize animatePalette_RandomBreathe()
 
 CRGBPalette16 fire = heatmapPalette;
 
-
+// TODO: This is hacky/slow?
+BluetoothManager bluetoothManager = BluetoothManager();
+static void readBluetoothWrapper()
+{
+  bluetoothManager.readBluetooth();
+}
 Scheduler runner;
 Task animationTask(0, TASK_FOREVER, &doAnimation);
-Task bluetoothTask(0, TASK_FOREVER, &readBluetooth);
+Task bluetoothTask(0, TASK_FOREVER, readBluetoothWrapper);
 
 void setup() {
 
-    Serial.begin(115200);
-    while (!Serial) { }
-    Serial.println("ESP32 Startup");
+  Serial.begin(115200);
+  while (!Serial) { }
+  Serial.println("ESP32 Startup");
 
-    ESP_BT.begin("ESP32_Test"); //Name of your Bluetooth interface -> will show up on your phone
+  bluetoothManager.beginBluetooth();
+  // ESP32_BT.begin("ESP32_Test");
 
-    preferences.begin("myApp", false);              // Open preferences namespace
-    // int clearMessage[6] = {0, 0, 255, 255, 0, 0};
-    // setNumLEDs(clearMessage);
-    loadSavedData();
+  preferences.begin("myApp", false);              // Open preferences namespace
+  // int clearMessage[6] = {0, 0, 255, 255, 0, 0};
+  // setNumLEDs(clearMessage);
+  loadSavedData();
 
-    leds = new CRGB[NUM_LEDS];
-    pinMode(DATA_PIN, OUTPUT);
-    FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-    colorIndex = new uint8_t[NUM_LEDS];
-    FastLED.clear();
-    FastLED.show();
-    // FastLED.setBrightness(maxBrightness);
-    // FastLED.setTemperature(intColorTemperatureCorrectionMap[colorTemperatureCorrectionKey]);
-    // FastLED.setCorrection(intColorCorrectionMap[colorCorrectionKey]);
-    // FastLED.setCorrection(TypicalLEDStrip);
-    // FastLED.setMaxPowerInVoltsAndMilliamps(5, 30000);
+  leds = new CRGB[NUM_LEDS];
+  pinMode(DATA_PIN, OUTPUT);
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  colorIndex = new uint8_t[NUM_LEDS];
+  FastLED.clear();
+  FastLED.show();
+  // FastLED.setBrightness(maxBrightness);
+  // FastLED.setTemperature(intColorTemperatureCorrectionMap[colorTemperatureCorrectionKey]);
+  // FastLED.setCorrection(intColorCorrectionMap[colorCorrectionKey]);
+  // FastLED.setCorrection(TypicalLEDStrip);
+  // FastLED.setMaxPowerInVoltsAndMilliamps(5, 30000);
 
-    runner.addTask(animationTask);
-    animationTask.enable();
-    runner.addTask(bluetoothTask);
-    bluetoothTask.enable();
+  runner.addTask(animationTask);
+  animationTask.enable();
+  runner.addTask(bluetoothTask);
+  bluetoothTask.enable();
 }
 
 
 
 void loop()
 {
-    runner.execute();
+  runner.execute();
 }
