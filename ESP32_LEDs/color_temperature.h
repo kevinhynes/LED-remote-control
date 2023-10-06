@@ -48,18 +48,21 @@ std::map<ColorTemperature, String> colorTemperatureCorrectionMap =
                 {UncorrectedTemperature, "UncorrectedTemperature"}
         };
 
-int delayTimeCT = 3000;
+// int delayTimeCT = 3000;
 
-void DrawTemperatures()
-{
-    for (const auto& pair : colorTemperatureCorrectionMap) {
-        Serial.print(pair.first);
-        Serial.print("  -  ");
-        Serial.println(pair.second);
-        FastLED.clear();
-        fill_solid(leds, NUM_LEDS, CRGB::White);
-        FastLED.setCorrection(pair.first);
-        FastLED.delay(3000);
-    }
-}
+// void DrawTemperatures()
+// {
+//   for (const auto& pair : colorTemperatureCorrectionMap) {
+//     Serial.print(pair.first);
+//     Serial.print("  -  ");
+//     Serial.println(pair.second);
+//     FastLED.clear();
+//     fill_solid(leds, NUM_LEDS, CRGB::White);
+//     FastLED.setCorrection(pair.first);
+//     FastLED.delay(3000);
+//   }
+// }
+
+
+
 

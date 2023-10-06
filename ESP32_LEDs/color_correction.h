@@ -23,20 +23,20 @@ std::map<LEDColorCorrection, String> colorCorrectionMap =
         };
 
 
-int delayTimeCC = 3000;
+// int delayTimeCC = 3000;
 
-void DrawCorrections()
-{
-    for (const auto& pair : colorCorrectionMap) {
-        Serial.print(pair.first);
-        Serial.print("  -  ");
-        Serial.println(pair.second);
-        FastLED.clear();
-        fill_solid(leds, NUM_LEDS, CRGB::White);
-        FastLED.setCorrection(pair.first);
-        FastLED.delay(3000);
-    }
-}
+// void DrawCorrections()
+// {
+//   for (const auto& pair : colorCorrectionMap) {
+//     Serial.print(pair.first);
+//     Serial.print("  -  ");
+//     Serial.println(pair.second);
+//     FastLED.clear();
+//     fill_solid(leds, NUM_LEDS, CRGB::White);
+//     FastLED.setCorrection(pair.first);
+//     FastLED.delay(3000);
+//   }
+// }
 
 
 
