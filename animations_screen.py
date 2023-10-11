@@ -161,20 +161,6 @@ class AnimationExpansionPanel(MDCard):
         self.top_panel.name_lbl.text = self.name
         self.control_panel_tray.add_control_panel(self.control_panel)
 
-    # def toggle_expansion(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     self.parent.reduce_all()
-    #     if self.is_expanded:
-    #         self.height = dp(50)
-    #         self.control_panel_tray.unmount_control_panel()
-    #         self.is_expanded = False
-    #     else:
-    #         self.height = self.expanded_height
-    #         self.control_panel_tray.mount_control_panel()
-    #         self.is_expanded = True
-    #         logging.debug(
-    #             f'{self.control_panel_tray.height, self.control_panel_tray.control_panel.height}')
-
     def expand(self, *args):
         self.parent.contract_all()
         self.height = self.expanded_height
@@ -194,12 +180,11 @@ class AnimationsList(MDList):
     def __init__(self, **kwargs):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         super().__init__(**kwargs)
-        self.is_expanded = False
         animation_attrs = [
             ('Breathe', 'data/wind3.png', 1, [], BreatheControls()),
-            ('Scroll', 'data/right-arrow.png', 1, [], ScrollControls()),
+            ('Scroll', 'data/right-arrow.png', 2, [], ScrollControls()),
             ('Splatter', 'data/paint.png', 3, [], SplatterControls()),
-            ('Twinkle', 'data/star.png', 3, [], TwinkleControls()),
+            ('Twinkle', 'data/star.png', 4, [], TwinkleControls()),
             ('Comet', 'data/comet.png', 9, [], CometControls()),
         ]
         animations = []

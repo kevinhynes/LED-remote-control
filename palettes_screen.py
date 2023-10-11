@@ -66,7 +66,6 @@ class PaletteWidget(MDBoxLayout):
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
             # Adding my own ripple because Kivy is dumb!!!
-            logging.debug(f'\tCalling do_ripple()...')
             self.do_ripple(touch)
 
     def on_touch_up(self, touch):
@@ -75,13 +74,11 @@ class PaletteWidget(MDBoxLayout):
 
     def do_ripple(self, touch=None):
         if self.ripple_graphics is None:
-            logging.debug(f'\t\tStarting Ripple...')
             with self.canvas.after:
                 Color(1, 1, 1, 0.25)
                 self.ripple_graphics = RoundedRectangle(pos=(touch.x, touch.y), size=(1, 1))
             Clock.schedule_once(self.do_ripple)
         elif self.ripple_graphics.size[0] < self.width:
-            logging.debug(f'\t\tDoing Ripple...')
             self.canvas.after.clear()
             with self.canvas.after:
                 Color(1, 1, 1, 0.25)
@@ -97,7 +94,6 @@ class PaletteWidget(MDBoxLayout):
             Clock.schedule_once(self.do_ripple)
         else:
             self.canvas.after.clear()
-            logging.debug(f'\t\t\tEnding Ripple...')
             self.ripple_graphics = None
 
     def update_palette(self, *args):

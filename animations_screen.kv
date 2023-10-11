@@ -20,11 +20,12 @@
     md_bg_color: app.theme_cls.primary_light
     MDRelativeLayout:
         # Need this so ControlPanel is under TopPanel
+        size_hint: (1, 1)
+        md_bg_color: (1, 0, 0, 0.5)
         ControlPanelTray:
             id: control_panel_tray_
             orientation: 'vertical'
-            size_hint: (1, None)
-            height: max(dp(50), panel_.height - tp_.height)
+            size_hint: (1, 1)
         TopPanel:
             id: tp_
             panel: panel_
@@ -100,16 +101,18 @@
     ControlLabel:
         text: "Palette Selection".upper()
     MDBoxLayout:
-        size_hint: (0.5, None)
-        pos_hint: {'center_x': 0.5}
+        size_hint: (0.9, None)
         height: dp(50)
-        md_bg_color: (1, 0, 0, 0.4)
-        MDRaisedButton:
-            size_hint: (None, None)
-            height: dp(30)
-            width: dp(150)
+        pos_hint: {'center_x': 0.5}
+#        md_bg_color: (1, 0, 0, 0.4)
+        MDWidget:
+            size_hint: (1, 1)
             pos_hint: {'center_x': 0.5}
+            radius: (dp(15), dp(15))
             md_bg_color: (0, 1, 0, 0.4)
+        MDIconButton:
+            icon: 'launch'
+            on_release: print('This should open the PalettesScreen')
     ControlSeparator:
 
 
@@ -132,9 +135,6 @@
     ControlSeparator:
     ControlLabel:
         text: "Palette Selection".upper()
-    MDFlatButton:
-        text: "TEST"
-        halign: 'center'
 
 
 <TwinkleControls>:
