@@ -75,7 +75,6 @@ class MainApp(MDApp):
         # self.theme_cls.material_style = 'M3'
         # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
 
-
         # Loading the Kivy language files will load the corresponding Python files / classes...?
         Builder.load_file('device_controller.kv')
         Builder.load_file('device_connection_dialog.kv')
@@ -85,6 +84,7 @@ class MainApp(MDApp):
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
         Builder.load_file('animations_screen.kv')
+        # Builder.load_file('rgb_panel.kv')
 
         Clock.schedule_once(self.request_bluetooth_permissions)
         Clock.schedule_once(self.load_saved_data)

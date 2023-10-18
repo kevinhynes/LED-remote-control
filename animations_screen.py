@@ -160,6 +160,7 @@ class AnimationExpansionPanel(MDCard):
         self.top_panel.anim_icon.icon = self.icon_filepath
         self.top_panel.name_lbl.text = self.name
         self.control_panel_tray.add_control_panel(self.control_panel)
+        # self.expanded_height = dp(50) + self.control_panel.height
 
     def expand(self, *args):
         self.parent.contract_all()
