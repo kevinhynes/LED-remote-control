@@ -256,6 +256,31 @@ class ColorPresetsSlide(MDBoxLayout):
         self.device_controller.update_rgb_sliders(md_bg_color)
 
 
+class ColorPresets(MDBoxLayout):
+    pass
+
+
+class ColorPresetGrid(MDGridLayout):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_kv_post(self, *args):
+        num_buttons = 16
+        hue_step = 255 / num_buttons
+        for i in range(0, num_buttons):
+            hue = i * hue_step
+            hsv = [hue / 255, 1, 1]
+            rgb = colorsys.hsv_to_rgb(*hsv)
+            color_preset_btn = ColorPresetsSlideButton(
+                md_bg_color=rgb,
+                size_hint=(None, None),
+            )
+            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
+                                                     color_preset_btn.md_bg_color))
+            self.add_widget(color_preset_btn)
+
+
 class RenameDeviceTextField(MDTextField):
     pass
 
