@@ -65,7 +65,6 @@ class PaletteWidget(MDBoxLayout):
 
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
-            # Adding my own ripple because Kivy is dumb!!!
             self.do_ripple(touch)
 
     def on_touch_up(self, touch):
@@ -73,6 +72,7 @@ class PaletteWidget(MDBoxLayout):
             self.parent.send_palette()
 
     def do_ripple(self, touch=None):
+        # Adding my own ripple because Kivy is dumb!!!
         if self.ripple_graphics is None:
             with self.canvas.after:
                 Color(1, 1, 1, 0.25)

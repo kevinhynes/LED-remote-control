@@ -140,10 +140,8 @@ class StatusSpinner(MDSpinner):
 
 
 class SuccessIcon(MDIconButton):
-    # overlay_color_ = ListProperty([0, 0, 1, 0.3])
     font_size = sp(50)
 
 
 class FailIcon(MDIconButton):
-    # overlay_color_ = ListProperty([0, 0, 1, 0.3])
     font_size = sp(50)

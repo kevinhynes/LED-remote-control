@@ -2,6 +2,7 @@ import asyncio
 import random
 import sys
 import string
+from math import pi, sin, trunc
 import logging
 import jnius
 import struct
@@ -19,7 +20,7 @@ from kivy.clock import mainthread
 from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty, \
     BooleanProperty
 from kivy.metrics import dp, sp
-from kivy.graphics import Color
+from kivy.graphics import Color, Bezier, Line, Rectangle
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.gridlayout import MDGridLayout
@@ -54,231 +55,139 @@ AnimationPresetButtonAttr = namedtuple('AnimationPresetButtonAttr',
                                        ('icon_filepath', 'animation', 'speed', 'palette_name',))
 
 
-class AnimationPresetButton(MDIconButton, MDRoundFlatButton):
-    pass
+class Drawer(MDRelativeLayout):
+    control_panel = ObjectProperty()
+
+    def open_drawer(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.height = self.control_panel.height + dp(20)
+        self.control_panel.x = dp(0)
+
+    def close_drawer(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        self.height = dp(20)
+        self.control_panel.x = Window.width
+
+    def toggle_drawer(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
+        if self.height == dp(20):
+            self.open_drawer()
+        else:
+            self.close_drawer()
 
 
-class AnimationPresetsSlide(MDBoxLayout):
+class RGBDrawer(Drawer):
     device_controller = ObjectProperty()
+
+
+class WaveDrawer(Drawer):
+    frequency = NumericProperty(10)
+    range_min = NumericProperty(0)
+    range_max = NumericProperty(255)
+    speed = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.presets_grid = MDGridLayout()
-        self.control_grid = MDGridLayout()
+        self._phase_offset = 0
+        Clock.schedule_once(self.draw_wave)
 
-    def on_kv_post(self, *args):
-        presets_grid = MDGridLayout(cols=4,
-                                    # md_bg_color=(1, 0, 0, 0.25),
-                                    adaptive_size=True,
-                                    pos_hint={'bottom': 0},
-                                    padding=(dp(0), dp(10), dp(0), dp(10)),
-                                    # spacing=(dp(5))
-                                    )
-        ap_btn_attrs = [
-            AnimationPresetButtonAttr(
-                icon_filepath="data/comet.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/bounce.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/star.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/firework.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/rocket.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/bonfire.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/comet.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/bounce.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/star.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/firework.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/rocket.png", animation=1, speed=1, palette_name='forest'),
-            AnimationPresetButtonAttr(
-                icon_filepath="data/bonfire.png", animation=1, speed=1, palette_name='forest'),
-        ]
+    def close_drawer(self, *args):
+        super().close_drawer()
+        self.ids.graph_.canvas.before.clear()
 
-        for i in range(len(ap_btn_attrs)):
-            ap_btn_attr = ap_btn_attrs[i]
-            ap_btn = AnimationPresetButton(icon=ap_btn_attr.icon_filepath, )
-            presets_grid.add_widget(ap_btn)
+    def open_drawer(self, *args):
+        super().open_drawer()
+        Clock.schedule_once(self.draw_wave)
 
-        control_grid = MDGridLayout(cols=2,
-                                    # md_bg_color=(1, 0, 0, 0.25),
-                                    adaptive_size=True,
-                                    pos_hint={'bottom': 0},
-                                    padding=(dp(0), dp(10), dp(0), dp(10)),
-                                    spacing=(dp(5))
-                                    )
-        control_button_attrs = [
-            ControlButtonAttr(color='red', icon='arrow-up-bold', rgb_inc=[5, 0, 0]),
-            ControlButtonAttr(color='red', icon='arrow-down-bold', rgb_inc=[-5, 0, 0]),
-            ControlButtonAttr(color='green', icon='arrow-up-bold', rgb_inc=[0, 5, 0]),
-            ControlButtonAttr(color='green', icon='arrow-down-bold', rgb_inc=[0, -5, 0]),
-            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 5]),
-            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, -5]),
-            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 0]),
-            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, 0]),
-        ]
-        for i in range(8):
-            control_btn_attr = control_button_attrs[i]
-            control_btn = ColorPresetsSlideControlButton(
-                icon=control_btn_attr.icon,
-                theme_icon_color='Custom',
-                icon_color=control_btn_attr.color,
-                # md_bg_color=(1, 1, 1),
-                size_hint=(None, None),
-            )
-            control_btn.bind(on_release=partial(self.device_controller.increment_rgb,
-                                                control_btn_attr.rgb_inc))
-            control_grid.add_widget(control_btn)
-        self.control_grid = control_grid
-        self.presets_grid = presets_grid
-        self.add_widget(presets_grid)
-        self.add_widget(control_grid)
+    def on_frequency(self, *args):
+        self.draw_wave()
 
-    def on_size(self, *args):
-        self.update_buttons()
+    def on_range_min(self, *args):
+        self.draw_wave()
 
-    def on_pos(self, *args):
-        self.update_buttons()
+    def on_range_max(self, *args):
+        self.draw_wave()
 
-    def update_buttons(self):
-        # Because of control_grid and color_grid adaptive_size: True
-        btn_width = (self.width - dp(30)) / 6
-        for btn in self.control_grid.children:
-            btn.size = (btn_width, btn_width)
+    def on_speed(self, *args):
+        self.draw_wave()
 
-        for btn in self.presets_grid.children:
-            btn.size = (btn_width, btn_width)
-            # btn.pos = btn.x - dp(2), btn.y - dp(2)
+    def draw_wave(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        self.ids.graph_.canvas.before.clear()
+        points = []
+        wave_height = self.ids.graph_.height - dp(30)  # Adds vertical 'padding' for labels
+        amplitude = abs(self.range_max - self.range_min)
+        normalized_amplitude = (amplitude / 255) * (wave_height / 2)
+        x0, y0 = self.ids.graph_.pos
+        xi = trunc(self.ids.graph_.width)
+        range_midpoint = (self.range_max + self.range_min) / 2
+        ym = y0 + (range_midpoint / 255) * wave_height + dp(15)
+        self.ids.x_axis_lbl_.center_y = ym - self.ids.wave_options_.height - dp(20)
+        self.ids.x_axis_lbl_.text = str(range_midpoint) + ' '
+        for x in range(xi):
+            points.append(x0 + x)
+            points.append(sin(self.frequency * (x / xi) + self.speed) * normalized_amplitude + ym)
+        with self.ids.graph_.canvas.before:
+            # Sin Wave
+            Color(1, 0, 0, 1)
+            Line(points=points)
+            # Background
+            Color(1, 1, 1, 0.1)
+            Rectangle(pos=self.ids.graph_.pos, size=self.ids.graph_.size)
+            # X-Axis
+            Color(0, 0, 0, 1)
+            Line(points=(x0, ym, xi + x0, ym))
 
 
 class ColorPresetButton(MDRoundFlatButton):
     pass
 
 
-class ColorPresetsSlideButton(MDRoundFlatButton):
+class FavoriteButton(MDRoundFlatButton):
     pass
 
 
-class ColorPresetsSlideControlButton(MDIconButton):
+class Presets(MDBoxLayout):
     pass
 
 
-ControlButtonAttr = namedtuple('ControlButton', ['color', 'icon', 'rgb_inc'])
-
-
-class ColorPresetsSlide(MDBoxLayout):
+class ColorPresets(MDGridLayout):
     device_controller = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.color_grid = MDGridLayout()
-        self.control_grid = MDGridLayout()
 
-    def on_kv_post(self, *args):
-        color_grid = MDGridLayout(cols=4,
-                                  # md_bg_color=(1, 0, 0, 0.25),
-                                  adaptive_size=True,
-                                  pos_hint={'bottom': 0},
-                                  padding=(dp(0), dp(10), dp(0), dp(10)),
-                                  spacing=(dp(5))
-                                  )
-        control_grid = MDGridLayout(cols=2,
-                                    # md_bg_color=(1, 0, 0, 0.25),
-                                    adaptive_size=True,
-                                    pos_hint={'bottom': 0},
-                                    padding=(dp(0), dp(10), dp(0), dp(10)),
-                                    spacing=(dp(5))
-                                    )
-        num_buttons = 16
+    def on_device_controller(self, *args):
+        num_buttons = 20
         hue_step = 255 / num_buttons
         for i in range(0, num_buttons):
             hue = i * hue_step
             hsv = [hue / 255, 1, 1]
             rgb = colorsys.hsv_to_rgb(*hsv)
-            color_preset_btn = ColorPresetsSlideButton(
+            color_preset_btn = ColorPresetButton(
                 md_bg_color=rgb,
-                size_hint=(None, None),
-            )
-            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
-                                                     color_preset_btn.md_bg_color))
-            color_grid.add_widget(color_preset_btn)
-        control_button_attrs = [
-            ControlButtonAttr(color='red', icon='arrow-up-bold', rgb_inc=[5, 0, 0]),
-            ControlButtonAttr(color='red', icon='arrow-down-bold', rgb_inc=[-5, 0, 0]),
-            ControlButtonAttr(color='green', icon='arrow-up-bold', rgb_inc=[0, 5, 0]),
-            ControlButtonAttr(color='green', icon='arrow-down-bold', rgb_inc=[0, -5, 0]),
-            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 5]),
-            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, -5]),
-            ControlButtonAttr(color='blue', icon='arrow-up-bold', rgb_inc=[0, 0, 0]),
-            ControlButtonAttr(color='blue', icon='arrow-down-bold', rgb_inc=[0, 0, 0]),
-        ]
-        for i in range(8):
-            control_btn_attr = control_button_attrs[i]
-            control_btn = ColorPresetsSlideControlButton(
-                icon=control_btn_attr.icon,
-                theme_icon_color='Custom',
-                icon_color=control_btn_attr.color,
-                # md_bg_color=(1, 1, 1),
-                size_hint=(None, None),
-            )
-            control_btn.bind(on_release=partial(self.device_controller.increment_rgb,
-                                                control_btn_attr.rgb_inc))
-            control_grid.add_widget(control_btn)
-        self.color_grid = color_grid
-        self.control_grid = control_grid
-        self.add_widget(color_grid)
-        self.add_widget(control_grid)
-
-    def on_size(self, *args):
-        self.update_buttons()
-
-    def on_pos(self, *args):
-        self.update_buttons()
-
-    def update_buttons(self):
-        # Because of control_grid and color_grid adaptive_size: True
-        btn_width = (self.width - dp(30)) / 6
-        for btn in self.control_grid.children:
-            btn.size = (btn_width, btn_width)
-
-        for btn in self.color_grid.children:
-            btn.size = (btn_width, btn_width)
-
-    def update_rgb_sliders(self, md_bg_color, *args):
-        logging.debug(
-            f'`{self.__class__.__name__}.{func_name()}` called with args: {md_bg_color}')
-        self.device_controller.update_rgb_sliders(md_bg_color)
-
-
-class ColorPresets(MDBoxLayout):
-    pass
-
-
-class ColorPresetGrid(MDGridLayout):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def on_kv_post(self, *args):
-        num_buttons = 16
-        hue_step = 255 / num_buttons
-        for i in range(0, num_buttons):
-            hue = i * hue_step
-            hsv = [hue / 255, 1, 1]
-            rgb = colorsys.hsv_to_rgb(*hsv)
-            color_preset_btn = ColorPresetsSlideButton(
-                md_bg_color=rgb,
-                size_hint=(None, None),
             )
             color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
                                                      color_preset_btn.md_bg_color))
             self.add_widget(color_preset_btn)
+
+
+class WhitePresets(MDGridLayout):
+    device_controller = ObjectProperty()
+
+    def on_device_controller(self, *args):
+        for i in range(4):
+            rgb = (1, 1, (255 - i * 30) / 255)
+            color_preset_btn = ColorPresetButton(
+                md_bg_color=rgb,
+            )
+            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
+                                                     color_preset_btn.md_bg_color))
+            self.add_widget(color_preset_btn)
+
+
+class PaletteDrawer(Drawer):
+    device_controller = ObjectProperty()
 
 
 class RenameDeviceTextField(MDTextField):
@@ -296,9 +205,9 @@ class DeviceController(BaseListItem):
     green_slider = ObjectProperty()
     blue_slider = ObjectProperty()
     brightness = NumericProperty(100)
-    r = NumericProperty(255)
-    g = NumericProperty(255)
-    b = NumericProperty(255)
+    # r = NumericProperty(255)
+    # g = NumericProperty(255)
+    # b = NumericProperty(255)
     is_connected = BooleanProperty()
     is_expanded = BooleanProperty(False)
     off_screen = ObjectProperty()
@@ -334,14 +243,6 @@ class DeviceController(BaseListItem):
             'text': 'Forget Device',
             'on_release': self.forget_device,
         }
-        color = {
-            'text': 'Open Color Picker',
-            'on_release': self.open_color_picker,
-        }
-        color_screen = {
-            'text': 'Open Color Picker Screen',
-            'on_release': self.open_color_picker_screen,
-        }
         palettes = {
             'text': 'Palettes',
             'on_release': self.open_palettes_screen,
@@ -350,8 +251,7 @@ class DeviceController(BaseListItem):
             'text': 'Animations',
             'on_release': self.open_animations_screen,
         }
-        menu_items = [configure_leds, rename, info, forget, reconnect, disconnect, forget,
-                      color, color_screen, palettes, animations]
+        menu_items = [configure_leds, rename, info, forget, palettes, animations]
         self.menu = MDDropdownMenu(
             caller=self.ids.menu_button_,
             items=menu_items,
@@ -380,6 +280,11 @@ class DeviceController(BaseListItem):
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
+
+    def on_kv_post(self, *args):
+        Clock.schedule_once(self.ids.rgb_drawer_.close_drawer)
+        Clock.schedule_once(self.ids.wave_drawer_.close_drawer)
+        Clock.schedule_once(self.ids.palette_drawer_.close_drawer)
 
     def on_is_connected(self, *args):
         logging.debug(
@@ -475,27 +380,6 @@ class DeviceController(BaseListItem):
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'device_info'
 
-    def open_color_picker_screen(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        self.menu.dismiss()
-        app = MDApp.get_running_app()
-        color_picker_screen = app.root_screen.screen_manager.get_screen('color_picker')
-        color_picker_screen.device_controller = self
-        slide_left = SlideTransition(direction='left')
-        app.root_screen.screen_manager.transition = slide_left
-        app.root_screen.screen_manager.current = 'color_picker'
-
-    def open_color_picker(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-        self.menu.dismiss()
-        self.color_picker = MDColorPicker(size_hint=(0.95, 0.85))
-        self.color_picker.open()
-        self.color_picker.bind(
-            on_select_color=self.on_select_color,
-            on_release=self.get_selected_color,
-        )
-        # self.color_picker.ids.gradient_widget.bind(on_touch_move=self.gradient_on_touch_move)
-
     def open_palettes_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         self.menu.dismiss()
@@ -515,64 +399,6 @@ class DeviceController(BaseListItem):
         slide_left = SlideTransition(direction='left')
         app.root_screen.screen_manager.transition = slide_left
         app.root_screen.screen_manager.current = 'animations'
-
-    # def gradient_on_touch_move(self, touch):
-    #     """Handles the ``self.ids.gradient_widget`` touch event."""
-    #     gradient_widget = self.color_picker.ids.gradient_widget
-    #     if gradient_widget.collide_point(*touch.pos):
-    #         color = gradient_widget.get_rgba_color_from_touch_region(gradient_widget, touch)
-    #         self.color_picker.dispatch(
-    #             "on_select_color", [x / 255.0 for x in color]
-    #         )
-    #     return super(Widget, self).on_touch_down(touch)
-
-    def on_select_color(self, color_picker, rgba):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` '
-                      f'called with args: {color_picker, rgba}')
-        for i, color in enumerate(rgba):
-            rgba[i] = int(color * 255)
-        # self.send(1, rgba)
-
-    def get_selected_color(self, instance_color_picker: MDColorPicker, type_color: str,
-                           selected_color: Union[list, str], ):
-        '''Return selected color.'''
-        logging.debug(f'Selected color is {selected_color}')
-
-    def carousel_change_slides(self, increment):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with : {increment}')
-        # Dimmer slide...
-        if self.slide_num == 0:
-            self.dimmer_container.x = Window.width
-        # RGB sliders...
-        if self.slide_num == 1:
-            self.rgb_container.x = Window.width
-        # Color presets slide...
-        if self.slide_num == 2:
-            self.color_presets_slide.x = Window.width
-        # Animation presets slide...
-        if self.slide_num == 3:
-            self.animation_presets_slide.x = Window.width
-        self.slide_num = (self.slide_num + increment) % 4
-        # Dimmer slide...
-        if self.slide_num == 0:
-            self.height = dp(165)
-            self.ids.card_bottom_.height = dp(100)
-            self.dimmer_container.x = self.x
-        # RGB sliders...
-        if self.slide_num == 1:
-            self.height = dp(165) + dp(100)
-            self.ids.card_bottom_.height = dp(100) + dp(100)
-            self.rgb_container.x = self.x
-        # Color presets slide...
-        if self.slide_num == 2:
-            self.height = dp(165) + dp(150)
-            self.ids.card_bottom_.height = dp(100) + dp(150)
-            self.color_presets_slide.x = self.x
-        # Animation presets slide...
-        if self.slide_num == 3:
-            self.height = dp(165) + dp(150)
-            self.ids.card_bottom_.height = dp(100) + dp(150)
-            self.animation_presets_slide.x = self.x
 
     def open_configure_leds_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -643,94 +469,6 @@ class DeviceController(BaseListItem):
             self.reconnection_active = False
             self.is_connected = True
 
-    # def dimmer_touch_down(self, dimmer, touch):
-    #     # Reducing the slider to 0 should also turn off the power button, but only after releasing
-    #     # the slider at 0 - in case slider is moved to 0 and back up again.
-    #     #
-    #     # Therefore need the on_touch_up event, but if the touch_up occurs outside of the slider,
-    #     # it isn't possible to know which slider it was for.
-    #     #
-    #     # Grab the touch event for the slider to check the touch_up event later. Don't return True
-    #     # so that KivyMD's slider animations can complete.
-    #     if dimmer.collide_point(touch.x, touch.y) and not dimmer.disabled:
-    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}` '
-    #                       f'called from device: {self.device.getAddress()}')
-    #         logging.debug('Grabbing touch_down INSIDE Dimmer')
-    #         touch.grab(dimmer)
-    #
-    # def dimmer_touch_up(self, dimmer, touch):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     if touch.grab_current is dimmer:
-    #         logging.debug('Found touch_up...')
-    #         if dimmer.collide_point(touch.x, touch.y):
-    #             logging.debug('               ...INSIDE Dimmer')
-    #         else:
-    #             logging.debug('               ...OUTSIDE Dimmer')
-    #         if dimmer.value == 0:
-    #             dimmer.disabled = True
-    #             self.power_button.active = False
-    #         touch.ungrab(dimmer)
-
-    # def red_slider_touch_down(self, red_slider, touch):
-    #     if red_slider.collide_point(touch.x, touch.y) and not red_slider.disabled:
-    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #         logging.debug('Grabbing touch_down INSIDE red_slider')
-    #         touch.grab(red_slider)
-    #
-    # def red_slider_touch_up(self, red_slider, touch):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     if touch.grab_current is red_slider:
-    #         logging.debug('Found touch_up...')
-    #         if red_slider.collide_point(touch.x, touch.y):
-    #             logging.debug('               ...INSIDE red_slider')
-    #         else:
-    #             logging.debug('               ...OUTSIDE red_slider')
-    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
-    #                 and self.blue_slider.value == 0:
-    #             red_slider.disabled = True
-    #             self.power_button.active = False
-    #         touch.ungrab(red_slider)
-    #
-    # def green_slider_touch_down(self, green_slider, touch):
-    #     if green_slider.collide_point(touch.x, touch.y) and not green_slider.disabled:
-    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #         logging.debug('Grabbing touch_down INSIDE green_slider')
-    #         touch.grab(green_slider)
-    #
-    # def green_slider_touch_up(self, green_slider, touch):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     if touch.grab_current is green_slider:
-    #         logging.debug('Found touch_up...')
-    #         if green_slider.collide_point(touch.x, touch.y):
-    #             logging.debug('               ...INSIDE green_slider')
-    #         else:
-    #             logging.debug('               ...OUTSIDE green_slider')
-    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
-    #                 and self.blue_slider.value == 0:
-    #             green_slider.disabled = True
-    #             self.power_button.active = False
-    #         touch.ungrab(green_slider)
-    #
-    # def blue_slider_touch_down(self, blue_slider, touch):
-    #     if blue_slider.collide_point(touch.x, touch.y) and not blue_slider.disabled:
-    #         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #         logging.debug('Grabbing touch_down INSIDE blue_slider')
-    #         touch.grab(blue_slider)
-    #
-    # def blue_slider_touch_up(self, blue_slider, touch):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     if touch.grab_current is blue_slider:
-    #         logging.debug('Found touch_up...')
-    #         if blue_slider.collide_point(touch.x, touch.y):
-    #             logging.debug('               ...INSIDE blue_slider')
-    #         else:
-    #             logging.debug('               ...OUTSIDE blue_slider')
-    #         if self.red_slider.value == 0 and self.green_slider.value == 0 \
-    #                 and self.blue_slider.value == 0:
-    #             blue_slider.disabled = True
-    #             self.power_button.active = False
-    #         touch.ungrab(blue_slider)
-
     def power(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
         if self.power_button.active:
@@ -764,16 +502,9 @@ class DeviceController(BaseListItem):
         command = Command(mode=2, dimmer_val=dimmer.value)
         self.send_command(command)
 
-    def increment_rgb(self, rgb_inc, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        red = min(max(0, self.red_slider.value + rgb_inc[0]), 255)
-        green = min(max(0, self.green_slider.value + rgb_inc[1]), 255)
-        blue = min(max(0, self.blue_slider.value + rgb_inc[2]), 255)
-        self.update_rgb_sliders((red / 255, green / 255, blue / 255))
-
     def update_rgb_sliders(self, md_bg_color, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        logging.debug(f'`\tmd_bg_color: {md_bg_color}')
+        # logging.debug(f'`\tmd_bg_color: {md_bg_color}')
         r = self.red_slider.value
         g = self.green_slider.value
         b = self.blue_slider.value

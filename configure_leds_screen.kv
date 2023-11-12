@@ -15,43 +15,76 @@
         MDSeparator:
         MDGridLayout:
             cols: 1
-            spacing: dp(40)
+            spacing: dp(10)
             padding: dp(10)
+            adaptive_height: True
             MDTextField:
                 id: num_leds_text_field_
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
-                height: dp(50)
+                height: dp(60)
                 hint_text: ''
                 helper_text: 'Number of LEDs [0 - 65535]'
                 helper_text_mode: 'persistent'
                 mode: 'fill'
                 on_text_validate: root.validate_num_leds(self)
                 on_focus: self.hint_text = ''
+            MDBoxLayout:
+                size_hint: (1, None)
+                height: dp(10)
+            MDSeparator:
             MDTextField:
                 id: max_brightness_text_field_
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
-                height: dp(50)
+                height: dp(60)
                 helper_text: 'Set maximum brightness [0 - 255]'
                 helper_text_mode: 'persistent'
                 mode: 'fill'
                 on_text_validate: root.validate_brightness(self)
                 on_focus: self.hint_text = ''
+            MDBoxLayout:
+                size_hint: (1, None)
+                height: dp(10)
+            MDSeparator:
+            MDBoxLayout:
+                size_hint: (1, None)
+                height: dp(10)
+            MDLabel:
+                text: 'Color Correction Options'
+                size_hint: (1, None)
+                pos_hint: {'x': 0}
+                height: dp(10)
+                font_size: sp(10)
+                font_style: 'Overline'
+                halign: 'left'
+                valign: 'bottom'
             MDDropDownItem:
                 id: color_corrections_btn_
                 text: 'Color Corrections Options'
                 font_size: sp(14)
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
-                height: dp(50)
+                height: dp(20)
                 on_release: root.open_color_corrections_menu(self)
-                md_bg_color: 'white'
+            MDBoxLayout:
+                size_hint: (1, None)
+                height: dp(10)
+            MDLabel:
+                text: 'Color Temperature Correction Options'
+                size_hint: (1, None)
+                pos_hint: {'x': 0}
+                height: dp(10)
+                font_size: sp(10)
+                font_style: 'Overline'
+                halign: 'left'
+                valign: 'bottom'
             MDDropDownItem:
                 id: temperature_corrections_btn_
                 text: 'Color Temperature Corrections Options'
                 font_size: sp(14)
                 pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 size_hint: (0.9, None)
-                height: dp(50)
+                height: dp(20)
                 on_release: root.open_temperature_corrections_menu(self)
+

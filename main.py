@@ -9,6 +9,7 @@ from jnius import autoclass, cast, java_method
 from threading import Thread
 from kivy.utils import platform
 from kivy.clock import Clock, mainthread
+from kivy.metrics import dp
 from kivy.config import Config
 from kivy.lang import Builder
 from kivymd.theming import ThemeManager
@@ -48,7 +49,7 @@ if platform == 'android':
 
 if platform == 'linux':
     from kivy.core.window import Window
-    Window.size = (330, 600)
+    Window.size = (dp(450), dp(800))
 
 
 class MainApp(MDApp):
