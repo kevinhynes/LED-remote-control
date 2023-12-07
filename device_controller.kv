@@ -2,6 +2,8 @@
 #:import Window kivy.core.window
 #:import RadialSlider kivy_garden.radialslider
 #:import trunc math.trunc
+#:import WaveOptionRadioButton device_controller.WaveOptionRadioButton
+#:import AnimationsList animations_screen.AnimationsList
 
 
 <AnimationPresetButton>:
@@ -84,6 +86,7 @@
     red_slider: red_slider_
     green_slider: green_slider_
     blue_slider: blue_slider_
+    presets: presets_
     size_hint: (0.95, None)
     pos_hint: {'center_x': 0.5}
     height: rgb_cp_.height + dp(20)
@@ -143,9 +146,11 @@
                 on_value: root.device_controller.send_rgb()
         CtrlSeparator:
         Presets:
+            id: presets_
             adaptive_size: True
             spacing: dp(5)
             pos_hint: {'center_x': 0.5}
+            disabled: True
             ColorPresets:
                 id: color_presets_
                 device_controller: root.device_controller
@@ -184,7 +189,9 @@
         icon: 'chevron-down'
         center_y: wave_lbl_.center_y
         pos_hint: {'right': 1}
-        _no_ripple_effect: True
+#        _no_ripple_effect: True
+        size_hint: (None, None)
+        size: (dp(30), dp(30))
         on_release:
             root.toggle_drawer()
             self.icon = 'chevron-up' if self.icon == 'chevron-down' else 'chevron-down'
@@ -192,8 +199,17 @@
         id: wave_cp_
         orientation: 'vertical'
         adaptive_height: True
-        padding: (dp(32), dp(20), dp(32), dp(20))
+        padding: (dp(32), dp(0), dp(32), dp(20))
         spacing: dp(6)
+#        md_bg_color: (1, 0, 0, 0.1)
+        MDRelativeLayout:
+            size_hint: (1, None)
+            height:  sw_.height - dp(10)
+#            md_bg_color: (1, 0, 0, 0.1)
+            MDSwitch:
+                id: sw_
+                pos_hint: {'center_y': 0.5, 'right': 1}
+                widget_style: 'ios'
         MDBoxLayout:
             id: knobs_
             adaptive_size: True
@@ -315,39 +331,97 @@
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    id: hue_radio_button_
+                    active: True
+                    value: 'hue'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 'h'
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    value: 'saturation'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 's'
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    value: 'value'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 'v'
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    value: 'red'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 'r'
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    value: 'green'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 'g'
             MDBoxLayout:
                 adaptive_size: True
                 orientation: 'vertical'
-                CtrlRadioButton:
+                WaveOptionRadioButton:
+                    value: 'blue'
+                    on_active: root.on_wave_option_active(self)
                 CtrlLabel:
                     text: 'b'
+            MDSeparator:
+                orientation: 'vertical'
+                width: dp(5)
+            MDBoxLayout:
+                id: strip_options_
+                adaptive_size: True
+                pos_hint: {'center_x': 0.5}
+                spacing: dp(8)
+                MDBoxLayout:
+                    adaptive_size: True
+                    orientation: 'vertical'
+                    WaveOptionRadioButton:
+                        id: strip_radio_button_
+                        active: True
+                        value: 'strip'
+                        on_active: root.on_strip_option_active(self)
+                        width: dp(30)
+                    CtrlLabel:
+                        text: 'strip'
+                        width: dp(30)
+                MDBoxLayout:
+                    adaptive_size: True
+                    orientation: 'vertical'
+                    WaveOptionRadioButton:
+                        value: 'leds'
+                        on_active: root.on_strip_option_active(self)
+                        width: dp(30)
+                    CtrlLabel:
+                        text: 'leds'
+                        width: dp(30)
+            MDSeparator:
+                orientation: 'vertical'
+                width: dp(5)
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    id: animate_button_
+                    value: 'animate'
+                    on_active: root.on_animation_active(self)
+                    width: dp(30)
+                CtrlLabel:
+                    text: 'anim'
+                    width: dp(30)
 
 
 <PaletteDrawer>:
@@ -396,15 +470,18 @@
             MDIconButton:
                 icon: 'launch'
                 on_release: root.device_controller.open_palettes_screen()
+        AnimationsList:
+
 
 <DeviceController>:
     id: device_controller_
     power_button: power_button_
     dimmer: dimmer_
+    dimmer_container: dimmer_container_
     red_slider: rgb_drawer_.red_slider
     green_slider: rgb_drawer_.green_slider
     blue_slider: rgb_drawer_.blue_slider
-    dimmer_container: dimmer_container_
+    presets: rgb_drawer_.presets
     off_screen: off_screen_
     _no_ripple_effect: True
     divider: None
@@ -452,6 +529,7 @@
                 CtrlSeparator:
                 WaveDrawer:
                     id: wave_drawer_
+                    device_controller: root
                 CtrlSeparator:
                 PaletteDrawer:
                     id: palette_drawer_
@@ -639,8 +717,8 @@
     valign: 'bottom'
 
 
-<CtrlRadioButton@MDCheckbox>:
-    group: 'group'
+<WaveOptionRadioButton>:
+#    group: 'wave_options'
     size_hint: (None, None)
     font_size: sp(18)
     size: (dp(20), dp(20))

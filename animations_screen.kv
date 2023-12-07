@@ -21,7 +21,7 @@
     MDRelativeLayout:
         # Need this so ControlPanel is under TopPanel
         size_hint: (1, 1)
-        md_bg_color: (1, 0, 0, 0.5)
+#        md_bg_color: (1, 0, 0, 0.5)
         ControlPanelTray:
             id: control_panel_tray_
             orientation: 'vertical'
@@ -50,8 +50,6 @@
                 icon: 'data/comet.png'
         Label:
             id: name_lbl_
-            text: 'Comet'
-            font_style: 'Button'
     MDRelativeLayout:
         id: tp_right_
         MDIconButton:
@@ -60,9 +58,7 @@
             pos_hint: {'right': 1}
             on_release:
                 root.panel.contract() if root.panel.is_expanded else root.panel.expand()
-        Label:
-            text: 'Comet'
-            font_style: 'Button'
+
 
 
 <AnimationExpansionPanelIconButton@MDIconButton>:

@@ -42,6 +42,8 @@ from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.pickers import MDColorPicker
+from kivymd.uix.selectioncontrol import MDCheckbox
+from kivy.uix.checkbox import CheckBox
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import func_name
@@ -80,7 +82,12 @@ class RGBDrawer(Drawer):
     device_controller = ObjectProperty()
 
 
+class WaveOptionRadioButton(MDCheckbox):
+    pass
+
+
 class WaveDrawer(Drawer):
+    device_controller = ObjectProperty()
     frequency = NumericProperty(10)
     range_min = NumericProperty(0)
     range_max = NumericProperty(255)
@@ -88,7 +95,12 @@ class WaveDrawer(Drawer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._animation = None
         self._phase_offset = 0
+        self._active_wave_option = 'hue'
+        self._active_strip_option = 'strip'
+        self.wave_debounce = False
+        self.strip_debounce = False
         Clock.schedule_once(self.draw_wave)
 
     def close_drawer(self, *args):
@@ -98,6 +110,18 @@ class WaveDrawer(Drawer):
     def open_drawer(self, *args):
         super().open_drawer()
         Clock.schedule_once(self.draw_wave)
+
+    def on_kv_post(self, *args):
+        mac_address = self.device_controller.device.getAddress()
+        for box in self.ids.wave_options_.children:
+            for child in box.children:
+                if isinstance(child, WaveOptionRadioButton):
+                    child.group = mac_address + '1'
+        for box in self.ids.strip_options_.children:
+            for child in box.children:
+                if isinstance(child, WaveOptionRadioButton):
+                    child.group = mac_address + '2'
+        self.ids.animate_button_.group = mac_address + '3'
 
     def on_frequency(self, *args):
         self.draw_wave()
@@ -109,7 +133,8 @@ class WaveDrawer(Drawer):
         self.draw_wave()
 
     def on_speed(self, *args):
-        self.draw_wave()
+        if self._animation:
+            self.draw_wave()
 
     def draw_wave(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -124,9 +149,11 @@ class WaveDrawer(Drawer):
         ym = y0 + (range_midpoint / 255) * wave_height + dp(15)
         self.ids.x_axis_lbl_.center_y = ym - self.ids.wave_options_.height - dp(20)
         self.ids.x_axis_lbl_.text = str(range_midpoint) + ' '
+        _frame_offset = 0.5 * pi * (self.speed/100)  # when new frame value == pi it just flip flops
+        self._phase_offset = (self._phase_offset + _frame_offset) % (2 * pi)
         for x in range(xi):
             points.append(x0 + x)
-            points.append(sin(self.frequency * (x / xi) + self.speed) * normalized_amplitude + ym)
+            points.append(sin(self.frequency * (x / xi) + self._phase_offset) * normalized_amplitude + ym)
         with self.ids.graph_.canvas.before:
             # Sin Wave
             Color(1, 0, 0, 1)
@@ -138,6 +165,38 @@ class WaveDrawer(Drawer):
             Color(0, 0, 0, 1)
             Line(points=(x0, ym, xi + x0, ym))
 
+    def on_wave_option_active(self, radio_button):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` \t '
+                      f'{radio_button.state, radio_button.active, radio_button.value}')
+        if self.wave_debounce:
+            self.wave_debounce = False
+            return
+        if radio_button.value == self._active_wave_option:
+            radio_button.active = True
+            self.wave_debounce = True
+        else:
+            self._active_wave_option = radio_button.value
+
+    def on_strip_option_active(self, radio_button):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` \t '
+                      f'{radio_button.state, radio_button.active, radio_button.value}')
+        if self.strip_debounce:
+            self.strip_debounce = False
+            return
+        if radio_button.value == self._active_strip_option:
+            radio_button.active = True
+            self.strip_debounce = True
+        else:
+            self._active_strip_option = radio_button.value
+
+    def on_animation_active(self, radio_button):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` \t '
+                      f'{radio_button.state, radio_button.active, radio_button.value}')
+        if radio_button.active:
+            self._animation = Clock.schedule_interval(self.draw_wave, 0.05)
+        else:
+            self._animation.cancel()
+            self._animation = None
 
 class ColorPresetButton(MDRoundFlatButton):
     pass
@@ -204,6 +263,7 @@ class DeviceController(BaseListItem):
     red_slider = ObjectProperty()
     green_slider = ObjectProperty()
     blue_slider = ObjectProperty()
+    presets = ObjectProperty()
     brightness = NumericProperty(100)
     # r = NumericProperty(255)
     # g = NumericProperty(255)
@@ -481,6 +541,7 @@ class DeviceController(BaseListItem):
             self.red_slider.disabled = False
             self.green_slider.disabled = False
             self.blue_slider.disabled = False
+            self.presets.disabled = False
             command = Command(mode=2, dimmer_val=self.brightness)
         else:
             logging.debug('LIGHTS OFF!')
@@ -493,6 +554,7 @@ class DeviceController(BaseListItem):
             self.red_slider.disabled = True
             self.green_slider.disabled = True
             self.blue_slider.disabled = True
+            self.presets.disabled = True
             command = Command(mode=2, dimmer_val=0)
         self.send_command(command)
 

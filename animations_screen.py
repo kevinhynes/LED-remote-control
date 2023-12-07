@@ -67,7 +67,7 @@ class ScrollControls(ControlPanel):
         speed = 100 - self.ids.animation_speed_slider_.value
         command = Command(mode=4, animation_id=2, animation_speed=speed)
         self.device_controller.send_command(command)
-        logging.debug(f'\tBreathe animation sent...')
+        logging.debug(f'\tScroll animation sent...')
         logging.debug(f'\t\t speed: {speed}')
 
 
@@ -186,7 +186,7 @@ class AnimationsList(MDList):
             ('Scroll', 'data/right-arrow.png', 2, [], ScrollControls()),
             ('Splatter', 'data/paint.png', 3, [], SplatterControls()),
             ('Twinkle', 'data/star.png', 4, [], TwinkleControls()),
-            ('Comet', 'data/comet.png', 9, [], CometControls()),
+            ('Comet', 'data/comet.png', 5, [], CometControls()),
         ]
         animations = []
         for attrs in animation_attrs:
