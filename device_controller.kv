@@ -3,81 +3,197 @@
 #:import RadialSlider kivy_garden.radialslider
 #:import trunc math.trunc
 #:import WaveOptionRadioButton device_controller.WaveOptionRadioButton
-#:import AnimationsList animations_screen.AnimationsList
+#:import AnimationsList animations_list.AnimationsList
 
 
-<AnimationPresetButton>:
-    # Testing comet animation
-#    icon_size: sp(50)
-    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    size_hint: (None, None)
-    width: self.height
-    rounded_button: True
-    line_color: app.theme_cls.bg_light
-    line_width: dp(0.5)
-    canvas.before:
-        Color:
-            rgba: 0, 0, 0, 0.5
-        Line:
-            circle: self.center_x, self.center_y, self.width / 2 , 0, 360, 100
-        Color:
-            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-            size: self.width, self.height
-        Color:
-            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x, self.y   # Adjust shadow position
-            size: self.width, self.height
+<DeviceController>:
+    id: device_controller_
+    power_button: power_button_
+    dimmer: dimmer_
+    dimmer_container: dimmer_container_
+    red_slider: rgb_drawer_.red_slider
+    green_slider: rgb_drawer_.green_slider
+    blue_slider: rgb_drawer_.blue_slider
+    presets: rgb_drawer_.presets
+    off_screen: off_screen_
+    _no_ripple_effect: True
+    divider: None
+    size_hint: (1, None)
+    height: card_.height
 
-<ColorPresetButton>:
-    size_hint_y: None
-    width: self.height
-    rounded_button: True
-#    line_color: app.theme_cls.bg_light
-#    line_width: dp(0.1)
-    canvas.before:
-        Color:
-            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-            size: self.width, self.height
-    canvas.after:
-        Color:
-            rgba: 0, 0, 0, 0.2
-        Ellipse:
-            pos: self.x, self.y
-            size: self.width, self.height
-        Color:
-            rgba: self.md_bg_color
-        Ellipse:
-            pos: self.x, self.y + dp(3)
-            size: self.width- dp(3), self.height - dp(3)
+    MDCard:
+        id: card_
+        orientation: 'vertical'
+        size_hint_x: 0.9
+        adaptive_height: True
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        padding: dp(10), dp(10), dp(10), dp(10)
+        md_bg_color: app.theme_cls.primary_color
 
-<FavoriteButton>:
-    size_hint: (None, 0.9)
-    width: self.height
-    rounded_button: True
-    line_color: app.theme_cls.bg_light
-    line_width: dp(0.5)
-    canvas.before:
-        Color:
-            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-            size: self.width, self.height
+        MDRelativeLayout:
+            # Add card_bottom first so the shadow effect works. Use RelativeLayout to position
+            # the sections correctly.
+            id: levels_
+            size_hint: (1, None)
+            height: card_bottom_.height
 
+            MDCard:
+                id: card_bottom_
+                orientation: 'vertical'
+                pos_hint: {'top': 1}
+                adaptive_height: True
+                padding: dp(0), dp(0), dp(0), dp(10)
+                spacing: dp(6)
+                md_bg_color: app.theme_cls.primary_light
+                MDBoxLayout:
+                    id: card_top_spacer_
+                    size_hint: (1, None)
+                    height: dp(50)
+                MDBoxLayout:
+                    id: dimmer_container_
+                    orientation: 'vertical'
+                    padding: (dp(20), dp(0))
+                    adaptive_height: True
+                    CtrlSlider:
+                        id: dimmer_
+                        on_value: root.dim(self)
+                CtrlSeparator:
+                RGBDrawer:
+                    id: rgb_drawer_
+                    device_controller: root
+                CtrlSeparator:
+                WaveDrawer:
+                    id: wave_drawer_
+                    device_controller: root
+                CtrlSeparator:
+                PaletteDrawer:
+                    id: palette_drawer_
+                    device_controller: root
 
-<RenameDeviceTextField>:
-    size_hint: (None, None)
-    mode: 'rectangle'
-    helper_text: 'Rename your device'
-    helper_text_mode: 'persistent'
-    helper_text_color_normal: 'white'
-    helper_text_color_focus: 'white'
-    text_color_normal: 'white'
-    text_color_focus: 'white'
+            MDCard:
+                id: card_top_
+                orientation: 'horizontal'
+                pos_hint: {'top': 1}
+                size_hint: (1, None)
+                height: dp(50)
+                md_bg_color: app.theme_cls.primary_dark
+
+                MDRelativeLayout:
+                    id: _status_container
+                    size_hint: (0.1, 1)
+
+                    MDIconButton:
+                        id: status_icon_
+                        icon: 'bluetooth-audio'
+                        theme_icon_color: 'Custom'
+                        icon_color: 'green'
+                        on_release: root.disconnect_BluetoothSocket() if root.is_connected else root.reconnect_BluetoothSocket()
+
+                MDRelativeLayout:
+                    id: label_container_
+                    size_hint: (0.65, 1)
+
+                    MDLabel:
+                        id: label_
+                        padding: dp(20), dp(0)
+                        text: root.device.nickname if root.device.nickname else root.device.getName()
+                        text_size: self.size
+                        valign: 'middle'
+
+                MDBoxLayout:
+                    size_hint: (0.25, 1)
+
+                    MDSwitch:
+                        id: power_button_
+                        pos_hint: {'right': 1, 'center_y': 0.5}
+                        widget_style: 'ios'
+                        width: dp(45)
+                        on_active: root.power()
+
+                MDFloatLayout:
+                    # MDSwitch widget_style: 'ios' and material design 'M3' versions' right
+                    # side extends outside of the widget's boundary. Including this layout
+                    # as padding to make it look right.
+                    size_hint: (0.1, 1)
+
+        MDBoxLayout:
+            id: favorites_
+            pos_hint: {'bottom': 0}
+            size_hint: (1, None)
+            height: dp(40)
+            orientation: 'horizontal'
+            spacing: dp(7)
+            padding: dp(10), dp(2), dp(0), dp(2)
+
+            FavoriteButton:
+                # White
+                md_bg_color: (1, 1, 1, 1)
+                on_release: root.update_rgb_sliders(self.md_bg_color)
+
+            FavoriteButton:
+                # Red
+                md_bg_color: (1, 0, 0, 1)
+                on_release: root.update_rgb_sliders(self.md_bg_color)
+
+            FavoriteButton:
+                # Orange
+                md_bg_color: (1, 0.64, 0, 1)
+                on_release: root.update_rgb_sliders(self.md_bg_color)
+
+            FavoriteButton:
+                # Yellow
+                md_bg_color: (1, 1, 0, 1)
+                on_release: root.update_rgb_sliders(self.md_bg_color)
+
+            FavoriteButton:
+                # Green
+                md_bg_color: (0, 1, 0, 1)
+                on_release: root.update_rgb_sliders(self.md_bg_color)
+
+            MDIconButton:
+                # Testing comet animation
+                icon: "data/comet.png"
+#                    size_hint:  (None, None)
+#                    font_size: sp(100)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                size_hint: (None, 0.9)
+                width: self.height
+                rounded_button: True
+                line_color: app.theme_cls.bg_light
+                line_width: dp(0.5)
+                canvas.before:
+                    Color:
+                        rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+                    Ellipse:
+                        pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+                        size: self.width, self.height
+                    Color:
+                        rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+                    Ellipse:
+                        pos: self.x, self.y   # Adjust shadow position
+                        size: self.width, self.height
+            MDRelativeLayout:
+                MDIconButton:
+                    id: menu_button_
+                    icon: 'dots-vertical'
+                    icon_size: dp(20)
+                    pos_hint: {'center_x': .75, 'center_y': 0.45}
+                    ripple_alpha: 0.5
+#                        ripple_scale: 0.5
+                    on_release: root.open_options_menu(self)
+
+    MDRelativeLayout:
+        id: card_overlay_
+        size_hint: (0.9, 1)
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#        radius: dp(15), dp(15), dp(15), dp(15)
+#        md_bg_color: app.theme_cls.primary_color
+        md_bg_color: 'gray'
+        opacity: 0
+    MDRelativeLayout:
+        id: off_screen_
+        x: root.right + dp(100)
+        md_bg_color: (1, 0, 0, 0.5)
 
 
 <RGBDrawer>:
@@ -89,7 +205,7 @@
     presets: presets_
     size_hint: (0.95, None)
     pos_hint: {'center_x': 0.5}
-    height: rgb_cp_.height + dp(20)
+    height: dp(20)
     canvas.after:
         Color:
             rgba: 0, 0, 0, 0.2
@@ -109,13 +225,14 @@
         _no_ripple_effect: True
         on_release:
             root.toggle_drawer()
-            self.icon = 'chevron-up' if self.icon == 'chevron-down' else 'chevron-down'
+            self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
     MDBoxLayout:
         id: rgb_cp_
         orientation: 'vertical'
         adaptive_height: True
         size_hint_x: 1
         spacing: dp(6)
+        x: Window.width
         MDBoxLayout:
             id: rgb_sliders_
             orientation: 'vertical'
@@ -172,7 +289,7 @@
     id: wave_drawer_
     size_hint: (0.95, None)
     pos_hint: {'center_x': 0.5}
-    height: wave_cp_.height + dp(20)
+    height: dp(20)
     canvas.after:
         Color:
             rgba: 0, 0, 0, 0.2
@@ -189,18 +306,17 @@
         icon: 'chevron-down'
         center_y: wave_lbl_.center_y
         pos_hint: {'right': 1}
-#        _no_ripple_effect: True
-        size_hint: (None, None)
-        size: (dp(30), dp(30))
+        _no_ripple_effect: True
         on_release:
             root.toggle_drawer()
-            self.icon = 'chevron-up' if self.icon == 'chevron-down' else 'chevron-down'
+            self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
     MDBoxLayout:
         id: wave_cp_
         orientation: 'vertical'
         adaptive_height: True
         padding: (dp(32), dp(0), dp(32), dp(20))
         spacing: dp(6)
+        x: Window.width
 #        md_bg_color: (1, 0, 0, 0.1)
         MDRelativeLayout:
             size_hint: (1, None)
@@ -425,11 +541,11 @@
 
 
 <PaletteDrawer>:
-    control_panel: palette_cp_
     id: palette_drawer_
+    control_panel: palette_cp_
     size_hint: (0.95, None)
     pos_hint: {'center_x': 0.5}
-    height: palette_cp_.height + dp(20)
+    height: dp(20)
     canvas.after:
         Color:
             rgba: 0, 0, 0, 0.2
@@ -437,11 +553,11 @@
             rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
     MDLabel:
         id: palette_lbl_
-        text: 'Palettes'
+        text: 'Palette Animations'
         font_style: 'Button'
         pos_hint: {'top': 1, 'x': 0.05}
-        size_hint: (None, None)
-        size: (dp(100), dp(20))
+        size_hint: (1, None)
+        height: dp(20)
     MDIconButton:
         icon: 'chevron-down'
         center_y: palette_lbl_.center_y
@@ -456,210 +572,77 @@
         adaptive_height: True
         padding: (dp(10), dp(10), dp(10), dp(10))
         spacing: dp(6)
-        ControlLabel:
-            text: "Palette Selection".upper()
-        MDBoxLayout:
-            size_hint: (1, None)
-            height: dp(50)
-            pos_hint: {'center_x': 0.5}
-            MDWidget:
-                size_hint: (1, 1)
-                pos_hint: {'center_x': 0.5}
-                radius: (dp(15), dp(15))
-                md_bg_color: (0, 1, 0, 0.4)
-            MDIconButton:
-                icon: 'launch'
-                on_release: root.device_controller.open_palettes_screen()
+        x: Window.width
         AnimationsList:
+            id: animations_list_
+            device_controller: root.device_controller
 
 
-<DeviceController>:
-    id: device_controller_
-    power_button: power_button_
-    dimmer: dimmer_
-    dimmer_container: dimmer_container_
-    red_slider: rgb_drawer_.red_slider
-    green_slider: rgb_drawer_.green_slider
-    blue_slider: rgb_drawer_.blue_slider
-    presets: rgb_drawer_.presets
-    off_screen: off_screen_
-    _no_ripple_effect: True
-    divider: None
-    height: card_.height
+<RenameDeviceTextField>:
+    size_hint: (None, None)
+    mode: 'rectangle'
+    helper_text: 'Rename your device'
+    helper_text_mode: 'persistent'
+    helper_text_color_normal: 'white'
+    helper_text_color_focus: 'white'
+    text_color_normal: 'white'
+    text_color_focus: 'white'
 
-    MDCard:
-        id: card_
-        orientation: 'vertical'
-        size_hint_x: 0.9
-        adaptive_height: True
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        padding: dp(10), dp(10), dp(10), dp(10)
-        md_bg_color: app.theme_cls.primary_color
 
-        MDRelativeLayout:
-            # Add card_bottom first so the shadow effect works. Use RelativeLayout to position
-            # the sections correctly.
-            size_hint: (1, None)
-            height: card_bottom_.height
+<ColorPresetButton>:
+    size_hint_y: None
+    width: self.height
+    rounded_button: True
+#    line_color: app.theme_cls.bg_light
+#    line_width: dp(0.1)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Ellipse:
+            pos: self.x, self.y
+            size: self.width, self.height
+        Color:
+            rgba: self.md_bg_color
+        Ellipse:
+            pos: self.x, self.y + dp(3)
+            size: self.width- dp(3), self.height - dp(3)
 
-            MDCard:
-                id: card_bottom_
-                orientation: 'vertical'
-                pos_hint: {'top': 1}
-                adaptive_height: True
-                padding: dp(0), dp(0), dp(0), dp(10)
-                spacing: dp(6)
-                md_bg_color: app.theme_cls.primary_light
-                MDBoxLayout:
-                    id: card_top_spacer_
-                    size_hint: (1, None)
-                    height: dp(50)
-                MDBoxLayout:
-                    id: dimmer_container_
-                    orientation: 'vertical'
-                    padding: (dp(20), dp(0))
-                    adaptive_height: True
-                    CtrlSlider:
-                        id: dimmer_
-                        on_value: root.dim(self)
-                CtrlSeparator:
-                RGBDrawer:
-                    id: rgb_drawer_
-                    device_controller: root
-                CtrlSeparator:
-                WaveDrawer:
-                    id: wave_drawer_
-                    device_controller: root
-                CtrlSeparator:
-                PaletteDrawer:
-                    id: palette_drawer_
-                    device_controller: root
+<AnimationPresetButton>:
+    # Testing comet animation
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    size_hint: (None, None)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.5
+        Line:
+            circle: self.center_x, self.center_y, self.width / 2 , 0, 360, 100
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+        Color:
+            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x, self.y   # Adjust shadow position
+            size: self.width, self.height
 
-            MDCard:
-                id: card_top_
-                orientation: 'horizontal'
-                pos_hint: {'top': 1}
-                size_hint: (1, None)
-                height: dp(50)
-                md_bg_color: app.theme_cls.primary_dark
 
-                MDRelativeLayout:
-                    id: _status_container
-                    size_hint: (0.1, 1)
-
-                    MDIconButton:
-                        id: status_icon_
-                        icon: 'bluetooth-audio'
-                        theme_icon_color: 'Custom'
-                        icon_color: 'green'
-                        on_release: root.disconnect_BluetoothSocket() if root.is_connected else root.reconnect_BluetoothSocket()
-
-                MDRelativeLayout:
-                    id: label_container_
-                    size_hint: (0.65, 1)
-
-                    MDLabel:
-                        id: label_
-                        padding: dp(20), dp(0)
-                        text: root.device.nickname if root.device.nickname else root.device.getName()
-                        text_size: self.size
-                        valign: 'middle'
-
-                MDBoxLayout:
-                    size_hint: (0.25, 1)
-
-                    MDSwitch:
-                        id: power_button_
-                        pos_hint: {'right': 1, 'center_y': 0.5}
-                        widget_style: 'ios'
-                        width: dp(45)
-                        on_active: root.power()
-
-                MDFloatLayout:
-                    # MDSwitch widget_style: 'ios' and material design 'M3' versions' right
-                    # side extends outside of the widget's boundary. Including this layout
-                    # as padding to make it look right.
-                    size_hint: (0.1, 1)
-
-        MDBoxLayout:
-            id: favorites_
-            pos_hint: {'bottom': 0}
-            size_hint: (1, None)
-            height: dp(40)
-            orientation: 'horizontal'
-            spacing: dp(7)
-            padding: dp(10), dp(2), dp(0), dp(2)
-
-            FavoriteButton:
-                # White
-                md_bg_color: (1, 1, 1, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Red
-                md_bg_color: (1, 0, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Orange
-                md_bg_color: (1, 0.64, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Yellow
-                md_bg_color: (1, 1, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Green
-                md_bg_color: (0, 1, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            MDIconButton:
-                # Testing comet animation
-                icon: "data/comet.png"
-#                    size_hint:  (None, None)
-#                    font_size: sp(100)
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (None, 0.9)
-                width: self.height
-                rounded_button: True
-                line_color: app.theme_cls.bg_light
-                line_width: dp(0.5)
-                canvas.before:
-                    Color:
-                        rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-                    Ellipse:
-                        pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-                        size: self.width, self.height
-                    Color:
-                        rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
-                    Ellipse:
-                        pos: self.x, self.y   # Adjust shadow position
-                        size: self.width, self.height
-            MDRelativeLayout:
-                MDIconButton:
-                    id: menu_button_
-                    icon: 'dots-vertical'
-                    icon_size: dp(20)
-                    pos_hint: {'center_x': .75, 'center_y': 0.45}
-                    ripple_alpha: 0.5
-#                        ripple_scale: 0.5
-                    on_release: root.open_options_menu(self)
-
-    MDRelativeLayout:
-        id: card_overlay_
-        size_hint: (0.9, 1)
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-#        radius: dp(15), dp(15), dp(15), dp(15)
-#        md_bg_color: app.theme_cls.primary_color
-        md_bg_color: 'gray'
-        opacity: 0
-    MDRelativeLayout:
-        id: off_screen_
-        x: root.right + dp(100)
-        md_bg_color: (1, 0, 0, 0.5)
-
+<WaveOptionRadioButton>:
+#    group: 'wave_options'
+    size_hint: (None, None)
+    font_size: sp(18)
+    size: (dp(20), dp(20))
 
 
 <CtrlSlider@MDSlider>:
@@ -717,8 +700,17 @@
     valign: 'bottom'
 
 
-<WaveOptionRadioButton>:
-#    group: 'wave_options'
-    size_hint: (None, None)
-    font_size: sp(18)
-    size: (dp(20), dp(20))
+<FavoriteButton>:
+    size_hint: (None, 0.9)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+
+

@@ -27,34 +27,66 @@
 
 <PaletteControls>:
     id: control_bar_
-    adaptive_size: True
-    orientation: 'lr-tb'
-    rows: 1
     size_hint_y: 0.75
     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    spacing: dp(15)
-#    md_bg_color: (1, 0, 0, 0.4)
-    PaletteControlButton:
-        icon: 'blur-linear'
-        size: (control_bar_.height, control_bar_.height)
-        on_press:
-            root.toggle_blend()
-            self.icon = 'dots-grid' if self.icon == 'blur-linear' else 'blur-linear'
-    PaletteControlButton:
-        icon: 'swap-horizontal'
-        size: (control_bar_.height, control_bar_.height)
-        on_press: root.toggle_swap()
-    PaletteControlButton:
-        icon: 'reflect-horizontal'
-        size: (control_bar_.height, control_bar_.height)
-        on_press: root.toggle_mirror()
-    PaletteControlButton:
-        icon: 'checkbox-blank-outline'
-        size: (control_bar_.height, control_bar_.height)
-        on_press:
-            root.toggle_select()
-            self.icon = 'checkbox-marked-outline' if self.icon == 'checkbox-blank-outline' else 'checkbox-blank-outline'
-
+    MDBoxLayout:
+        adaptive_size: True
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        spacing: dp(15)
+        PaletteControlButton:
+            icon: 'blur-linear'
+            size: (control_bar_.height, control_bar_.height)
+            on_press:
+                root.toggle_blend()
+                self.icon = 'dots-grid' if self.icon == 'blur-linear' else 'blur-linear'
+        PaletteControlButton:
+            icon: 'swap-horizontal'
+            size: (control_bar_.height, control_bar_.height)
+            on_press: root.toggle_swap()
+        PaletteControlButton:
+            icon: 'reflect-horizontal'
+            size: (control_bar_.height, control_bar_.height)
+            on_press: root.toggle_mirror()
+    MDBoxLayout:
+        adaptive_size: True
+        pos_hint: {'right': 1, 'center_y': 0.5}
+        spacing: dp(20)
+        padding: dp(35)
+        MDRelativeLayout:
+            size_hint: (None, None)
+            size: (control_bar_.height, control_bar_.height)
+            pos_hint: {'center_x':0.5, 'center_y': 0.5}
+            PaletteControlButton:
+                icon: 'led-on'
+                size: (control_bar_.height, control_bar_.height)
+                on_press: root.send_palette()
+            MDIcon:
+                icon: ''
+                badge_icon: 'upload'
+                badge_icon_color: (0, 0, 0, 0.9)
+                badge_bg_color: (0.9, 0.9, 0.9, 0.9)
+                badge_font_size: sp(14)
+                pos_hint: {'right': 0.75, 'top': 0.3}
+                halign: 'center'
+                valign: 'center'
+        MDRelativeLayout:
+            size_hint: (None, None)
+            size: (control_bar_.height, control_bar_.height)
+            pos_hint: {'center_x':0.5, 'center_y': 0.5}
+            PaletteControlButton:
+                id: save_to_animation_btn_
+                icon: 'content-save-outline'
+                size: (control_bar_.height, control_bar_.height)
+                on_press: root.save_to_animation()
+            MDIcon:
+                icon: ''
+                badge_icon: 'arrow-right-thick'
+                badge_icon_color: (0, 0, 0, 0.9)
+                badge_bg_color: (0.9, 0.9, 0.9, 0.9)
+                badge_font_size: sp(14)
+                pos_hint: {'right': 0.75, 'top': 0.3}
+                halign: 'center'
+                valign: 'center'
 
 
 <PaletteControlButton@MDIconButton>:

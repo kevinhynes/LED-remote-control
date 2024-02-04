@@ -3,7 +3,6 @@
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 #:import Gradient kivy_gradient.Gradient
 #:import PalettesScreen palettes_screen.PalettesScreen
-#:import AnimationsScreen animations_screen.AnimationsScreen
 
 
 <Overlay@Widget>:
@@ -87,9 +86,9 @@
                 name: 'palettes'
                 size_hint_y: 1 - top_app_bar_.height / root.height
 
-            AnimationsScreen:
-                name: 'animations'
-                size_hint_y: 1 - top_app_bar_.height / root.height
+#            AnimationsScreen:
+#                name: 'animations'
+#                size_hint_y: 1 - top_app_bar_.height / root.height
 
         MDNavigationDrawer:
             id: nav_drawer_

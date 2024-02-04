@@ -1,33 +1,28 @@
 import logging
 from kivymd.app import MDApp
 from kivy.clock import Clock
-from kivy.graphics import Color, RoundedRectangle, Ellipse
+from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 from kivy.utils import get_color_from_hex
-from kivy.uix.behaviors import ButtonBehavior
-from kivymd.uix.behaviors import CircularRippleBehavior, RectangularRippleBehavior
-from kivy.uix.stencilview import StencilView
 from kivymd.uix.screen import MDScreen
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty, BooleanProperty
+from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty
 from kivymd.uix.widget import MDWidget
 from kivymd.uix.relativelayout import MDRelativeLayout
-from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.card import MDCard
 from kivymd.uix.list import MDList
-from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from kivymd.uix.selectioncontrol import MDCheckbox
 from kivy.uix.screenmanager import SlideTransition
 
 from kivy_gradient import Gradient
 
-from bluetooth_helpers import Command
-import palettes
 from troubleshooting import func_name
+import palettes
+from bluetooth_helpers import Command
 
 
-class PaletteControls(MDGridLayout):
+class PaletteControls(MDRelativeLayout):
     palette_widget = ObjectProperty()
+    palette_controller = ObjectProperty()
 
     def toggle_blend(self, *args):
         self.palette_widget.is_blended = not self.palette_widget.is_blended
@@ -41,19 +36,30 @@ class PaletteControls(MDGridLayout):
     def toggle_select(self, *args):
         self.palette_widget.is_selected = not self.palette_widget.is_selected
 
+    def send_palette(self, *args):
+        self.palette_controller.save_to_animation()
+        self.palette_controller.send_palette()
+
+    def save_to_animation(self, *args):
+        self.palette_controller.save_to_animation()
+
 
 class PaletteWidget(MDBoxLayout):
     is_mirrored = BooleanProperty(False)
     is_swapped = BooleanProperty(False)
     is_blended = BooleanProperty(False)
-    is_selected = BooleanProperty(False)
 
-    def __init__(self, colors, **kwargs):
+    def __init__(self, hex_colors=None, **kwargs):
         # PaletteWidget's BooleanProperties will be updated by buttons in PaletteControls
         super().__init__(**kwargs)
         # Right now only works for hex values in string form
-        self.colors = [str(color) for color in colors]
-        self.display_colors = [str(color) for color in colors]
+        if not hex_colors:
+            # Default widget for when Animation's ControlPanel is first instantiated.
+            hex_colors = list(palettes.palettes[0].values())[0].values()
+            # Also need to change size_hint_x like for clone.
+            Clock.schedule_once(self.initialize_default_widget)
+        self.hex_colors = [str(hex_color) for hex_color in hex_colors]
+        self.display_colors = [str(hex_color) for hex_color in hex_colors]
         self.shadow = RoundedRectangle()
         self.gradient = RoundedRectangle()
         self.bind(pos=self.update_palette,
@@ -63,51 +69,56 @@ class PaletteWidget(MDBoxLayout):
                   is_blended=self.update_palette)
         self.ripple_graphics = None
 
+    def initialize_default_widget(self, *args):
+        self.size_hint_x = 1
+
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
-            self.do_ripple(touch)
+            # self.do_ripple(touch)
+            pass
 
-    def on_touch_up(self, touch):
-        if self.collide_point(touch.x, touch.y):
-            self.parent.send_palette()
+    # Now that PaletteWidget is used in AnimationExpansionPanel this breaks.
+    # def on_touch_up(self, touch):
+    #     if self.collide_point(touch.x, touch.y):
+    #         self.parent.send_palette()
 
-    def do_ripple(self, touch=None):
-        # Adding my own ripple because Kivy is dumb!!!
-        if self.ripple_graphics is None:
-            with self.canvas.after:
-                Color(1, 1, 1, 0.25)
-                self.ripple_graphics = RoundedRectangle(pos=(touch.x, touch.y), size=(1, 1))
-            Clock.schedule_once(self.do_ripple)
-        elif self.ripple_graphics.size[0] < self.width:
-            self.canvas.after.clear()
-            with self.canvas.after:
-                Color(1, 1, 1, 0.25)
-                x_step = dp(25)
-                y_step = dp(10)
-                x, y = self.ripple_graphics.pos
-                nx = max(self.x, x - x_step)
-                ny = max(self.y, y - y_step)
-                w, h = self.ripple_graphics.size[0], self.ripple_graphics.size[1]
-                nw = min(2 * x_step + w, self.right - nx)
-                nh = min(2 * y_step + h, self.top - ny)
-                self.ripple_graphics = RoundedRectangle(pos=(nx, ny), size=(nw, nh))
-            Clock.schedule_once(self.do_ripple)
-        else:
-            self.canvas.after.clear()
-            self.ripple_graphics = None
+    # def do_ripple(self, touch=None):
+    #     # Adding my own ripple because Kivy is dumb!!!
+    #     if self.ripple_graphics is None:
+    #         with self.canvas.after:
+    #             Color(1, 1, 1, 0.25)
+    #             self.ripple_graphics = RoundedRectangle(pos=(touch.x, touch.y), size=(1, 1))
+    #         Clock.schedule_once(self.do_ripple)
+    #     elif self.ripple_graphics.size[0] < self.width:
+    #         self.canvas.after.clear()
+    #         with self.canvas.after:
+    #             Color(1, 1, 1, 0.25)
+    #             x_step = dp(25)
+    #             y_step = dp(10)
+    #             x, y = self.ripple_graphics.pos
+    #             nx = max(self.x, x - x_step)
+    #             ny = max(self.y, y - y_step)
+    #             w, h = self.ripple_graphics.size[0], self.ripple_graphics.size[1]
+    #             nw = min(2 * x_step + w, self.right - nx)
+    #             nh = min(2 * y_step + h, self.top - ny)
+    #             self.ripple_graphics = RoundedRectangle(pos=(nx, ny), size=(nw, nh))
+    #         Clock.schedule_once(self.do_ripple)
+    #     else:
+    #         self.canvas.after.clear()
+    #         self.ripple_graphics = None
 
     def update_palette(self, *args):
         # logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.update_shadow()
         self.children[:] = []
-        colors = []
+        hex_colors = []
         if self.is_swapped:
-            colors[:] = self.colors[::-1]
+            hex_colors[:] = self.hex_colors[::-1]
         else:
-            colors[:] = self.colors[:]
+            hex_colors[:] = self.hex_colors[:]
         if self.is_mirrored:
-            colors[:] = colors[:] + colors[::-1]
-        self.display_colors[:] = colors
+            hex_colors[:] = hex_colors[:] + hex_colors[::-1]
+        self.display_colors[:] = hex_colors
         if self.is_blended:
             self.update_gradient()
         else:
@@ -139,25 +150,43 @@ class PaletteWidget(MDBoxLayout):
                 self.shadow = RoundedRectangle(size=self.size, pos=(self.x + dp(4), self.y - dp(3)),
                                                radius=(dp(1), dp(1)))
 
+    def create_clone(self):
+        clone = PaletteWidget(hex_colors=self.hex_colors, is_mirrored=self.is_mirrored,
+                              is_blended=self.is_blended, is_swapped=self.is_swapped)
+        # Cloned PaletteWidgets go into an AnimationExpansionPanel.ControlPanelTray.ControlPanel -
+        # adjusting look to fit its place in the GUI
+        clone.size_hint_x = 1
+        return clone
+
 
 class PaletteController(MDCard):
 
     def __init__(self, hex_colors, **kwargs):
         super().__init__(**kwargs)
-        self.hex_colors = hex_colors
+        self.hex_colors = list(hex_colors)  # was dict values object
         self.palette_widget = PaletteWidget(hex_colors)
-        self.controls = PaletteControls(palette_widget=self.palette_widget)
+        self.controls = PaletteControls(palette_controller=self, palette_widget=self.palette_widget)
         self.add_widget(self.palette_widget)
         self.add_widget(self.controls)
 
     def send_palette(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        command = Command(mode=3, hex_colors=self.hex_colors)
-        self.parent.device_controller.send_command(command)
+        hex_colors = self.hex_colors[::-1] if self.palette_widget.is_swapped else self.hex_colors
+        command = Command(mode=3,
+                          hex_colors=hex_colors,
+                          is_mirrored=self.palette_widget.is_mirrored,
+                          is_blended=self.palette_widget.is_blended)
+        palettes_screen = MDApp.get_running_app().root_screen.screen_manager.get_screen('palettes')
+        palettes_screen.device_controller.send_command(command)
+
+    def save_to_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        palettes_screen = MDApp.get_running_app().root_screen.screen_manager.get_screen('palettes')
+        pw_clone = self.palette_widget.create_clone()
+        palettes_screen.client_animation_control_panel.update_palette_widget(pw_clone)
 
 
 class PalettesList(MDList):
-    device_controller = ObjectProperty()
 
     def __init__(self, **kwargs):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -167,19 +196,13 @@ class PalettesList(MDList):
         for named_palette in palettes.palettes:
             for palette_name in named_palette.keys():
                 self.palettes.append(named_palette[palette_name].values())
-
-    def on_kv_post(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         for palette in self.palettes:
             self.add_widget(PaletteController(hex_colors=palette))
 
-    def connect_device_controller(self, device_controller, *args):
-        self.device_controller = device_controller
-
 
 class PalettesScreen(MDScreen):
-    grid = ObjectProperty()
     device_controller = ObjectProperty()
+    client_animation_control_panel = ObjectProperty()
 
     def on_pre_enter(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -193,10 +216,3 @@ class PalettesScreen(MDScreen):
         app.root_screen.screen_manager.current = 'controllers'
         open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
         app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
-
-    def on_device_controller(self, *args):
-        # DeviceController given to screen when the open_palettes_screen button is clicked,
-        # PaletteController needs access.  Because PalettesList holds all PaletteControllers,
-        # just have PaletteController use its parent attribute for access to DeviceController to
-        # save memory (bush vs tree compared w/ animations_screen.py).
-        self.ids.palettes_list_.connect_device_controller(self.device_controller)

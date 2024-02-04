@@ -11,8 +11,9 @@ class Command:
 
     def __init__(self, mode, red=None, green=None, blue=None, dimmer_val=None,
                  num_leds=None, max_brightness=None, color_correction_key=None,
-                 color_temperature_correction_key=None, hex_colors=None, mirrored=False,
-                 animation_id=None, animation_speed=None, trail_length= None, num_comets=None):
+                 color_temperature_correction_key=None, hex_colors=None, is_mirrored=False,
+                 is_blended=False,
+                 animation_id=None, animation_speed=None, trail_length=None, num_comets=None):
         self.mode = mode
         self.red = red
         self.green = green
@@ -23,7 +24,8 @@ class Command:
         self.color_correction_key = color_correction_key
         self.color_temperature_correction_key = color_temperature_correction_key
         self.hex_colors = hex_colors
-        self.mirrored = mirrored
+        self.is_mirrored = is_mirrored
+        self.is_blended = is_blended
         self.animation_id = animation_id
         self.animation_speed = animation_speed
         self.trail_length = trail_length

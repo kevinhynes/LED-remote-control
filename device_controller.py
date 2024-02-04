@@ -1,7 +1,3 @@
-import asyncio
-import random
-import sys
-import string
 from math import pi, sin, trunc
 import logging
 import jnius
@@ -9,41 +5,28 @@ import struct
 import webcolors
 import colorsys
 from collections import namedtuple
-from typing import Optional, List
+from typing import List
 from threading import Thread
 from jnius import cast, autoclass
 from functools import partial
-from typing import Union
 from kivymd.app import MDApp
 from kivy.core.window import Window
 from kivy.clock import mainthread
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty, StringProperty, \
-    BooleanProperty
+from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty
 from kivy.metrics import dp, sp
-from kivy.graphics import Color, Bezier, Line, Rectangle
+from kivy.graphics import Color, Line, Rectangle
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.relativelayout import MDRelativeLayout
-from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDIconButton, MDRoundFlatButton, MDRectangleFlatButton
-from kivymd.uix.list import TwoLineAvatarIconListItem
-from kivymd.uix.spinner import MDSpinner
+from kivymd.uix.button import MDIconButton, MDRoundFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import BaseListItem, OneLineListItem, OneLineAvatarIconListItem, \
-    IRightBodyTouch
-from kivymd.uix.card import MDCard
-from kivymd.uix.selectioncontrol import MDSwitch
-from kivymd.uix.slider import MDSlider
-from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelOneLine
+from kivymd.uix.list import BaseListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import SlideTransition
-from kivymd.uix.pickers import MDColorPicker
 from kivymd.uix.selectioncontrol import MDCheckbox
-from kivy.uix.checkbox import CheckBox
 
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import func_name
@@ -58,6 +41,7 @@ AnimationPresetButtonAttr = namedtuple('AnimationPresetButtonAttr',
 
 
 class Drawer(MDRelativeLayout):
+    # control_panel should point to the instance's "control panel" in .kv rule.
     control_panel = ObjectProperty()
 
     def open_drawer(self, *args):
@@ -82,7 +66,46 @@ class RGBDrawer(Drawer):
     device_controller = ObjectProperty()
 
 
-class WaveOptionRadioButton(MDCheckbox):
+class Presets(MDBoxLayout):
+    pass
+
+
+class ColorPresets(MDGridLayout):
+    device_controller = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_device_controller(self, *args):
+        num_buttons = 20
+        hue_step = 255 / num_buttons
+        for i in range(0, num_buttons):
+            hue = i * hue_step
+            hsv = [hue / 255, 1, 1]
+            rgb = colorsys.hsv_to_rgb(*hsv)
+            color_preset_btn = ColorPresetButton(
+                md_bg_color=rgb,
+            )
+            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
+                                                     color_preset_btn.md_bg_color))
+            self.add_widget(color_preset_btn)
+
+
+class WhitePresets(MDGridLayout):
+    device_controller = ObjectProperty()
+
+    def on_device_controller(self, *args):
+        for i in range(4):
+            rgb = (1, 1, (255 - i * 30) / 255)
+            color_preset_btn = ColorPresetButton(
+                md_bg_color=rgb,
+            )
+            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
+                                                     color_preset_btn.md_bg_color))
+            self.add_widget(color_preset_btn)
+
+
+class ColorPresetButton(MDRoundFlatButton):
     pass
 
 
@@ -101,7 +124,7 @@ class WaveDrawer(Drawer):
         self._active_strip_option = 'strip'
         self.wave_debounce = False
         self.strip_debounce = False
-        Clock.schedule_once(self.draw_wave)
+        # Clock.schedule_once(self.draw_wave)
 
     def close_drawer(self, *args):
         super().close_drawer()
@@ -198,62 +221,42 @@ class WaveDrawer(Drawer):
             self._animation.cancel()
             self._animation = None
 
-class ColorPresetButton(MDRoundFlatButton):
+
+class WaveOptionRadioButton(MDCheckbox):
     pass
+
+
+class PaletteDrawer(Drawer):
+    device_controller = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def close_drawer(self, *args):
+        super().close_drawer()
+        self.control_panel.unbind(height=self._update_height)
+
+    def open_drawer(self, *args):
+        super().open_drawer()
+        self.control_panel.bind(height=self._update_height)
+
+    def _update_height(self, *args):
+        # PaletteDrawer contains the AnimationsList, which can also grow in height when its
+        # AnimationExpansionPanels have been expanded.  In that case, PaletteDrawer should also
+        # grow in height to visually contain the AnimationsList.  Previously this was done in .kv
+        # (height: pallette_cp_.height + dp(20)) but requries closing the drawer on start-up.
+        self.height = self.control_panel.height + dp(20)
 
 
 class FavoriteButton(MDRoundFlatButton):
     pass
 
 
-class Presets(MDBoxLayout):
-    pass
-
-
-class ColorPresets(MDGridLayout):
-    device_controller = ObjectProperty()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def on_device_controller(self, *args):
-        num_buttons = 20
-        hue_step = 255 / num_buttons
-        for i in range(0, num_buttons):
-            hue = i * hue_step
-            hsv = [hue / 255, 1, 1]
-            rgb = colorsys.hsv_to_rgb(*hsv)
-            color_preset_btn = ColorPresetButton(
-                md_bg_color=rgb,
-            )
-            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
-                                                     color_preset_btn.md_bg_color))
-            self.add_widget(color_preset_btn)
-
-
-class WhitePresets(MDGridLayout):
-    device_controller = ObjectProperty()
-
-    def on_device_controller(self, *args):
-        for i in range(4):
-            rgb = (1, 1, (255 - i * 30) / 255)
-            color_preset_btn = ColorPresetButton(
-                md_bg_color=rgb,
-            )
-            color_preset_btn.bind(on_release=partial(self.device_controller.update_rgb_sliders,
-                                                     color_preset_btn.md_bg_color))
-            self.add_widget(color_preset_btn)
-
-
-class PaletteDrawer(Drawer):
-    device_controller = ObjectProperty()
-
-
 class RenameDeviceTextField(MDTextField):
     pass
 
 
-class DeviceController(BaseListItem):
+class DeviceController(MDRelativeLayout):
     device = ObjectProperty()
     power_button = ObjectProperty()
     carousel = ObjectProperty()
@@ -340,11 +343,6 @@ class DeviceController(BaseListItem):
     def _initialize_switch(self, *args):
         self.power_button.ids.thumb._no_ripple_effect = True
         self.power_button.ids.thumb.ids.icon.icon = 'power'
-
-    def on_kv_post(self, *args):
-        Clock.schedule_once(self.ids.rgb_drawer_.close_drawer)
-        Clock.schedule_once(self.ids.wave_drawer_.close_drawer)
-        Clock.schedule_once(self.ids.palette_drawer_.close_drawer)
 
     def on_is_connected(self, *args):
         logging.debug(
@@ -613,7 +611,7 @@ class DeviceController(BaseListItem):
 
     def _send_command(self, command: Command):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` command: {command}')
-        byte0 = byte1 = byte2 = byte3 = byte4 = byte5 = -1
+        byte0 = byte1 = byte2 = byte3 = byte4 = byte5 = 0
 
         # Configuration Mode
         if command.mode == 0:
@@ -661,10 +659,11 @@ class DeviceController(BaseListItem):
         # Palettes...
         elif command.mode == 3:
             byte0 = 3
-            command.mirrored = True
-            if command.mirrored:
-                command.hex_colors = list(command.hex_colors) + list(command.hex_colors)[::-1]
             byte1 = len(command.hex_colors)
+            if command.is_mirrored:
+                byte2 = 1
+            if command.is_blended:
+                byte3 = 1
             self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
             for hex_color in command.hex_colors:
                 rgb = webcolors.hex_to_rgb(hex_color)
@@ -675,6 +674,7 @@ class DeviceController(BaseListItem):
         elif command.mode == 4:
             byte0 = 4
             byte1 = command.animation_id
+            byte2 = command.animation_speed
             self._send_to_ESP32([byte0, byte1, byte2, byte3, byte4, byte5])
 
     def _send_to_ESP32(self, send_bytes: List[int]) -> None:

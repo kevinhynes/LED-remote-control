@@ -81,6 +81,7 @@ palettes = [
                    'Dark moss green': '#245501', 'Avocado': '#538d22', 'Asparagus': '#73a942',
                    'Pistachio': '#aad576'}},
 ]
+
 # These are FastLED predefined palettes
 cloud_colors = [
     webcolors.name_to_hex('blue'),

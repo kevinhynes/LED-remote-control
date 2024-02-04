@@ -1,7 +1,6 @@
-import asyncio
 import os
-import struct
-import jnius
+# import struct
+# import jnius
 import logging
 import threading
 import random
@@ -15,8 +14,10 @@ from kivy.lang import Builder
 from kivymd.theming import ThemeManager
 from kivy.storage.jsonstore import JsonStore
 from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 from screens import *
 import atexit
+import time
 
 from bluetooth_helpers import FakeDevice, CustomBluetoothDevice
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
@@ -69,7 +70,24 @@ class MainApp(MDApp):
         self.broadcast_receiver = self._get_broadcast_receiver() if platform == 'android' else None
         self.saved_data = None
 
+        # self.theme_cls.theme_style = 'Dark'
+        # self.theme_cls.primary_palette = 'BlueGray'
+        # self.theme_cls.primary_hue = '400'
+        # # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
+        # # self.theme_cls.material_style = 'M3'
+        #
+        # # Loading the Kivy language files will load the corresponding Python files / classes...?
+        # Builder.load_file('device_controller.kv')
+        # Builder.load_file('device_connection_dialog.kv')
+        # Builder.load_file('device_info_list_item.kv')
+        # Builder.load_file('palettes_screen.kv')  # Re-tooling widget
+        # Builder.load_file('configure_leds_screen.kv')
+        # Builder.load_file('device_info_screen.kv')
+        # Builder.load_file('find_devices_screen.kv')
+        # Builder.load_file('animations_list.kv')
+
     def build(self):
+        start_time = time.time()
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'BlueGray'
         self.theme_cls.primary_hue = '400'
@@ -84,13 +102,16 @@ class MainApp(MDApp):
         Builder.load_file('configure_leds_screen.kv')
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
-        Builder.load_file('animations_screen.kv')
-        # Builder.load_file('rgb_panel.kv')
+        Builder.load_file('animations_list.kv')
 
         Clock.schedule_once(self.request_bluetooth_permissions)
         Clock.schedule_once(self.load_saved_data)
 
         self.root_screen = RootScreen()
+        end_time = time.time()
+        startup_time = end_time - start_time
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`\n'
+                      f'\tAPP STARTUP TIME: {startup_time:.4f}')
         return self.root_screen
 
     def on_start(self, *args):
@@ -199,44 +220,6 @@ class MainApp(MDApp):
             logging.debug(f'Exception occurred reading a BluetoothAdapter broadcast: {e}')
         else:
             logging.debug(f'Successfully read a BluetoothAdapter broadcast.')
-
-    # def start_discovery(self, *args):
-    #     # No longer needed, not doing Bluetooth scanning to avoid unnecessary permissions.
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
-    #     if platform == 'linux':
-    #         new_devices = [FakeDevice() for _ in range(10)]
-    #         self.available_devices[:] = new_devices
-    #     if platform == 'android':
-    #         try:
-    #             print('In try block')
-    #             # This is kind of working?
-    #             actions = [BluetoothDevice.ACTION_FOUND,
-    #                        BluetoothAdapter.ACTION_DISCOVERY_STARTED,
-    #                        BluetoothAdapter.ACTION_DISCOVERY_FINISHED]
-    #             self.broadcast_receiver = BroadcastReceiver(self.on_broadcast_received,
-    #                                                         actions=actions)
-    #             self.broadcast_receiver.start()
-    #             activity = PythonActivity.mActivity
-    #             intent_filter = IntentFilter()
-    #             intent_filter.addAction(BluetoothDevice.ACTION_FOUND)
-    #             activity.registerReceiver(self.bluetooth_discovery_receiver, intent_filter)
-    #             if not self.bluetooth_adapter.startDiscovery():
-    #                 logging.debug(f'Bluetooth scan failed...')
-    #             # Wait for discovery to complete...
-    #             activity.unregisterReceiver(self.bluetooth_discovery_receiver)
-    #         except Exception as e:
-    #             print(f'BroadcastReceiver failed with Exception: {e}')
-    #         else:
-    #             print(f'BroadcastReceiver success')
-    #
-    # def on_broadcast_received(self, context, intent):
-    #     # No longer needed, not doing Bluetooth scanning to avoid unnecessary permissions.
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-    #     logging.debug(f'Conext: {context}, Intent: {intent}')
-    #     action = intent.getAction()
-    #     if BluetoothDevice.ACTION_FOUND == action:
-    #         device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-    #         logging.debug(f'Found device: {device.getName()} {device.getAddress()}')
 
     def request_bluetooth_permissions(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
@@ -492,10 +475,9 @@ class MainApp(MDApp):
             self.loaded_devices[:] = loaded_devices
             logging.debug(f'\tDone loading saved data on Android with BluetoothAdapter: '
                           f'{self.bluetooth_adapter}')
-            logging.debug(f'\tSaved Devices: {self.loaded_devices}')
+            logging.debug(f'\tLoaded Devices: {self.loaded_devices}')
 
         if platform == 'linux':
-            # internal_storage_dir is /home/fourteen/.config/main  ??
             internal_storage_dir = self.user_data_dir
             filename = os.path.join(internal_storage_dir, 'saved_data.json')
             logging.debug(f'Loading saved data on Linux.')
@@ -523,7 +505,7 @@ class MainApp(MDApp):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with device {device}')
         # Save to database.
         device_info = device.get_device_info()
-        # -make UUIDs strings to save them
+        # make UUIDs strings to save them
         uuids = [uuid.toString() for uuid in device_info['UUIDs']]
         device_info['UUIDs'] = uuids
         mac_address = device_info['Address']

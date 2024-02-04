@@ -1,22 +1,12 @@
 import logging
-from functools import partial
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.list import OneLineListItem, OneLineRightIconListItem
-from kivymd.uix.button import MDFlatButton
 from typing import Union
 from kivymd.uix.pickers import MDColorPicker
-from kivymd.uix.relativelayout import MDRelativeLayout
-from kivy.properties import NumericProperty, ListProperty, ObjectProperty
+from kivy.properties import ListProperty, ObjectProperty
 from kivymd.app import MDApp
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.list import TwoLineAvatarIconListItem
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import BaseListItem, OneLineIconListItem, TwoLineListItem
-from kivymd.uix.menu import MDDropdownMenu
 from kivy.uix.screenmanager import SlideTransition
 
 from device_controller import DeviceController
-from bluetooth_helpers import Command
 from troubleshooting import func_name
 
 
@@ -92,5 +82,4 @@ class RootScreen(MDScreen):
     screen_manager = ObjectProperty()
 
     def open_nav_drawer_(self, *args):
-        # TODO: Is something wrong here due to find > replace?
         self.ids.nav_drawer_.set_state('open')
