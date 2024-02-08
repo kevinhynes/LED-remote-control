@@ -21,6 +21,7 @@ import time
 
 from bluetooth_helpers import FakeDevice, CustomBluetoothDevice
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
+# import favorites_bar
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -70,29 +71,11 @@ class MainApp(MDApp):
         self.broadcast_receiver = self._get_broadcast_receiver() if platform == 'android' else None
         self.saved_data = None
 
-        # self.theme_cls.theme_style = 'Dark'
-        # self.theme_cls.primary_palette = 'BlueGray'
-        # self.theme_cls.primary_hue = '400'
-        # # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
-        # # self.theme_cls.material_style = 'M3'
-        #
-        # # Loading the Kivy language files will load the corresponding Python files / classes...?
-        # Builder.load_file('device_controller.kv')
-        # Builder.load_file('device_connection_dialog.kv')
-        # Builder.load_file('device_info_list_item.kv')
-        # Builder.load_file('palettes_screen.kv')  # Re-tooling widget
-        # Builder.load_file('configure_leds_screen.kv')
-        # Builder.load_file('device_info_screen.kv')
-        # Builder.load_file('find_devices_screen.kv')
-        # Builder.load_file('animations_list.kv')
-
-    def build(self):
-        start_time = time.time()
         self.theme_cls.theme_style = 'Dark'
         self.theme_cls.primary_palette = 'BlueGray'
         self.theme_cls.primary_hue = '400'
-        # self.theme_cls.material_style = 'M3'
         # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
+        # self.theme_cls.material_style = 'M3'
 
         # Loading the Kivy language files will load the corresponding Python files / classes...?
         Builder.load_file('device_controller.kv')
@@ -103,6 +86,26 @@ class MainApp(MDApp):
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
         Builder.load_file('animations_list.kv')
+        Builder.load_file('favorites_bar.kv')
+
+    def build(self):
+        start_time = time.time()
+        # self.theme_cls.theme_style = 'Dark'
+        # self.theme_cls.primary_palette = 'BlueGray'
+        # self.theme_cls.primary_hue = '400'
+        # # self.theme_cls.material_style = 'M3'
+        # # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
+        #
+        # # Loading the Kivy language files will load the corresponding Python files / classes...?
+        #
+        # Builder.load_file('device_controller.kv')
+        # Builder.load_file('device_connection_dialog.kv')
+        # Builder.load_file('device_info_list_item.kv')
+        # Builder.load_file('palettes_screen.kv')
+        # Builder.load_file('configure_leds_screen.kv')
+        # Builder.load_file('device_info_screen.kv')
+        # Builder.load_file('find_devices_screen.kv')
+        # Builder.load_file('animations_list.kv')
 
         Clock.schedule_once(self.request_bluetooth_permissions)
         Clock.schedule_once(self.load_saved_data)

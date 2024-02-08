@@ -5,7 +5,7 @@ from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 from kivy.utils import get_color_from_hex
 from kivymd.uix.screen import MDScreen
-from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty
+from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty, ListProperty
 from kivymd.uix.widget import MDWidget
 from kivymd.uix.relativelayout import MDRelativeLayout
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -26,40 +26,36 @@ class PaletteControls(MDRelativeLayout):
 
     def toggle_blend(self, *args):
         self.palette_widget.is_blended = not self.palette_widget.is_blended
+        self.send_palette()
 
     def toggle_swap(self, *args):
         self.palette_widget.is_swapped = not self.palette_widget.is_swapped
+        self.send_palette()
 
     def toggle_mirror(self, *args):
         self.palette_widget.is_mirrored = not self.palette_widget.is_mirrored
-
-    def toggle_select(self, *args):
-        self.palette_widget.is_selected = not self.palette_widget.is_selected
+        self.send_palette()
 
     def send_palette(self, *args):
-        self.palette_controller.save_to_animation()
         self.palette_controller.send_palette()
-
-    def save_to_animation(self, *args):
-        self.palette_controller.save_to_animation()
 
 
 class PaletteWidget(MDBoxLayout):
+    palette_controller = ObjectProperty()
+    hex_colors = ListProperty()
     is_mirrored = BooleanProperty(False)
     is_swapped = BooleanProperty(False)
     is_blended = BooleanProperty(False)
 
-    def __init__(self, hex_colors=None, **kwargs):
+    def __init__(self, **kwargs):
         # PaletteWidget's BooleanProperties will be updated by buttons in PaletteControls
         super().__init__(**kwargs)
-        # Right now only works for hex values in string form
-        if not hex_colors:
+        if not self.hex_colors:
             # Default widget for when Animation's ControlPanel is first instantiated.
-            hex_colors = list(palettes.palettes[0].values())[0].values()
-            # Also need to change size_hint_x like for clone.
-            Clock.schedule_once(self.initialize_default_widget)
-        self.hex_colors = [str(hex_color) for hex_color in hex_colors]
-        self.display_colors = [str(hex_color) for hex_color in hex_colors]
+            self.hex_colors = list(palettes.palettes[0].values())[0].values()
+        # Right now only works for hex values in string form
+        self.hex_colors[:] = [str(hex_color) for hex_color in self.hex_colors]
+        self.display_colors = [str(hex_color) for hex_color in self.hex_colors]
         self.shadow = RoundedRectangle()
         self.gradient = RoundedRectangle()
         self.bind(pos=self.update_palette,
@@ -68,9 +64,6 @@ class PaletteWidget(MDBoxLayout):
                   is_swapped=self.update_palette,
                   is_blended=self.update_palette)
         self.ripple_graphics = None
-
-    def initialize_default_widget(self, *args):
-        self.size_hint_x = 1
 
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
@@ -151,23 +144,18 @@ class PaletteWidget(MDBoxLayout):
                                                radius=(dp(1), dp(1)))
 
     def create_clone(self):
+        """Clone the current PaletteWidget to be added to a AnimationDrawer's ControlPanel."""
         clone = PaletteWidget(hex_colors=self.hex_colors, is_mirrored=self.is_mirrored,
                               is_blended=self.is_blended, is_swapped=self.is_swapped)
-        # Cloned PaletteWidgets go into an AnimationExpansionPanel.ControlPanelTray.ControlPanel -
-        # adjusting look to fit its place in the GUI
-        clone.size_hint_x = 1
         return clone
 
 
 class PaletteController(MDCard):
+    hex_colors = ListProperty()
 
     def __init__(self, hex_colors, **kwargs):
         super().__init__(**kwargs)
         self.hex_colors = list(hex_colors)  # was dict values object
-        self.palette_widget = PaletteWidget(hex_colors)
-        self.controls = PaletteControls(palette_controller=self, palette_widget=self.palette_widget)
-        self.add_widget(self.palette_widget)
-        self.add_widget(self.controls)
 
     def send_palette(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -178,12 +166,7 @@ class PaletteController(MDCard):
                           is_blended=self.palette_widget.is_blended)
         palettes_screen = MDApp.get_running_app().root_screen.screen_manager.get_screen('palettes')
         palettes_screen.device_controller.send_command(command)
-
-    def save_to_animation(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
-        palettes_screen = MDApp.get_running_app().root_screen.screen_manager.get_screen('palettes')
-        pw_clone = self.palette_widget.create_clone()
-        palettes_screen.client_animation_control_panel.update_palette_widget(pw_clone)
+        palettes_screen.cur_palette = self.palette_widget.create_clone()
 
 
 class PalettesList(MDList):
@@ -203,6 +186,7 @@ class PalettesList(MDList):
 class PalettesScreen(MDScreen):
     device_controller = ObjectProperty()
     client_animation_control_panel = ObjectProperty()
+    cur_palette = ObjectProperty(None)
 
     def on_pre_enter(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
@@ -210,9 +194,14 @@ class PalettesScreen(MDScreen):
         app.root_screen.ids.top_app_bar_.left_action_items = [['arrow-left-bold', self.go_back]]
 
     def go_back(self, *args):
+        self.save_palette_to_animation()
         app = MDApp.get_running_app()
         slide_right = SlideTransition(direction='right')
         app.root_screen.screen_manager.transition = slide_right
         app.root_screen.screen_manager.current = 'controllers'
         open_nav_menu = lambda x: app.root_screen.ids.nav_drawer_.set_state('open')
         app.root_screen.ids.top_app_bar_.left_action_items = [['menu', open_nav_menu]]
+
+    def save_palette_to_animation(self, *args):
+        if self.cur_palette:
+            self.client_animation_control_panel.update_palette_widget(self.cur_palette)

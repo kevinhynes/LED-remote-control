@@ -248,8 +248,7 @@ class PaletteDrawer(Drawer):
         self.height = self.control_panel.height + dp(20)
 
 
-class FavoriteButton(MDRoundFlatButton):
-    pass
+
 
 
 class RenameDeviceTextField(MDTextField):

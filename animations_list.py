@@ -27,6 +27,9 @@ class Animation:
 
 
 class AnimationsList(MDList):
+    """
+    AnimationsList class stores all AnimationDrawers and provides interlocking functionality.
+    """
     device_controller = ObjectProperty()
 
     def __init__(self, **kwargs):
@@ -39,6 +42,14 @@ class AnimationsList(MDList):
 
 
 class AnimationDrawer(MDRelativeLayout):
+    """
+    AnimationDrawer class with drop-down and interlocked functionality.
+
+    AnimationDrawer holds a ControlPanel for a specific LED animation. Only one LED animation can be
+    active at a time, so only one ControlPanel should be shown at a time.  AnimationDrawers are
+    interlocked so that only one can be opened at a time; any AnimationDrawer's opening will trigger
+    AnimationDrawer's parent - AnimationList - to close all drawers.
+    """
     device_controller = ObjectProperty()
     anm_list = ObjectProperty()
     control_panel = ObjectProperty()
@@ -46,8 +57,6 @@ class AnimationDrawer(MDRelativeLayout):
     is_open = BooleanProperty()
 
     def __init__(self, **kwargs):
-        # Only one animation control panel should be shown at a given time.  These drawers are
-        # interlocked so that opening any drawer closes all other drawers in the parent anm_list.
         super().__init__(**kwargs)
         self.is_open = False
 
@@ -76,10 +85,11 @@ class AnimationDrawer(MDRelativeLayout):
 
 
 class HeaderPanel(MDCard):
-    # Declare all properties here to use them in .kv rule. Avoid reaching into parent or children
-    # attributes within .kv rule or there may be errors when Kivy widget tree is built.
-    icon_filepath = StringProperty()
+    """
+    HeaderPanel class acts as "top layer" of AnimationDrawer.
+    """
     name = StringProperty()
+    icon_filepath = StringProperty()
 
 
 class BreatheDrawer(AnimationDrawer):
@@ -103,6 +113,11 @@ class CometDrawer(AnimationDrawer):
 
 
 class ControlPanel(MDBoxLayout):
+    """
+    ControlPanel class holds PaletteWidget and a set of widgets specific to an LED palette
+    animation.  Widgets in the ControlPanel use its attached DeviceController to update variable
+    values running on the microcontroller.
+    """
     device_controller = ObjectProperty()
     animation_id = NumericProperty()
 
@@ -113,6 +128,9 @@ class ControlPanel(MDBoxLayout):
     def on_kv_post(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
         self.ids.animation_speed_slider_.bind(value=self.send_animation)
+
+    def update_animation_speed(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
 
     def open_palettes_screen(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
@@ -128,17 +146,16 @@ class ControlPanel(MDBoxLayout):
         self.ids.palette_container_.clear_widgets()
         self.ids.palette_container_.add_widget(pw)
 
-    def update_animation_speed(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args: {args}')
-
     def send_palette_animation(self, *args):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         self.send_palette()
         self.send_animation()
 
     def send_palette(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         palette_widget = self.ids.palette_container_.children[0]
-        hex_colors = palette_widget.hex_colors[::-1] if palette_widget.is_swapped else palette_widget.hex_colors
+        hex_colors = palette_widget.hex_colors[::-1] \
+            if palette_widget.is_swapped else palette_widget.hex_colors
         command = Command(mode=3,
                           hex_colors=hex_colors,
                           is_mirrored=palette_widget.is_mirrored,
@@ -146,7 +163,10 @@ class ControlPanel(MDBoxLayout):
         self.device_controller.send_command(command)
 
     def send_animation(self, *args):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` animation_id: {self.animation_id}')
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
+        speed = 100 - self.ids.animation_speed_slider_.value
+        command = Command(mode=4, animation_id=self.animation_id, animation_speed=speed)
+        self.device_controller.send_command(command)
 
 
 class BreatheControls(ControlPanel):
@@ -223,4 +243,3 @@ class CometControls(ControlPanel):
     #     self.device_controller.send_command(command)
     #     logging.debug(f'\tComet animation sent...')
     #     logging.debug(f'\t\t speed: {speed} trail length: {trail_length} num_comets: {num_comets}')
-

@@ -115,72 +115,16 @@
                     # side extends outside of the widget's boundary. Including this layout
                     # as padding to make it look right.
                     size_hint: (0.1, 1)
-
-        MDBoxLayout:
+        FavoritesBar:
             id: favorites_
-            pos_hint: {'bottom': 0}
-            size_hint: (1, None)
-            height: dp(40)
-            orientation: 'horizontal'
-            spacing: dp(7)
-            padding: dp(10), dp(2), dp(0), dp(2)
-
-            FavoriteButton:
-                # White
-                md_bg_color: (1, 1, 1, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Red
-                md_bg_color: (1, 0, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Orange
-                md_bg_color: (1, 0.64, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Yellow
-                md_bg_color: (1, 1, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
-            FavoriteButton:
-                # Green
-                md_bg_color: (0, 1, 0, 1)
-                on_release: root.update_rgb_sliders(self.md_bg_color)
-
+        MDRelativeLayout:
             MDIconButton:
-                # Testing comet animation
-                icon: "data/comet.png"
-#                    size_hint:  (None, None)
-#                    font_size: sp(100)
-                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                size_hint: (None, 0.9)
-                width: self.height
-                rounded_button: True
-                line_color: app.theme_cls.bg_light
-                line_width: dp(0.5)
-                canvas.before:
-                    Color:
-                        rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-                    Ellipse:
-                        pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-                        size: self.width, self.height
-                    Color:
-                        rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
-                    Ellipse:
-                        pos: self.x, self.y   # Adjust shadow position
-                        size: self.width, self.height
-            MDRelativeLayout:
-                MDIconButton:
-                    id: menu_button_
-                    icon: 'dots-vertical'
-                    icon_size: dp(20)
-                    pos_hint: {'center_x': .75, 'center_y': 0.45}
-                    ripple_alpha: 0.5
-#                        ripple_scale: 0.5
-                    on_release: root.open_options_menu(self)
+                id: menu_button_
+                icon: 'dots-vertical'
+                icon_size: dp(20)
+                pos_hint: {'bottom': 0, 'right': 1}
+                ripple_alpha: 0.5
+                on_release: root.open_options_menu(self)
 
     MDRelativeLayout:
         id: card_overlay_
@@ -698,19 +642,5 @@
     font_style: 'Overline'
     halign: 'center'
     valign: 'bottom'
-
-
-<FavoriteButton>:
-    size_hint: (None, 0.9)
-    width: self.height
-    rounded_button: True
-    line_color: app.theme_cls.bg_light
-    line_width: dp(0.5)
-    canvas.before:
-        Color:
-            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
-        Ellipse:
-            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
-            size: self.width, self.height
 
 
