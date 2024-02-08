@@ -1,0 +1,68 @@
+#: import FavoritesBar favorites_bar.FavoritesBar
+#: import FavoriteButton favorites_bar.FavoriteButton
+#: import AddFavoriteButton favorites_bar.AddFavoriteButton
+
+
+<FavoritesBar>:
+    id: favorites_bar_
+    pos_hint: {'bottom': 0}
+    size_hint: (1, None)
+    height: dp(40)
+    adaptive_width: True
+    orientation: 'horizontal'
+    spacing: dp(7)
+    padding: dp(10), dp(2), dp(0), dp(2)
+    MDBoxLayout:
+        id: favorites_
+        adaptive_width: True
+        spacing: dp(7)
+#            MDIconButton:
+#                # Testing comet animation
+#                icon: "data/comet.png"
+#                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+#                size_hint: (None, 0.9)
+#                width: self.height
+#                rounded_button: True
+#                line_color: app.theme_cls.bg_light
+#                line_width: dp(0.5)
+#                canvas.before:
+#                    Color:
+#                        rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+#                    Ellipse:
+#                        pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+#                        size: self.width, self.height
+#                    Color:
+#                        rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+#                    Ellipse:
+#                        pos: self.x, self.y   # Adjust shadow position
+#                        size: self.width, self.height
+
+    AddFavoriteButton:
+        id: add_btn_
+        on_release: root.add_favorite()
+
+
+<AddFavoriteButton>:
+    icon: 'plus'
+    style: 'outlined'
+    size_hint: (None, 0.9)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+
+
+<FavoriteButton>:
+    size_hint: (None, 0.9)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+
+
