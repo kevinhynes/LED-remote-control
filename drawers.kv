@@ -1,0 +1,456 @@
+#:import trunc math.trunc
+#:import RGBDrawer drawers.RGBDrawer
+#:import WaveDrawer drawers.WaveDrawer
+#:import PaletteDrawer drawers.PaletteDrawer
+#:import AnimationsList animations_list.AnimationsList
+
+
+<RGBDrawer>:
+    id: rgb_drawer_
+    control_panel: rgb_cp_
+    red_slider: red_slider_
+    green_slider: green_slider_
+    blue_slider: blue_slider_
+    presets: presets_
+    size_hint: (0.95, None)
+    pos_hint: {'center_x': 0.5}
+    height: dp(20)
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDLabel:
+        id: rgb_lbl_
+        text: 'rgb'
+        font_style: 'Button'
+        pos_hint: {'top': 1, 'x': 0.05}
+        size_hint: (None, None)
+        size: (dp(40), dp(20))
+    MDIconButton:
+        icon: 'chevron-down'
+        center_y: rgb_lbl_.center_y
+        pos_hint: {'right': 1}
+        _no_ripple_effect: True
+        on_release:
+            root.toggle_drawer()
+            self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
+    MDBoxLayout:
+        id: rgb_cp_
+        orientation: 'vertical'
+        adaptive_height: True
+        size_hint_x: 1
+        spacing: dp(6)
+        x: Window.width
+        MDBoxLayout:
+            id: rgb_sliders_
+            orientation: 'vertical'
+            adaptive_height: True
+            pos_hint: {'center_x': 0.5}
+            padding: (dp(20), dp(0))
+            spacing: (dp(3))
+            CtrlSlider:
+                id: red_slider_
+                color: (0.8, 0, 0, 0.75)
+                thumb_color_active: (0.8, 0, 0, 0.75)
+                thumb_color_inactive: (0.8, 0, 0, 0.75)
+                thumb_color_disabled: (0.8, 0, 0, 0.75)
+                on_value: root.device_controller.send_rgb()
+            CtrlSlider:
+                id: green_slider_
+                color: (0, 0.8, 0, 0.75)
+                thumb_color_active: (0, 0.8, 0, 0.75)
+                thumb_color_inactive: (0, 0.8, 0, 0.75)
+                thumb_color_disabled: (0, 0.8, 0, 0.75)
+                on_value: root.device_controller.send_rgb()
+            CtrlSlider:
+                id: blue_slider_
+                color: (0, 0, 0.8, 0.75)
+                thumb_color_active: (0, 0, 0.8, 0.75)
+                thumb_color_inactive: (0, 0, 0.8, 0.75)
+                thumb_color_disabled: (0, 0, 0.8, 0.75)
+                on_value: root.device_controller.send_rgb()
+        CtrlSeparator:
+        Presets:
+            id: presets_
+            adaptive_size: True
+            spacing: dp(5)
+            pos_hint: {'center_x': 0.5}
+            disabled: True
+            ColorPresets:
+                id: color_presets_
+                device_controller: root.device_controller
+                cols: 5
+                padding: (dp(0), dp(10), dp(0), dp(10))
+                spacing: dp(5)
+                adaptive_size: True
+            WhitePresets:
+                id: white_presets_
+                device_controller: root.device_controller
+                rows: 4
+                padding: (dp(0), dp(10), dp(0), dp(10))
+                spacing: dp(5)
+                adaptive_size: True
+
+
+<WaveDrawer>:
+    control_panel: wave_cp_
+    id: wave_drawer_
+    size_hint: (0.95, None)
+    pos_hint: {'center_x': 0.5}
+    height: dp(20)
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDLabel:
+        id: wave_lbl_
+        text: 'effects'
+        font_style: 'Button'
+        pos_hint: {'top': 1, 'x': 0.05}
+        size_hint: (None, None)
+        size: (dp(100), dp(20))
+    MDIconButton:
+        icon: 'chevron-down'
+        center_y: wave_lbl_.center_y
+        pos_hint: {'right': 1}
+        _no_ripple_effect: True
+        on_release:
+            root.toggle_drawer()
+            self.icon = 'chevron-down' if self.icon == 'chevron-up' else 'chevron-up'
+    MDBoxLayout:
+        id: wave_cp_
+        orientation: 'vertical'
+        adaptive_height: True
+        padding: (dp(32), dp(0), dp(32), dp(20))
+        spacing: dp(6)
+        x: Window.width
+#        md_bg_color: (1, 0, 0, 0.1)
+        MDRelativeLayout:
+            size_hint: (1, None)
+            height:  sw_.height - dp(10)
+#            md_bg_color: (1, 0, 0, 0.1)
+            MDSwitch:
+                id: sw_
+                pos_hint: {'center_y': 0.5, 'right': 1}
+                widget_style: 'ios'
+        MDBoxLayout:
+            id: knobs_
+            adaptive_size: True
+            pos_hint: {'center_x': 0.5}
+            spacing: dp(5)
+            MDBoxLayout:
+                orientation: 'vertical'
+                adaptive_size: True
+                CtrlLabel:
+                    text: 'Min'
+                CtrlRadialSlider:
+                    id: min_knob_
+                    min_value: 0
+                    max_value: 254
+                    on_value: root.range_min = min(trunc(min_knob_.value), trunc(max_knob_.value - 1))
+                    Label:
+                        # !!! Positioning does not work with MDLabel
+                        text: str(min(trunc(min_knob_.value), trunc(max_knob_.value - 1)))
+                        center: self.parent.center
+            MDBoxLayout:
+                orientation: 'vertical'
+                adaptive_size: True
+                CtrlLabel:
+                    text: 'Max'
+                CtrlRadialSlider:
+                    id: max_knob_
+                    min_value: 1
+                    max_value: 255
+                    value: 255
+                    on_value:
+                        root.range_max = trunc(max_knob_.value)
+                        min_knob_.value = min(trunc(min_knob_.value), trunc(max_knob_.value - 1))
+                    Label:
+                        # !!! Positioning does not work with MDLabel
+                        text: str(trunc(max_knob_.value))
+                        center: self.parent.center
+            MDBoxLayout:
+                orientation: 'vertical'
+                adaptive_size: True
+                CtrlLabel:
+                    text: 'Freq'
+                CtrlRadialSlider:
+                    min_value: 0
+                    max_value: 100
+                    value: 10
+                    on_value: root.frequency = self.value
+                    Label:
+                        # !!! Positioning does not work with MDLabel
+                        text: str(trunc(self.parent.value))
+                        center: self.parent.center
+            MDBoxLayout:
+                orientation: 'vertical'
+                adaptive_size: True
+                CtrlLabel:
+                    text: 'Speed'
+                CtrlRadialSlider:
+                    min_value: 0
+                    max_value: 100
+                    value: 0
+                    on_value: root.speed = self.value
+                    Label:
+                        # !!! Positioning does not work with MDLabel
+                        text: str(trunc(self.parent.value))
+                        center: self.parent.center
+        MDBoxLayout:
+            id: graph_
+            size_hint: (1, None)
+            height: dp(110)
+            # Need this for graph to be drawn on start-up
+            canvas.before:
+                # Background
+                Color:
+                    rgba: (1, 1, 1, 0.1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+                # X-Axis
+                Color:
+                    rgba: (0, 0, 0, 1)
+                Line:
+                    points: (self.x, self.y + self.height / 2, self.x + self.width, self.y + self.height/2)
+            MDRelativeLayout:
+                MDLabel:
+                    id: range_max_lbl_
+                    text: str(255)
+                    size_hint: (1, None)
+                    pos_hint: {'x': 0, 'top': 1}
+                    height: dp(15)
+                    font_size: sp(8)
+                    font_style: 'Overline'
+                    halign: 'left'
+                    valign: 'top'
+                MDLabel:
+                    id: range_min_lbl_
+                    text: str(0)
+                    size_hint: (1, None)
+                    pos_hint: {'x': 0, 'y': 0}
+                    height: dp(15)
+                    font_size: sp(8)
+                    font_style: 'Overline'
+                    halign: 'left'
+                    valign: 'bottom'
+                MDLabel:
+                    id: x_axis_lbl_
+                    text: str(0)
+                    pos_hint: {'right': 0}
+                    size_hint: (None, None)
+                    size: (dp(30), dp(15))
+                    font_size: sp(8)
+                    font_style: 'Overline'
+                    halign: 'right'
+                    valign: 'middle'
+
+        MDBoxLayout:
+            id: wave_options_
+            adaptive_size: True
+            pos_hint: {'center_x': 0.5}
+            spacing: dp(8)
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    id: hue_radio_button_
+                    active: True
+                    value: 'hue'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 'h'
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    value: 'saturation'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 's'
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    value: 'value'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 'v'
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    value: 'red'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 'r'
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    value: 'green'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 'g'
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    value: 'blue'
+                    on_active: root.on_wave_option_active(self)
+                CtrlLabel:
+                    text: 'b'
+            MDSeparator:
+                orientation: 'vertical'
+                width: dp(5)
+            MDBoxLayout:
+                id: strip_options_
+                adaptive_size: True
+                pos_hint: {'center_x': 0.5}
+                spacing: dp(8)
+                MDBoxLayout:
+                    adaptive_size: True
+                    orientation: 'vertical'
+                    WaveOptionRadioButton:
+                        id: strip_radio_button_
+                        active: True
+                        value: 'strip'
+                        on_active: root.on_strip_option_active(self)
+                        width: dp(30)
+                    CtrlLabel:
+                        text: 'strip'
+                        width: dp(30)
+                MDBoxLayout:
+                    adaptive_size: True
+                    orientation: 'vertical'
+                    WaveOptionRadioButton:
+                        value: 'leds'
+                        on_active: root.on_strip_option_active(self)
+                        width: dp(30)
+                    CtrlLabel:
+                        text: 'leds'
+                        width: dp(30)
+            MDSeparator:
+                orientation: 'vertical'
+                width: dp(5)
+            MDBoxLayout:
+                adaptive_size: True
+                orientation: 'vertical'
+                WaveOptionRadioButton:
+                    id: animate_button_
+                    value: 'animate'
+                    on_active: root.on_animation_active(self)
+                    width: dp(30)
+                CtrlLabel:
+                    text: 'anim'
+                    width: dp(30)
+
+
+<PaletteDrawer>:
+    id: palette_drawer_
+    control_panel: palette_cp_
+    size_hint: (0.95, None)
+    pos_hint: {'center_x': 0.5}
+    height: dp(20)
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+    MDLabel:
+        id: palette_lbl_
+        text: 'Palette Animations'
+        font_style: 'Button'
+        pos_hint: {'top': 1, 'x': 0.05}
+        size_hint: (1, None)
+        height: dp(20)
+    MDIconButton:
+        icon: 'chevron-down'
+        center_y: palette_lbl_.center_y
+        pos_hint: {'right': 1}
+        _no_ripple_effect: True
+        on_release:
+            root.toggle_drawer()
+            self.icon = 'chevron-up' if self.icon == 'chevron-down' else 'chevron-down'
+    MDBoxLayout:
+        id: palette_cp_
+        orientation: 'vertical'
+        adaptive_height: True
+        padding: (dp(10), dp(10), dp(10), dp(10))
+        spacing: dp(6)
+        x: Window.width
+        AnimationsList:
+            id: animations_list_
+            device_controller: root.device_controller
+
+
+<RenameDeviceTextField>:
+    size_hint: (None, None)
+    mode: 'rectangle'
+    helper_text: 'Rename your device'
+    helper_text_mode: 'persistent'
+    helper_text_color_normal: 'white'
+    helper_text_color_focus: 'white'
+    text_color_normal: 'white'
+    text_color_focus: 'white'
+
+
+<ColorPresetButton>:
+    size_hint_y: None
+    width: self.height
+    rounded_button: True
+#    line_color: app.theme_cls.bg_light
+#    line_width: dp(0.1)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Ellipse:
+            pos: self.x, self.y
+            size: self.width, self.height
+        Color:
+            rgba: self.md_bg_color
+        Ellipse:
+            pos: self.x, self.y + dp(3)
+            size: self.width- dp(3), self.height - dp(3)
+
+<AnimationPresetButton>:
+    # Testing comet animation
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    size_hint: (None, None)
+    width: self.height
+    rounded_button: True
+    line_color: app.theme_cls.bg_light
+    line_width: dp(0.5)
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.5
+        Line:
+            circle: self.center_x, self.center_y, self.width / 2 , 0, 360, 100
+        Color:
+            rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x + dp(2), self.y - dp(2)  # Adjust shadow position
+            size: self.width, self.height
+        Color:
+            rgba: 1, 1, 1, 0.5  # Shadow color (adjust opacity as needed)
+        Ellipse:
+            pos: self.x, self.y   # Adjust shadow position
+            size: self.width, self.height
+
+
+<WaveOptionRadioButton>:
+#    group: 'wave_options'
+    size_hint: (None, None)
+    font_size: sp(18)
+    size: (dp(20), dp(20))
+
+

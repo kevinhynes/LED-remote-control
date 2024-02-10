@@ -25,7 +25,7 @@ class AddFavoriteButton(MDIconButton):
 
 class FavoriteButton(MDRoundFlatButton):
     favorites_bar = ObjectProperty()
-    long_press_time = NumericProperty(0.75)
+    long_press_time = NumericProperty(0.5)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

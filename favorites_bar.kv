@@ -50,7 +50,7 @@
     rounded_button: True
     line_color: app.theme_cls.bg_light
     line_width: dp(0.5)
-
+    _no_ripple_effect: True
 
 <FavoriteButton>:
     size_hint: (None, 0.9)
@@ -58,6 +58,8 @@
     rounded_button: True
     line_color: app.theme_cls.bg_light
     line_width: dp(0.5)
+    ripple_duration_in_fast: 0.75
+    ripple_duration_in_slow: 0.75
     canvas.before:
         Color:
             rgba: 0, 0, 0, 0.2  # Shadow color (adjust opacity as needed)

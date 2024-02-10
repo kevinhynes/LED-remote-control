@@ -86,7 +86,9 @@ class MainApp(MDApp):
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
         Builder.load_file('animations_list.kv')
+        Builder.load_file('drawers.kv')
         Builder.load_file('favorites_bar.kv')
+        Builder.load_file('ctrl_widgets.kv')
 
     def build(self):
         start_time = time.time()

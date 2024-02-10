@@ -1,0 +1,57 @@
+#:import RadialSlider kivy_garden.radialslider
+
+
+<CtrlSlider@MDSlider>:
+    size_hint: (1, None)
+    height: dp(50)
+    pos_hint: {'center_x': 0.5}
+    hint: False
+    show_off: False
+    min: 0
+    max: 255
+    step: 1
+    disabled: True
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 0.2
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(10), dp(10)
+
+
+<CtrlSeparator@MDBoxLayout>:
+    size_hint: (0.95, None)
+    height: dp(2)
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    padding: (dp(0), dp(0), dp(0), dp(0))
+    canvas:
+        Color:
+            rgba: (0.5, 0.5, 0.5, 0.5)
+        Rectangle:
+            pos: self.x, self.y
+            size: self.width, self.height
+
+
+<CtrlRadialSlider@RadialSlider>:
+    size_hint: (None, None)
+    size: (dp(80), dp(80))
+    thumb_diameter: dp(12)
+    track_thickness: dp(3)
+    canvas:
+        # blue line
+        Color:
+            rgba: rgba("#3086BD")
+        Line:
+            width: self.track_thickness - 0.5
+            circle: self.center_x, self.center_y, self.width/2 - self.thumb_diameter, 0, self.angle
+            cap_precision: 10
+
+
+<CtrlLabel@MDLabel>:
+    size_hint: (1, None)
+    pos_hint: {'center_x': 0.5}
+    height: dp(15)
+    font_size: sp(8)
+    font_style: 'Overline'
+    halign: 'center'
+    valign: 'bottom'
+
