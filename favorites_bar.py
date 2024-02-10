@@ -5,6 +5,7 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDRoundFlatButton
 from kivymd.uix.button import MDIconButton, MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from bluetooth_helpers import Command
 from troubleshooting import func_name
 
 

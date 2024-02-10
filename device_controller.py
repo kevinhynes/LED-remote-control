@@ -244,11 +244,8 @@ class PaletteDrawer(Drawer):
         # PaletteDrawer contains the AnimationsList, which can also grow in height when its
         # AnimationExpansionPanels have been expanded.  In that case, PaletteDrawer should also
         # grow in height to visually contain the AnimationsList.  Previously this was done in .kv
-        # (height: pallette_cp_.height + dp(20)) but requries closing the drawer on start-up.
+        # (height: palette_cp_.height + dp(20)) but requires closing the drawer on start-up.
         self.height = self.control_panel.height + dp(20)
-
-
-
 
 
 class RenameDeviceTextField(MDTextField):
@@ -313,7 +310,7 @@ class DeviceController(MDRelativeLayout):
             'text': 'Animations',
             'on_release': self.open_animations_screen,
         }
-        menu_items = [configure_leds, rename, info, forget, palettes, animations]
+        menu_items = [configure_leds, rename, info, forget]
         self.menu = MDDropdownMenu(
             caller=self.ids.menu_button_,
             items=menu_items,
