@@ -21,7 +21,6 @@ import time
 
 from bluetooth_helpers import FakeDevice, CustomBluetoothDevice
 from device_connection_dialog import DeviceConnectionDialog, DialogContent
-# import favorites_bar
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -77,11 +76,12 @@ class MainApp(MDApp):
         # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
         # self.theme_cls.material_style = 'M3'
 
-        # Loading the Kivy language files will load the corresponding Python files / classes...?
+        # In the Kivy language files, use import statements to load the Python classes that
+        # correspond to any widget instantiated or defined by a Kivy rule.
         Builder.load_file('device_controller.kv')
         Builder.load_file('device_connection_dialog.kv')
         Builder.load_file('device_info_list_item.kv')
-        Builder.load_file('palettes_screen.kv')  # Re-tooling widget
+        Builder.load_file('palettes_screen.kv')
         Builder.load_file('configure_leds_screen.kv')
         Builder.load_file('device_info_screen.kv')
         Builder.load_file('find_devices_screen.kv')
@@ -91,23 +91,8 @@ class MainApp(MDApp):
         Builder.load_file('ctrl_widgets.kv')
 
     def build(self):
+        """Kivy built-in method that must return the root widget of the App's widget tree."""
         start_time = time.time()
-        # self.theme_cls.theme_style = 'Dark'
-        # self.theme_cls.primary_palette = 'BlueGray'
-        # self.theme_cls.primary_hue = '400'
-        # # self.theme_cls.material_style = 'M3'
-        # # 'M3' breaks MDSwitch. widget_style=ios looks good but also acts funky
-        #
-        # # Loading the Kivy language files will load the corresponding Python files / classes...?
-        #
-        # Builder.load_file('device_controller.kv')
-        # Builder.load_file('device_connection_dialog.kv')
-        # Builder.load_file('device_info_list_item.kv')
-        # Builder.load_file('palettes_screen.kv')
-        # Builder.load_file('configure_leds_screen.kv')
-        # Builder.load_file('device_info_screen.kv')
-        # Builder.load_file('find_devices_screen.kv')
-        # Builder.load_file('animations_list.kv')
 
         Clock.schedule_once(self.request_bluetooth_permissions)
         Clock.schedule_once(self.load_saved_data)
@@ -120,18 +105,18 @@ class MainApp(MDApp):
         return self.root_screen
 
     def on_start(self, *args):
-        # This method is called when the application is starting.
-        # You can perform additional initialization here.
+        """Kivy built-in method that is called when the application is starting.  Perform any
+        additional initialization here."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
 
     def on_resume(self, *args):
-        # This method is called when the application is resumed after being paused or stopped.
-        # You can register listeners or start services here.
+        """Kivy built-in method that is called when the application is resumed after being paused or
+        stopped. You can register listeners or start services here."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
 
     def on_pause(self, *args):
-        # This method is called when the application is paused (e.g., when the home button is pressed).
-        # You can save application state or perform any necessary cleanup here.
+        """Kivy built-in method that is called when the application is paused (e.g., when the home
+        button is pressed).You can save application state or perform any necessary cleanup here."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
         # if platform == 'android':
         #     close_thread = threading.Thread(target=self.close_sockets)
@@ -139,53 +124,77 @@ class MainApp(MDApp):
         return True
 
     def on_stop(self, *args):
-        # This method is supposed to be called when the application is stopped (e.g., when the app
-        # is closed) but it doesn't appear to ever get called.
+        """Kivy built-in method that is called when the application is stopped (e.g., when the app
+        # is closed) but it doesn't appear to ever get called."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
         if platform == 'android':
             close_thread = threading.Thread(target=self.close_sockets)
             close_thread.start()
 
-    def close_sockets(self, *args):
-        logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
-        for device in self.loaded_devices:
-            if device.bluetooth_socket:
-                device.bluetooth_socket.close()
-
-    def close_socket(self, address):
-        logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with address {address}')
-        for device in self.loaded_devices:
-            if device.getAddress() == address and device.bluetooth_socket:
-                logging.debug(f'Found saved device with matching address,'
-                              f'closing BluetoothSocket...')
-                device.bluetooth_socket.close()
-                break
-
     def _get_broadcast_receiver(self):
+        """Called from MDApp.__init__ if we're on Android.
+
+        App needs to receive Android system broadcasts about changes to the BluetoothAdapter or
+        a BluetoothDevice's connection state.  This registers a callback to be called when certain
+        system broadcasts are sent by the Android system."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}`')
         actions = [BluetoothDevice.ACTION_ACL_CONNECTED,
                    BluetoothDevice.ACTION_ACL_DISCONNECTED,
                    BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED,
                    BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED,
-                   BluetoothAdapter.ACTION_STATE_CHANGED,]
+                   BluetoothAdapter.ACTION_STATE_CHANGED,
+                   ]
+        # Not sure where instantiating a BroadcastReceiver with these arguments is documented...
+        # thanks ChatGPT :)
         br = BroadcastReceiver(self.on_broadcast_received, actions)
         br.start()
         return br
 
     def on_broadcast_received(self, context, intent):
+        """A broadcast we subscribed to has been received by the BroadcastReceiver. The 'broadcast'
+        is an Intent object.
+
+        If Bluetooth (BluetoothAdapter) has been turned on, get previously paired devices.  If it's
+        been turned off, close any open BluetoothSockets that we're responsible for.
+
+        If a BluetoothDevice (the ESP32) has been connected, add a DeviceController to the
+        ControllersScreen.  If it's been disconnected, close the BluetoothSocket.
+        """
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with context, intent: '
                       f'{context, intent}')
         try:
-            logging.debug(f'Getting action...')
+            logging.debug(f'\tGetting action...')
             action = intent.getAction()
         except Exception as e:
-            logging.debug(f'Exception occurred trying to read device or action from intent: {e}')
+            logging.debug(f'\tException occurred trying to read device or action from intent: {e}')
         else:
-            logging.debug(f'Successfully got action: {action}')
+            logging.debug(f'\tSuccessfully got action: {action}')
+
+        try:
+            if action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+                state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
+                if state == BluetoothAdapter.STATE_CONNECTED:
+                    logging.debug(f'\tBluetoothAdapter connected state')
+                elif state == BluetoothAdapter.STATE_DISCONNECTED:
+                    logging.debug(f'\tBluetoothAdapter disconnected state')
+                    self.close_sockets()
+            elif action == BluetoothAdapter.ACTION_STATE_CHANGED:
+                state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                                           BluetoothAdapter.STATE_OFF)
+                if state == BluetoothAdapter.STATE_ON:
+                    logging.debug(f'\tBluetooth enabled broadcast received, getting paired devices...')
+                    self.get_paired_devices()
+                elif state == BluetoothAdapter.STATE_OFF:
+                    logging.debug(f'\tBluetooth disabled broadcast received...')
+        except Exception as e:
+            logging.debug(f'\tException occurred reading a BluetoothAdapter broadcast: {e}')
+        else:
+            logging.debug(f'\tSuccessfully read a BluetoothAdapter broadcast.')
+
         try:
             if action == BluetoothDevice.ACTION_ACL_DISCONNECTED:
                 device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-                logging.debug(f'{device.getName(), device.getAddress()} disconnected')
+                logging.debug(f'\t{device.getName(), device.getAddress()} disconnected')
                 # If this device is saved / connected, need to get the CustomBluetoothDevice
                 # instance to get the BluetoothSocket and close it.  Here `device` is an
                 # Android BluetoothDevice - it does not hold a reference to the BluetoothSocket.
@@ -194,44 +203,25 @@ class MainApp(MDApp):
                 controllers_screen.update_controller_connection_status(device.getAddress(), False)
             elif action == BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED:
                 device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-                logging.debug(f'{device.getName(), device.getAddress()} disconnect requested')
+                logging.debug(f'\t{device.getName(), device.getAddress()} disconnect requested')
             elif action == BluetoothDevice.ACTION_ACL_CONNECTED:
                 device = cast(BluetoothDevice, intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE))
-                logging.debug(f'{device.getName(), device.getAddress()} connected')
+                logging.debug(f'\t{device.getName(), device.getAddress()} connected')
                 controllers_screen = self.root_screen.screen_manager.get_screen('controllers')
                 controllers_screen.update_controller_connection_status(device.getAddress(), True)
         except Exception as e:
-            logging.debug(f'Exception occurred reading a BluetoothDevice broadcast: {e}')
+            logging.debug(f'\tException occurred reading a BluetoothDevice broadcast: {e}')
         else:
-            logging.debug(f'Successfully read a BluetoothDevice broadcast.')
-
-        try:
-            if action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
-                state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
-                if state == BluetoothAdapter.STATE_CONNECTED:
-                    logging.debug(f'BluetoothAdapter connected state')
-                elif state == BluetoothAdapter.STATE_DISCONNECTED:
-                    logging.debug(f'BluetoothAdapter disconnected state')
-                    self.close_sockets()
-            elif action == BluetoothAdapter.ACTION_STATE_CHANGED:
-                state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                                           BluetoothAdapter.STATE_OFF)
-                if state == BluetoothAdapter.STATE_ON:
-                    logging.debug(f'Bluetooth enabled broadcast received, getting paired devices...')
-                    self.get_paired_devices()
-                elif state == BluetoothAdapter.STATE_OFF:
-                    logging.debug(f'Bluetooth disabled broadcast received...')
-        except Exception as e:
-            logging.debug(f'Exception occurred reading a BluetoothAdapter broadcast: {e}')
-        else:
-            logging.debug(f'Successfully read a BluetoothAdapter broadcast.')
+            logging.debug(f'\tSuccessfully read a BluetoothDevice broadcast.')
 
     def request_bluetooth_permissions(self, *args):
+        """Entry point to requesting Bluetooth permissions when App is started for the first time,
+        or forming Bluetooth connection to previously connected ESP32's."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
         if platform == 'android':
             logging.debug(f'Requesting Bluetooth Permissions')
             try:
-                logging.debug(f'Attempting checking permissions as objects')
+                logging.debug(f'Attempting checking permissions as objects...')
                 if not all(check_permission(permission) for permission in self.permissions):
                     bluetooth_dialog = MDDialog(
                         title='Allow Bluetooth access?',
@@ -253,6 +243,21 @@ class MainApp(MDApp):
             else:
                 logging.debug(f'No exception occurred while checking permissions.'
                               f'Did pop-up launch?')
+
+    def close_sockets(self, *args):
+        logging.warning(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
+        for device in self.loaded_devices:
+            if device.bluetooth_socket:
+                device.bluetooth_socket.close()
+
+    def close_socket(self, address):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with address {address}')
+        for device in self.loaded_devices:
+            if device.getAddress() == address and device.bluetooth_socket:
+                logging.debug(f'Found saved device with matching address,'
+                              f'closing BluetoothSocket...')
+                device.bluetooth_socket.close()
+                break
 
     @mainthread
     def request_bluetooth_permissions_callback(self, *args):
@@ -290,6 +295,13 @@ class MainApp(MDApp):
             logging.debug(f'BluetoothAdapter not found.')
 
     def get_paired_devices(self, *args):
+        """Called when we receive an Android system broadcast indicating BluetoothAdapter is on.
+        We registered for that broadcast before getting the BluetoothAdapter and/or turning it on
+        with enable_bluetooth so this should get called on every App start up.  Also called with
+        FindDevicesScreen's 'refresh' button.
+
+        Updating App.paired_devices will trigger FindDevicesScreen.on_paired_devices (tied together
+        on .kv side)."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()}` was called with {args}')
         if platform == 'android':
             if self.bluetooth_adapter is None:
@@ -306,6 +318,7 @@ class MainApp(MDApp):
             try:
                 paired_devices = self.bluetooth_adapter.getBondedDevices().toArray()
                 saved_device_addresses = {device.getAddress() for device in self.loaded_devices}
+                # The paired_devices list is for making new connections so don't show saved_devices.
                 self.paired_devices = [CustomBluetoothDevice(bluetooth_device=device)
                                        for device in paired_devices
                                        if not device.getAddress() in saved_device_addresses]
@@ -356,6 +369,8 @@ class MainApp(MDApp):
             logging.debug(f'Success on attempt number two')
 
     def connect_as_client(self, device, button):
+        """Called by clicking a paired Bluetooth device in FindDevicesScreen, or 'Retry?' button
+        in DeviceConnectionDialog."""
         logging.debug(
             f'`{self.__class__.__name__}.{func_name()} called with args: {device, button}`')
         if platform == 'android':
@@ -378,7 +393,7 @@ class MainApp(MDApp):
         t.start()
 
     def _connect_BluetoothSocket(self, device, dcd):
-        '''
+        """
         Create and open the android.bluetooth.BluetoothSocket connection to the ESP32.
         BluetoothSocket.connect() is a blocking call that stops the main Kivy thread from executing
         and pauses the GUI; execute this function in a separate thread to avoid this problem.
@@ -392,7 +407,7 @@ class MainApp(MDApp):
         Generic Access Profile (GAP)                    00001800-0000-1000-8000-00805F9B34FB
         ...
 
-        '''
+        """
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {device}`')
         try:
             logging.debug(f'Creating BluetoothSocket')
@@ -425,7 +440,6 @@ class MainApp(MDApp):
         dcd = DeviceConnectionDialog(
             type='custom',
             content_cls=DialogContent(),
-
         )
         dcd.content_cls.label.text = 'Connecting to...' + device.name
         dcd.content_cls.dialog = dcd  # back-reference to parent
@@ -450,10 +464,6 @@ class MainApp(MDApp):
     def load_saved_data(self, *args):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         if platform == 'android':
-            # This should help app function, causes error. App should have bluetooth_adapter at this
-            # point but doesn't...
-            # if not self.bluetooth_adapter.isEnabled():
-            #     self.enable_bluetooth()
             internal_storage_dir = self.user_data_dir
             filename = internal_storage_dir + '/saved_data.json'
             logging.debug(f'\tLoading saved data on Android...')
@@ -462,17 +472,19 @@ class MainApp(MDApp):
             self.saved_data = JsonStore(filename)
 
             loaded_devices = []
-            for key in self.saved_data.keys():
-                logging.debug(f'\tKey: {key}\n'
-                              f'\tValue: {self.saved_data[key]}')
+            for mac_address in self.saved_data.keys():
+                logging.debug(f'\tKey: {mac_address}\n'
+                              f'\tValue: {self.saved_data[mac_address]}')
                 if self.bluetooth_adapter and \
-                        self.bluetooth_adapter.checkBluetoothAddress(str(key)):
-                    bluetooth_device = self.bluetooth_adapter.getRemoteDevice(str(key))
+                        self.bluetooth_adapter.checkBluetoothAddress(str(mac_address)):
+                    bluetooth_device = self.bluetooth_adapter.getRemoteDevice(str(mac_address))
+                    # TODO: doesn't this need other attributes?
                     custom_bluetooth_device = CustomBluetoothDevice(
                         bluetooth_device=bluetooth_device,
-                        name=self.saved_data[key]['Name'],
-                        address=self.saved_data[key]['Address'],
-                        nickname=self.saved_data[key]['Nickname']
+                        name=self.saved_data[mac_address]['Name'],
+                        address=self.saved_data[mac_address]['Address'],
+                        nickname=self.saved_data[mac_address]['Nickname'],
+                        favorites=self.saved_data[mac_address]['Favorites']  # check dis
                     )
                     logging.debug(f'CustomBluetoothDevice.bluetooth_device: {bluetooth_device}')
                     loaded_devices.append(custom_bluetooth_device)
@@ -516,8 +528,9 @@ class MainApp(MDApp):
         mac_address = device_info['Address']
         self.saved_data[mac_address] = device_info
 
-        # If device was renamed, overwrite it.
+        # If device was renamed, overwrite it. This does not trigger on_loaded_devices calls.
         for i, saved_device in enumerate(self.loaded_devices):
+            logging.debug(f'\t`Saved device: {device} was renamed.')
             if saved_device.getAddress() == device.getAddress():
                 self.loaded_devices[i] = device
                 return
@@ -528,6 +541,17 @@ class MainApp(MDApp):
             if device.getAddress() in paired_addresses:
                 del self.paired_devices[i]
                 break
+
+    def save_device_favorite(self, device, fav_idx, commands_dict):
+        logging.debug(f'`{self.__class__.__name__}.{func_name()}')
+        device_info = device.get_device_info()
+        favorites = device_info['Favorites']
+        print(favorites.items())
+        for mode, command in commands_dict.items():
+            print(mode, command)
+            favorites[fav_idx][mode] = command.as_dict()
+        print(favorites.items())
+        self.save_device(device)
 
     def forget_device(self, device):
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with: {device}`')

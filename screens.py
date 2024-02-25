@@ -16,6 +16,7 @@ class ControllersScreen(MDScreen):
     controllers_list = ObjectProperty()
 
     def on_loaded_devices(self, *args):
+        """Connected to App.loaded_devices on .kv side."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         controllers_to_remove = [child for child in self.controllers_list.children]
         for controller in controllers_to_remove:

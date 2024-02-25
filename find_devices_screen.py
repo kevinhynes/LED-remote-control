@@ -41,6 +41,7 @@ class FindDevicesScreen(MDScreen):
         app.get_paired_devices()
 
     def on_loaded_devices(self, *args):
+        """Connected to App.loaded_devices on .kv side."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         saved_device_list_items_to_remove = [child for child in self.loaded_devices_list.children]
         for device_list_item in saved_device_list_items_to_remove:
@@ -52,6 +53,7 @@ class FindDevicesScreen(MDScreen):
             self.loaded_devices_list.add_widget(button)
 
     def on_paired_devices(self, *args):
+        """Connected to App.paired_devices on .kv side."""
         logging.debug(f'`{self.__class__.__name__}.{func_name()} called with args: {args}`')
         buttons_to_remove = [child for child in self.paired_devices_list.children]
         for child in buttons_to_remove:

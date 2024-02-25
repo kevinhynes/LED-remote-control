@@ -1,29 +1,27 @@
 import logging
 from kivy.core.window import Window
 from kivymd.app import MDApp
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.relativelayout import MDRelativeLayout
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, BooleanProperty
+from kivymd.uix.relativelayout import MDRelativeLayout
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import MDList
 from kivymd.uix.card import MDCard
 from kivy.uix.screenmanager import SlideTransition
-
 from kivy.metrics import dp
 
 from bluetooth_helpers import Command
 from troubleshooting import func_name
 
 
-class Animation:
-
-    def __init__(self, name='', icon_filepath='', animation_id=-1, variables=(), control_panel=None,
-                 **kwargs):
-        self.name = name
-        self.icon_filepath = icon_filepath
-        self.animation_id = animation_id
-        self.variables = variables
-        self.control_panel = control_panel
+# class Animation:
+#
+#     def __init__(self, name='', icon_filepath='', animation_id=-1, variables=(), control_panel=None,
+#                  **kwargs):
+#         self.name = name
+#         self.icon_filepath = icon_filepath
+#         self.animation_id = animation_id
+#         self.variables = variables
+#         self.control_panel = control_panel
 
 
 class AnimationsList(MDList):
@@ -172,56 +170,17 @@ class ControlPanel(MDBoxLayout):
 class BreatheControls(ControlPanel):
     pass
 
-    # def on_kv_post(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     self.ids.animation_speed_slider_.bind(value=self.send_animation)
-
-    # def send_animation(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     speed = 100 - self.ids.animation_speed_slider_.value
-    #     command = Command(mode=4, animation_id=1, animation_speed=speed)
-    #     self.device_controller.send_command(command)
-    #     logging.debug(f'\tBreathe animation sent...')
-    #     logging.debug(f'\t\t speed: {speed}')
-
 
 class BreezeControls(ControlPanel):
     pass
-
-    # def on_kv_post(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     self.ids.animation_speed_slider_.bind(value=self.send_animation)
-
-    # def send_animation(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     speed = 100 - self.ids.animation_speed_slider_.value
-    #     command = Command(mode=4, animation_id=2, animation_speed=speed)
-    #     self.device_controller.send_command(command)
-    #     logging.debug(f'\tBreeze animation sent...')
-    #     logging.debug(f'\t\t speed: {speed}')
 
 
 class SplatterControls(ControlPanel):
     pass
 
-    # def on_kv_post(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     self.ids.animation_speed_slider_.bind(value=self.send_animation)
-
-    # def send_animation(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
-    #     speed = 100 - self.ids.animation_speed_slider_.value
-    #     command = Command(mode=4, animation_id=3, animation_speed=speed)
-    #     self.device_controller.send_command(command)
-    #     logging.debug(f'\tSplatter animation sent...')
-    #     logging.debug(f'\t\t speed: {speed}')
-
 
 class TwinkleControls(ControlPanel):
     pass
-
-    # def send_animation(self, *args):
-    #     logging.debug(f'`{self.__class__.__name__}.{func_name()}` called with args {args}')
 
 
 class CometControls(ControlPanel):

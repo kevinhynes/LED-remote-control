@@ -1,13 +1,8 @@
 from math import pi, sin, trunc
 import logging
 import colorsys
-from typing import List
-from threading import Thread
-from jnius import cast, autoclass
 from functools import partial
-from kivymd.app import MDApp
 from kivy.core.window import Window
-from kivy.clock import mainthread
 from kivy.properties import NumericProperty, ObjectProperty, BooleanProperty
 from kivy.metrics import dp, sp
 from kivy.graphics import Color, Line, Rectangle
@@ -15,16 +10,8 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.relativelayout import MDRelativeLayout
 from kivymd.uix.button import MDIconButton, MDRoundFlatButton
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import BaseListItem
-from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.textfield import MDTextField
 from kivy.clock import Clock
-from kivy.utils import platform
-from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.selectioncontrol import MDCheckbox
-
-from device_connection_dialog import DeviceConnectionDialog, DialogContent
 from troubleshooting import func_name
 from bluetooth_helpers import Command
 

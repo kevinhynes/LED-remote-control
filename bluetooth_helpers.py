@@ -1,13 +1,14 @@
 import logging
 import random
 import string
+from collections import defaultdict
 
 
 class Command:
-    '''
-    Template for any possible command that can be sent from app to ESP32.
+    """
+    Template for any possible command that can be sent from App to ESP32.
     An instance of this class is given to DeviceController.send_command().
-    '''
+    """
 
     def __init__(self, mode, red=None, green=None, blue=None, dimmer_val=None,
                  num_leds=None, max_brightness=None, color_correction_key=None,
@@ -31,15 +32,69 @@ class Command:
         self.trail_length = trail_length
         self.num_comets = num_comets
 
+    def as_dict(self):
+        """Commands need to be saved to the App's JSON storage when a FavoriteButton is added."""
+        command_as_dict = {'mode': self.mode,
+                           'red': self.red,
+                           'green': self.green,
+                           'blue': self.blue,
+                           'dimmer_val': self.dimmer_val,
+                           'num_leds': self.num_leds,
+                           'max_brightness': self.max_brightness,
+                           'color_correction_key': self.color_correction_key,
+                           'color_temperature_correction_key': self.color_temperature_correction_key,
+                           'hex_colors': self.hex_colors,
+                           'is_mirrored': self.is_mirrored,
+                           'is_blended': self.is_blended,
+                           'animation_id': self.animation_id,
+                           'animation_speed': self.animation_speed,
+                           'trail_length': self.trail_length,
+                           'num_comets': self.num_comets}
+        return command_as_dict
+
+    @staticmethod
+    def load_from_dict(command_as_dict):
+        """When the App is loaded, any FavoriteButton.command_list's commands will have to be
+        reloaded as a Command object."""
+        command = Command(mode=command_as_dict['mode'],
+                          red=command_as_dict['red'],
+                          green=command_as_dict['green'],
+                          blue=command_as_dict['blue'],
+                          dimmer_val=command_as_dict['dimmer_val'],
+                          num_leds=command_as_dict['num_leds'],
+                          max_brightness=command_as_dict['max_brightness'],
+                          color_correction_key=command_as_dict['color_correction_key'],
+                          color_temperature_correction_key=command_as_dict[
+                              'color_temperature_correction_key'],
+                          hex_colors=command_as_dict['hex_colors'],
+                          is_mirrored=command_as_dict['is_mirrored'],
+                          is_blended=command_as_dict['is_blended'],
+                          animation_id=command_as_dict['animation_id'],
+                          animation_speed=command_as_dict['animation_speed'],
+                          trail_length=command_as_dict['trail_length'],
+                          num_comets=command_as_dict['num_comets'],
+                          )
+        return command
+
 
 class CustomBluetoothDevice:
-    # To allow user to rename device and save, I think this class is necessary?
+    """
+    CustomBluetoothDevice will hold the instance of the Android BluetoothDevice object:
+    https://developer.android.com/reference/android/bluetooth/BluetoothDevice
 
-    def __init__(self, bluetooth_device=None, name='', address='', nickname=''):
+    which is how we can open a BluetoothSocket and send data to the ESP32.
+
+    This class is essentially what gets saved to the App's storage / persistence.
+    Each CustomBluetoothDevice gets its own DeviceController.
+    """
+
+    def __init__(self, bluetooth_device=None, name='', address='', nickname='',
+                 favorites={}):
         self.bluetooth_device = bluetooth_device
         self.name = name
         self.address = address
         self.nickname = nickname
+        self.favorites = favorites
         self.bluetooth_socket = None
         self.recv_stream = None
         self.send_stream = None
@@ -50,7 +105,7 @@ class CustomBluetoothDevice:
         self.color_temperature_correction = 'Uncorrected Temperature'
 
     def __getattr__(self, attr):
-        """This allows CustomBluetoothDevice.METHOD_NAME to immediately defer to the Android APIs
+        """This allows CustomBluetoothDevice.METHOD_NAME to immediately defer to the Android API's
         BluetoothDevice.METHOD_NAME instead, where all the desired methods are defined.
         """
         if hasattr(self.bluetooth_device, attr):
@@ -86,6 +141,7 @@ class CustomBluetoothDevice:
                        'Alias': alias,
                        'Nickname': self.nickname,
                        'Address': address,
+                       'Favorites': self.favorites,
                        'Type': type,
                        'BondState': bond_state,
                        'UUIDs': UUIDs,
@@ -145,6 +201,7 @@ class FakeDevice:
             self.max_brightness = 100
             self.color_correction = 'Uncorrected Color'
             self.color_temperature_correction = 'Uncorrected Temperature'
+            self.favorites = defaultdict(dict)
         else:
             self.load_device_info(device_info)
 
@@ -181,7 +238,8 @@ class FakeDevice:
                        'Number of LEDs': self.num_leds,
                        'Maximum Brightness': self.max_brightness,
                        'Color Correction': self.color_correction,
-                       'Color Temperature Correction': self.color_temperature_correction
+                       'Color Temperature Correction': self.color_temperature_correction,
+                       'Favorites': self.favorites,
                        }
         return device_info
 
@@ -198,6 +256,9 @@ class FakeDevice:
         self.max_brightness = device_info['Maximum Brightness']
         self.color_correction = device_info['Color Correction']
         self.color_temperature_correction = device_info['Color Temperature Correction']
+        self.favorites = defaultdict(dict)
+        for fav_idx, loaded_commands_dict in device_info['Favorites'].items():
+            self.favorites[fav_idx] = loaded_commands_dict
 
     def isConnected(self):
         return random.choice([0, 1])
